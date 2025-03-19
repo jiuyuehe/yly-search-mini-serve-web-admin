@@ -240,5 +240,13 @@ export enum DICT_TYPE {
   IOT_PRODUCT_FUNCTION_TYPE = 'iot_product_function_type', // IOT 产品功能类型
   IOT_DATA_TYPE = 'iot_data_type', // IOT 数据类型
   IOT_UNIT_TYPE = 'iot_unit_type', // IOT 单位类型
-  IOT_RW_TYPE = 'iot_rw_type' // IOT 读写类型
+  IOT_RW_TYPE = 'iot_rw_type', // IOT 读写类型
+
+  // ========== RAG - 全文搜索模块 ==========
+  ES_INDEX_TYPE = 'es_index_type', // ES 索引类型
+  STORAGE_MEDIUM_TYPE = 'storage_medium_type', // 存储介质类型
+  CONTROL_FILE_TYPE = 'control_file_type', // 布控文件类型
+  CONTENT_HANDLE_TYPE = 'content_handle_type', // 内容处理类型
+  SCHEDULE_TYPE = 'schedule_type', // 调度类型
+  CONTROL_STATUS = 'control_status' // 布控状态
 }
