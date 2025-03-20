@@ -20,7 +20,7 @@
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
           <el-option
-            v-for="dict in getStrDictOptions(DICT_TYPE.COMMON_STATUS)"
+            v-for="dict in getStrDictOptions(DICT_TYPE.CONTROL_STATUS)"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -56,6 +56,21 @@
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="ID" align="center" prop="id" />
       <el-table-column label="任务名称" align="center" prop="taskName" />
+      <el-table-column label="存储介质" align="center" prop="storageId">
+        <template #default="scope">
+          {{ getStorageName(scope.row.storageId) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="基础信息扫描" align="center">
+        <template #default="scope">
+          {{ (scope.row.basicFileInfoCount || 0) + '/' + (scope.row.totalFiles || 0) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="内容扫描" align="center">
+        <template #default="scope">
+          {{ (scope.row.contentProcessedCount || 0) + '/' + (scope.row.totalFiles || 0) }}
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.CONTROL_STATUS" :value="scope.row.status" />
@@ -68,8 +83,26 @@
         :formatter="dateFormatter"
         width="180px"
       />
-      <el-table-column label="操作" align="center" min-width="120px">
+      <el-table-column label="操作" align="center" min-width="280px">
         <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            v-if="scope.row.status !== 2"
+            @click="handleStart(scope.row)"
+            v-hasPermi="['rag:control-task:update']"
+          >
+            启动
+          </el-button>
+          <el-button
+            link
+            type="warning"
+            v-if="scope.row.status === 2"
+            @click="handlePause(scope.row)"
+            v-hasPermi="['rag:control-task:update']"
+          >
+            暂停
+          </el-button>
           <el-button
             link
             type="primary"
@@ -86,6 +119,13 @@
           >
             删除
           </el-button>
+          <el-button
+            link
+            type="info"
+            @click="openDetail(scope.row.id)"
+          >
+            详情
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -100,19 +140,26 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <ControlTaskForm ref="formRef" @success="getList" />
+  
+  <!-- 任务详情弹窗 -->
+  <TaskDetailModal ref="detailRef" />
 </template>
 
 <script setup lang="ts">
 import { ControlTaskApi, ControlTaskVO } from '@/api/rag/controltask'
+import { useStorageMediumCache } from '@/hooks/web/useStorageMediumCache'
 import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 import download from '@/utils/download'
 import { dateFormatter } from '@/utils/formatTime'
 import ControlTaskForm from './ControlTaskForm.vue'
+import TaskDetailModal from './TaskDetailModal.vue'
+
 /** 布控任务 列表 */
 defineOptions({ name: 'ControlTask' })
 
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
+const { getStorageName } = useStorageMediumCache() // 存储介质缓存
 
 const loading = ref(true) // 列表的加载中
 const list = ref<ControlTaskVO[]>([]) // 列表的数据
@@ -170,6 +217,40 @@ const resetQuery = () => {
 const formRef = ref()
 const openForm = (type: string, id?: number) => {
   formRef.value.open(type, id)
+}
+
+/** 详情操作 */
+const detailRef = ref()
+const openDetail = (id: number) => {
+  detailRef.value.open(id)
+}
+
+/** 启动任务 */
+const handleStart = async (row: any) => {
+  try {
+    await ControlTaskApi.handleControlTask({
+      id: row.id,
+      status: 2  // 处理中状态
+    })
+    message.success('启动成功！')
+    await getList()
+  } catch (error) {
+    console.error('任务启动失败', error)
+  }
+}
+
+/** 暂停任务 */
+const handlePause = async (row: any) => {
+  try {
+    await ControlTaskApi.handleControlTask({
+      id: row.id,
+      status: 3  // 已暂停状态
+    })
+    message.success('暂停成功！')
+    await getList()
+  } catch (error) {
+    console.error('任务暂停失败', error)
+  }
 }
 
 /** 删除按钮操作 */

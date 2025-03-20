@@ -18,7 +18,12 @@
         />
       </el-form-item>
       <el-form-item label="类型" prop="mediumType">
-        <el-select v-model="queryParams.mediumType" placeholder="请选择类型" clearable class="!w-240px">
+        <el-select
+          v-model="queryParams.mediumType"
+          placeholder="请选择类型"
+          clearable
+          class="!w-240px"
+        >
           <el-option
             v-for="dict in getStrDictOptions(DICT_TYPE.STORAGE_MEDIUM_TYPE)"
             :key="dict.value"
@@ -72,7 +77,15 @@
         </template>
       </el-table-column>
       <el-table-column label="描述" align="center" prop="mediumDesc" />
-      <el-table-column label="状态" align="center" prop="status" >
+      <el-table-column label="连接状态" align="center" prop="mountStatus">
+        <template #default="scope">
+          <el-tag :type="scope.row.mountStatus === 1 ? 'success' : 'danger'">
+            {{ scope.row.mountStatus === 1 ? '已连接' : '未连接' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="连接路径" align="center" prop="mountPath" />
+      <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -142,7 +155,7 @@ const queryParams = reactive({
   mediumDesc: undefined,
   configJson: undefined,
   status: undefined,
-  createTime: [],
+  createTime: []
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
