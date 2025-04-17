@@ -299,7 +299,9 @@ const removeRule = (rule: string) => {
 // 初始化加载选项数据
 const loadOptions = async () => {
   indexList.value = await getIndexList()
+  // console.log('indexList.value', indexList)
   storageList.value = await getStorageList()
+  console.log('storageList.value', storageList.value)
 }
 
 /** 打开弹窗 */

@@ -5,7 +5,7 @@
         <el-avatar :size="60">
           <Icon icon="ep:avatar" :size="60" />
         </el-avatar>
-        <span class="text-18px font-bold">芋道源码</span>
+        <span class="text-18px font-bold">一粒云RAG</span>
       </div>
       <Icon icon="tdesign:qrcode" :size="20" />
     </div>
@@ -18,7 +18,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { UserCardProperty } from './config'
+import { UserCardProperty } from './config';
 
 /** 用户卡片 */
 defineOptions({ name: 'UserCard' })

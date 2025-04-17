@@ -40,9 +40,9 @@ export function useStorageMediumCache() {
     return storageTypeCache.value.get(id) || 0
   }
 
-  function getStorageList() {
+  async function getStorageList() {
     if (storageList.value.length === 0) {
-      ensureStorageData()
+      await ensureStorageData()
     }
     return Promise.resolve(storageList.value)
   }

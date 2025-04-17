@@ -9,7 +9,6 @@ export function useEsIndexCache() {
 
   async function ensureIndexData() {
     if (indexCache.value.size > 0) return
-    
     if (isLoading) {
       return loadPromise 
     }
@@ -32,9 +31,9 @@ export function useEsIndexCache() {
     return indexCache.value.get(id) || id.toString()
   }
 
-  function getIndexList() {
+  async function getIndexList() {
     if (indexList.value.length === 0) {
-      ensureIndexData()
+      await ensureIndexData()
     }
     return Promise.resolve(indexList.value)
   }
