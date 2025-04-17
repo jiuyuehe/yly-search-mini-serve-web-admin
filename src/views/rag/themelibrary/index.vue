@@ -77,7 +77,12 @@
           <span>{{ getDatasetName(scope.row.datasetId) }}</span>
         </template>
       </el-table-column>  
-      <el-table-column label="文件数" align="center" prop="fileCount" />
+      <!-- <el-table-column label="文件数" align="center" prop="fileCount" /> -->
+      <el-table-column label="文件数" align="center" prop="fileCount">
+        <template #default="scope">
+          <el-button type="text" @click="openFilesDialog(scope.row)">{{ scope.row.fileCount }}</el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
@@ -129,6 +134,7 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <ThemeLibraryForm ref="formRef" @success="getList" />
+  <ThemeLibraryFiles ref="filesDialogRef" :themeLibraryId="selectedThemeLibraryId || 0" />
 </template>
 
 <script setup lang="ts">
@@ -137,6 +143,7 @@ import { useDataSetsCache } from '@/hooks/web/useDataSetsCache'
 import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 import download from '@/utils/download'
 import { dateFormatter } from '@/utils/formatTime'
+import ThemeLibraryFiles from './ThemeLibraryFiles.vue'
 import ThemeLibraryForm from './ThemeLibraryForm.vue'
 
 /** 主题库 列表 */
@@ -160,6 +167,14 @@ const queryParams = reactive({
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
+const filesDialogRef = ref()
+const selectedThemeLibraryId = ref(null)
+
+// 修改 openFilesDialog 方法
+const openFilesDialog = (row) => {
+  selectedThemeLibraryId.value = row.id
+  filesDialogRef.value.open(row)
+}
 
 /** 查询列表 */
 const getList = async () => {

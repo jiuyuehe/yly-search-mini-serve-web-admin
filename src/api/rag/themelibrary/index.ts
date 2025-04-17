@@ -2,12 +2,12 @@ import request from '@/config/axios'
 
 // 主题库 VO
 export interface ThemeLibraryVO {
-  id: number // 主键ID
-  themeName: string // 主题名称
-  themeDesc: string // 主题描述
-  datasetId: string // Dify知识库ID
-  fileCount: number // 文件数
-  status: boolean // 状态 0:启用 1:禁用
+  id?: number // 主键ID
+  themeName?: string // 主题名称
+  themeDesc?: string // 主题描述
+  datasetId?: string // Dify知识库ID
+  fileCount?: number // 文件数
+  status?: boolean // 状态 0:启用 1:禁用
 }
 
 // 主题库 API
@@ -46,4 +46,15 @@ export const ThemeLibraryApi = {
   getDatasets: async () => {
     return await request.get({ url: `/rag/theme-library/datasets` })
   },
+
+  // 查询主题库分页
+  getThemeLibraryFilePage: async (params: any) => {
+    return await request.get({ url: `/rag/theme-library/files/page`, params })
+  },
+
+  // 添加文件到主题库
+  handleThemeLibraryFile: async (data: ThemeLibraryVO) => {
+    return await request.put({ url: `/rag/theme-library/file/handle`, data })
+  },
+  
 }
