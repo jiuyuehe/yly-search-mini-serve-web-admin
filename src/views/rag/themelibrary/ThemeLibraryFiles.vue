@@ -6,15 +6,25 @@
         <el-tab-pane label="待入库" name="pending">
           <div class="tab-description">与主题库分类匹配相关的文件列表</div>
           
-          <!-- 搜索框 -->
-          <div class="search-box">
+          <!-- 搜索框和批量操作按钮 -->
+          <div class="action-bar">
             <el-input 
               v-model="pendingSearchText" 
               placeholder="搜索" 
               prefix-icon="Search"
               clearable
               @input="handlePendingSearch"
+              class="search-box"
             />
+            
+            <!-- 新增批量入库按钮 -->
+            <el-button 
+              type="primary" 
+              :disabled="selectedPendingFiles.length === 0"
+              @click="handleBatchAdd"
+            >
+              批量入库
+            </el-button>
           </div>
           
           <!-- 文件列表 -->
@@ -24,6 +34,7 @@
             v-loading="pendingFilesLoading"
             :stripe="true"
             :show-overflow-tooltip="true"
+            @selection-change="handlePendingSelectionChange"
           >
             <el-table-column type="selection" width="55" />
             <el-table-column label="#" width="50" type="index" />
@@ -35,7 +46,7 @@
             </el-table-column>
             <el-table-column label="匹配度" prop="score" width="100">
               <template #default="scope">
-                {{ scope.row.score ? scope.row.score * 100 + '%' : '-' }}
+                {{ scope.row.score ? (scope.row.score * 100).toFixed(2) + '%' : '-' }}
               </template>
             </el-table-column>
             <el-table-column label="创建时间" prop="createTime" width="180" :formatter="dateFormatter" />
@@ -68,15 +79,25 @@
           <!-- 已入库文件描述 -->
           <div class="tab-description">已经入库的文件为独立文件，删除云盘中的文件不会影响主题库中的文件</div>
           
-          <!-- 搜索框 -->
-          <div class="search-box">
+          <!-- 搜索框和批量操作按钮 -->
+          <div class="action-bar">
             <el-input 
               v-model="storedSearchText" 
               placeholder="搜索" 
               prefix-icon="Search"
               clearable
               @input="handleStoredSearch"
+              class="search-box"
             />
+            
+            <!-- 新增批量出库按钮 -->
+            <el-button 
+              type="danger" 
+              :disabled="selectedStoredFiles.length === 0"
+              @click="handleBatchDelete"
+            >
+              批量出库
+            </el-button>
           </div>
           
           <!-- 文件列表 -->
@@ -86,6 +107,7 @@
             v-loading="storedFilesLoading"
             :stripe="true"
             :show-overflow-tooltip="true"
+            @selection-change="handleStoredSelectionChange"
           >
             <el-table-column type="selection" width="55" />
             <el-table-column label="#" width="50" type="index" />
@@ -97,7 +119,7 @@
             </el-table-column>
             <el-table-column label="匹配度" prop="score" width="100">
               <template #default="scope">
-                {{ scope.row.score ? scope.row.score * 100 + '%' : '-' }}
+                {{ scope.row.score ? (scope.row.score * 100).toFixed(2) + '%' : '-' }}
               </template>
             </el-table-column>
             <el-table-column label="创建时间" prop="createTime" width="180" :formatter="dateFormatter" />
@@ -160,6 +182,7 @@ const pendingSearchText = ref('')
 const pendingPage = ref(1)
 const pendingPageSize = ref(10)
 const pendingTotal = ref(0)
+const selectedPendingFiles = ref([]) // 新增：选中的待入库文件
 
 // 已入库状态
 const storedFilesLoading = ref(false)
@@ -168,6 +191,7 @@ const storedSearchText = ref('')
 const storedPage = ref(1)
 const storedPageSize = ref(10)
 const storedTotal = ref(0)
+const selectedStoredFiles = ref([]) // 新增：选中的已入库文件
 
 // 计算属性：根据搜索过滤文件
 const filteredPendingFiles = computed(() => {
@@ -187,13 +211,13 @@ const filteredStoredFiles = computed(() => {
 })
 
 // 监听标签页切换
-const handleTabChange = (tabName) => {
+const handleTabChange = async (tabName) => {
   console.log('切换到标签页:', tabName)
   // 根据当前活动标签页加载数据
   if (tabName === 'pending') {
-    loadPendingFiles()
+    await loadPendingFiles()
   } else if (tabName === 'stored') {
-    loadStoredFiles()
+    await loadStoredFiles()
   }
 }
 
@@ -204,6 +228,120 @@ const handlePendingSearch = () => {
 
 const handleStoredSearch = () => {
   // 本地搜索，不需要重新请求
+}
+
+// 新增：处理待入库文件选择变化
+const handlePendingSelectionChange = (selection) => {
+  selectedPendingFiles.value = selection
+}
+
+// 新增：处理已入库文件选择变化
+const handleStoredSelectionChange = (selection) => {
+  selectedStoredFiles.value = selection
+}
+
+// 新增：批量入库处理
+const handleBatchAdd = async () => {
+  if (selectedPendingFiles.value.length === 0) {
+    message.warning('请至少选择一个文件')
+    return
+  }
+  
+  try {
+    // 显示确认对话框
+    await message.confirm('确定要将选中的' + selectedPendingFiles.value.length + '个文件入库吗？')
+    
+    // 批量处理的加载状态
+    pendingFilesLoading.value = true
+    
+    // 存储成功和失败的数量
+    let successCount = 0
+    let failCount = 0
+    
+    // 循环处理每个选中的文件
+    for (const file of selectedPendingFiles.value) {
+      try {
+        const params: ThemeLibraryVO = {
+          id: file.id,
+          status: true
+        }
+        await ThemeLibraryApi.handleThemeLibraryFile(params)
+        successCount++
+      } catch (error) {
+        console.error('文件入库失败', error)
+        failCount++
+      }
+    }
+    
+    // 显示结果消息
+    if (successCount > 0 && failCount === 0) {
+      message.success(`成功入库${successCount}个文件`)
+    } else if (successCount > 0 && failCount > 0) {
+      message.warning(`成功入库${successCount}个文件，失败${failCount}个文件`)
+    } else {
+      message.error(`所有文件入库失败`)
+    }
+    
+    // 重新加载两个标签页的数据
+    await loadPendingFiles()
+    await loadStoredFiles()
+  } catch (error) {
+    // 用户取消操作，不做处理
+  } finally {
+    pendingFilesLoading.value = false
+  }
+}
+
+// 新增：批量出库处理
+const handleBatchDelete = async () => {
+  if (selectedStoredFiles.value.length === 0) {
+    message.warning('请至少选择一个文件')
+    return
+  }
+  
+  try {
+    // 显示确认对话框
+    await message.confirm('确定要将选中的' + selectedStoredFiles.value.length + '个文件出库吗？')
+    
+    // 批量处理的加载状态
+    storedFilesLoading.value = true
+    
+    // 存储成功和失败的数量
+    let successCount = 0
+    let failCount = 0
+    
+    // 循环处理每个选中的文件
+    for (const file of selectedStoredFiles.value) {
+      try {
+        const params: ThemeLibraryVO = {
+          id: file.id,
+          status: false
+        }
+        await ThemeLibraryApi.handleThemeLibraryFile(params)
+        successCount++
+      } catch (error) {
+        console.error('文件出库失败', error)
+        failCount++
+      }
+    }
+    
+    // 显示结果消息
+    if (successCount > 0 && failCount === 0) {
+      message.success(`成功出库${successCount}个文件`)
+    } else if (successCount > 0 && failCount > 0) {
+      message.warning(`成功出库${successCount}个文件，失败${failCount}个文件`)
+    } else {
+      message.error(`所有文件出库失败`)
+    }
+    
+    // 重新加载两个标签页的数据
+    await loadPendingFiles()
+    await loadStoredFiles()
+  } catch (error) {
+    // 用户取消操作，不做处理
+  } finally {
+    storedFilesLoading.value = false
+  }
 }
 
 // 打开弹窗方法
@@ -217,6 +355,9 @@ const open = async (themeLibraryData) => {
   storedSearchText.value = ''
   pendingPage.value = 1
   storedPage.value = 1
+  // 重置选中文件
+  selectedPendingFiles.value = []
+  selectedStoredFiles.value = []
   
   // 根据当前选中的标签页加载数据
   if (activeTab.value === 'pending') {
@@ -233,6 +374,7 @@ const loadPendingFiles = async () => {
     const params = {
       pageNo: pendingPage.value,
       pageSize: pendingPageSize.value,
+      themeLibraryId: themeLibrary.value.id,
       datasetId: themeLibrary.value.datasetId,
       status: false, // false表示未入库(0)
       fileName: pendingSearchText.value || undefined
@@ -241,6 +383,8 @@ const loadPendingFiles = async () => {
     const result = await ThemeLibraryApi.getThemeLibraryFilePage(params)
     pendingFiles.value = result.list || []
     pendingTotal.value = result.total || 0
+    // 重置选中文件
+    selectedPendingFiles.value = []
   } catch (error) {
     console.error('加载待入库文件列表失败', error)
     message.error('加载待入库文件列表失败')
@@ -256,6 +400,7 @@ const loadStoredFiles = async () => {
     const params = {
       pageNo: storedPage.value,
       pageSize: storedPageSize.value,
+      themeLibraryId: props.themeLibraryId,
       datasetId: themeLibrary.value.datasetId,
       status: true, // true表示已入库(1)
       fileName: storedSearchText.value || undefined
@@ -264,6 +409,8 @@ const loadStoredFiles = async () => {
     const result = await ThemeLibraryApi.getThemeLibraryFilePage(params)
     storedFiles.value = result.list || []
     storedTotal.value = result.total || 0
+    // 重置选中文件
+    selectedStoredFiles.value = []
   } catch (error) {
     console.error('加载已入库文件列表失败', error)
     message.error('加载已入库文件列表失败')
@@ -324,25 +471,25 @@ const formatFileSize = (size) => {
 }
 
 // 分页处理 - 待入库
-const handlePendingSizeChange = (val) => {
+const handlePendingSizeChange = async (val) => {
   pendingPageSize.value = val
-  loadPendingFiles()
+  await loadPendingFiles()
 }
 
-const handlePendingCurrentChange = (val) => {
+const handlePendingCurrentChange = async (val) => {
   pendingPage.value = val
-  loadPendingFiles()
+  await loadPendingFiles()
 }
 
 // 分页处理 - 已入库
-const handleStoredSizeChange = (val) => {
+const handleStoredSizeChange = async (val) => {
   storedPageSize.value = val
-  loadStoredFiles()
+  await loadStoredFiles()
 }
 
-const handleStoredCurrentChange = (val) => {
+const handleStoredCurrentChange = async (val) => {
   storedPage.value = val
-  loadStoredFiles()
+  await loadStoredFiles()
 }
 
 // 暴露方法
@@ -362,9 +509,15 @@ defineExpose({
   color: #666;
 }
 
+.action-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  justify-content: space-between;
+}
+
 .search-box {
   width: 240px;
-  margin-bottom: 16px;
 }
 
 .pagination-container {

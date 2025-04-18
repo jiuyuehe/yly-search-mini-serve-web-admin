@@ -36,13 +36,24 @@
       
       <!-- 匹配部分 -->
       <el-divider />
-      
+
       <el-form-item label="匹配">
         <div class="match-list">
           <!-- 匹配项列表 -->
           <template v-if="formData.matchItems && formData.matchItems.length > 0">
             <div v-for="(item, index) in formData.matchItems" :key="index" class="match-item">
-              <el-input v-model="item.content" placeholder="请输入匹配内容" />
+              <el-input v-model="item.content" placeholder="请输入匹配内容" class="content-input" />
+              
+              <div class="match-item-settings">
+                <el-tooltip content="匹配数" placement="top">
+                  <el-input-number v-model="item.matchCount" :min="1" :max="20" :step="1" size="small" controls-position="right" />
+                </el-tooltip>
+                
+                <el-tooltip :content="`匹配度：${(item.matchScore * 100).toFixed(0)}%`" placement="top">
+                  <el-slider v-model="item.matchScore" :min="0" :max="1" :step="0.05" size="small" class="score-slider" />
+                </el-tooltip>
+              </div>
+              
               <el-button type="danger" plain size="small" class="delete-btn" @click="removeMatchItem(index)">
                 <el-icon><Delete /></el-icon>
               </el-button>
@@ -88,7 +99,7 @@ const formData = ref({
   datasetId: undefined,
   fileCount: undefined,
   status: undefined,
-  matchItems: [] as Array<{ id?: number, content: string }> // 匹配项列表
+  matchItems: [] as Array<{ id?: number, content: string, matchCount: number, matchScore: number }>
 })
 const formRules = reactive({
   themeName: [{ required: true, message: '主题名称不能为空', trigger: 'blur' }]
@@ -101,8 +112,13 @@ const addMatchItem = () => {
   const maxId = formData.value.matchItems.reduce((max, item) => 
     (item.id && item.id > max) ? item.id : max, 0);
   
-  // 使用最大id + 1作为新项的id
-  formData.value.matchItems.push({ id: maxId + 1, content: '' });
+  // 使用最大id + 1作为新项的id，并添加匹配数量和匹配分数默认值
+  formData.value.matchItems.push({ 
+    id: maxId + 1, 
+    content: '',
+    matchCount: 5,    // 默认匹配数量为5
+    matchScore: 0.5   // 默认匹配分数为0.5 (50%)
+  });
 }
 
 /** 删除匹配项 */
@@ -129,6 +145,13 @@ const open = async (type: string, id?: number) => {
         try {
           // 尝试解析JSON字符串
           matchItemsArray = JSON.parse(data.matchItems)
+          
+          // 确保每个匹配项都有matchCount和matchScore字段
+          matchItemsArray = matchItemsArray.map(item => ({
+            ...item,
+            matchCount: item.matchCount || 5,    // 如果不存在，设置默认值5
+            matchScore: item.matchScore || 0.5   // 如果不存在，设置默认值0.5
+          }))
         } catch (e) {
           console.error('解析matchItems失败:', e)
           matchItemsArray = []
@@ -194,8 +217,48 @@ const resetForm = () => {
 </script>
 
 <style lang="scss" scoped>
-.match-list {
+.match-container {
+  display: flex;
   width: 100%;
+}
+
+.match-list {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.match-settings {
+  width: 250px;
+  padding-left: 20px;
+  border-left: 1px solid #eee;
+}
+
+.match-item {
+  display: flex;
+  margin-bottom: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.content-input {
+  flex: 1;
+  min-width: 200px;
+  margin-right: 10px;
+}
+
+.match-item-settings {
+  display: flex;
+  align-items: center;
+  margin: 0 10px;
+}
+
+.score-slider {
+  width: 150px;
+  margin: 0 10px;
+}
+
+.setting-item {
+  margin-bottom: 20px;
 }
 
 .match-item {
