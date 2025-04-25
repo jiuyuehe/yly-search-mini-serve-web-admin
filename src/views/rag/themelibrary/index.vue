@@ -151,7 +151,7 @@ defineOptions({ name: 'ThemeLibrary' })
 
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
-const { getDatasetName } = useDataSetsCache()
+const { getDatasetName, refreshDatasetCache } = useDataSetsCache()
 const loading = ref(true) // 列表的加载中
 const list = ref<ThemeLibraryVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
@@ -180,6 +180,10 @@ const openFilesDialog = (row) => {
 const getList = async () => {
   loading.value = true
   try {
+    // 先刷新知识库缓存，确保能获取最新的知识库名称
+    await refreshDatasetCache()
+
+    // 获取主题库列表
     const data = await ThemeLibraryApi.getThemeLibraryPage(queryParams)
     list.value = data.list
     total.value = data.total

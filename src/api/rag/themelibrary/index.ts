@@ -10,6 +10,17 @@ export interface ThemeLibraryVO {
   status?: boolean // 状态 0:启用 1:禁用
 }
 
+// 知识库 VO
+export interface DatasetVO {
+  name: string // 知识库名称
+  description?: string // 知识库描述
+  indexing_technique?: string // 索引技术
+  permission?: string // 权限
+  provider?: string // 提供者
+  external_knowledge_api_id?: string // 外部知识库API_ID
+  external_knowledge_id?: string // 外部知识库ID
+}
+
 // 主题库 API
 export const ThemeLibraryApi = {
   // 查询主题库分页
@@ -40,6 +51,11 @@ export const ThemeLibraryApi = {
   // 导出主题库 Excel
   exportThemeLibrary: async (params) => {
     return await request.download({ url: `/rag/theme-library/export-excel`, params })
+  },
+
+  // 新增知识库
+  createDataset: async (data: DatasetVO) => {
+    return await request.post({ url: `/rag/theme-library/datasets`, data })
   },
 
   // 获取知识库列表

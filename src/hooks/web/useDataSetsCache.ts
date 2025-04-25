@@ -41,9 +41,14 @@ export function useDataSetsCache() {
     return Promise.resolve(datasetList.value)
   }
 
+  async function refreshDatasetCache() {  
+    await ensureDatasetData()
+  }
+
   return {
     ensureDatasetData,
     getDatasetName,
-    getDatasetList
+    getDatasetList,
+    refreshDatasetCache
   }
 }

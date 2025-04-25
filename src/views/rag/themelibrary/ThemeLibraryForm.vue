@@ -14,14 +14,20 @@
         <el-input v-model="formData.themeDesc" placeholder="请输入描述" />
       </el-form-item>
       <el-form-item label="知识库" prop="datasetId">
-        <el-select :disabled="!!formData.id" v-model="formData.datasetId">
-          <el-option
-            v-for="item in datasetList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
+        <div class="dataset-select-container">
+          <el-select :disabled="!!formData.id && datasetExists" v-model="formData.datasetId" style="flex-grow: 1; margin-right: 8px;" placeholder="请选择知识库">
+            <el-option
+              v-for="item in datasetList"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+          <!-- 添加新的知识库按钮 -->
+          <el-button type="primary" plain size="small" @click="openCreateDatasetDialog">
+            <el-icon><Plus /></el-icon>
+          </el-button>
+        </div>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="formData.status" placeholder="请选择状态" clearable>
@@ -74,9 +80,66 @@
       <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
   </Dialog>
+
+  <!-- 创建知识库弹窗 -->
+  <el-dialog
+    v-model="createDatasetDialogVisible"
+    title="创建知识库"
+    width="30%"
+    append-to-body
+    destroy-on-close
+  >
+    <el-form
+      ref="datasetFormRef"
+      :model="datasetForm"
+      :rules="datasetFormRules"
+      label-width="80px"
+      v-loading="datasetFormLoading"
+    >
+    <el-form-item label="名称" prop="name">
+        <el-input v-model="datasetForm.name" placeholder="请输入知识库名称" />
+      </el-form-item>
+      <el-form-item label="描述" prop="description">
+        <el-input v-model="datasetForm.description" type="textarea" placeholder="请输入知识库描述" />
+      </el-form-item>
+      <el-form-item label="索引模式" prop="indexing_technique">
+        <el-select v-model="datasetForm.indexing_technique" placeholder="请选择索引模式" class="w-full">
+          <el-option label="高质量" value="high_quality" />
+          <el-option label="经济" value="economy" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="权限" prop="permission">
+        <el-select v-model="datasetForm.permission" placeholder="请选择权限" class="w-full">
+          <el-option label="仅自己" value="only_me" />
+          <el-option label="所有团队成员" value="all_team_members" />
+          <el-option label="部分团队成员" value="partial_members" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="提供者" prop="provider">
+        <el-select v-model="datasetForm.provider" placeholder="请选择提供者" class="w-full" @change="handleProviderChange">
+          <el-option label="上传文件" value="vendor" />
+          <el-option label="外部知识库" value="external" />
+        </el-select>
+      </el-form-item>
+      
+      <!-- 仅当提供者为"外部知识库"时显示 -->
+      <template v-if="datasetForm.provider === 'external'">
+        <el-form-item label="API ID" prop="external_knowledge_api_id">
+          <el-input v-model="datasetForm.external_knowledge_api_id" placeholder="请输入外部知识库API_ID" />
+        </el-form-item>
+        <el-form-item label="知识库 ID" prop="external_knowledge_id">
+          <el-input v-model="datasetForm.external_knowledge_id" placeholder="请输入外部知识库ID" />
+        </el-form-item>
+      </template>
+    </el-form>
+    <template #footer>
+      <el-button @click="createDatasetDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="submitDatasetForm" :loading="datasetFormLoading">确 定</el-button>
+    </template>
+  </el-dialog>
 </template>
 <script setup lang="ts">
-import { ThemeLibraryApi, ThemeLibraryVO } from '@/api/rag/themelibrary';
+import { DatasetVO, ThemeLibraryApi, ThemeLibraryVO } from '@/api/rag/themelibrary';
 import { useDataSetsCache } from '@/hooks/web/useDataSetsCache';
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict';
 import { Delete, Plus } from '@element-plus/icons-vue'; // 导入 Plus 和 Delete 图标
@@ -92,6 +155,7 @@ const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
+const datasetExists = ref(true)  // 知识库是否存在
 const formData = ref({
   id: undefined,
   themeName: undefined,
@@ -105,6 +169,81 @@ const formRules = reactive({
   themeName: [{ required: true, message: '主题名称不能为空', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
+
+// 创建知识库相关变量
+const createDatasetDialogVisible = ref(false)
+const datasetFormLoading = ref(false)
+const datasetForm = ref({
+  name: '',
+  description: '',
+  indexing_technique: 'high_quality', // 默认高质量
+  permission: 'only_me',              // 默认仅自己
+  provider: 'vendor',                 // 默认上传文件
+  external_knowledge_api_id: '',
+  external_knowledge_id: ''
+})
+const datasetFormRules = reactive({
+  name: [{ required: true, message: '知识库名称不能为空', trigger: 'blur' }]
+})
+const datasetFormRef = ref()
+
+/** 打开创建知识库弹窗 */
+const openCreateDatasetDialog = () => {
+  createDatasetDialogVisible.value = true
+  datasetForm.value = {
+    name: '',
+    description: '',
+    indexing_technique: 'high_quality', // 默认高质量
+    permission: 'only_me',              // 默认仅自己
+    provider: 'vendor',                 // 默认上传文件
+    external_knowledge_api_id: '',
+    external_knowledge_id: ''
+  }
+}
+
+/** 处理提供者变更 */
+const handleProviderChange = (value) => {
+  if (value !== 'external') {
+    // 如果不是外部知识库，清空相关字段
+    datasetForm.value.external_knowledge_api_id = ''
+    datasetForm.value.external_knowledge_id = ''
+  }
+}
+
+/** 提交创建知识库表单 */
+const submitDatasetForm = async () => {
+  // 校验表单
+  await datasetFormRef.value.validate()
+  // 提交请求
+  datasetFormLoading.value = true
+  try {
+    const result = await ThemeLibraryApi.createDataset(datasetForm.value as DatasetVO)
+    message.success('创建知识库成功')
+    createDatasetDialogVisible.value = false
+    
+    // 刷新知识库列表
+    datasetList.value = await getDatasetList()
+    
+    // 如果创建成功，添加到知识库列表中
+    if (result && result.id) {
+      // 将新创建的知识库添加到列表中
+      const newDataset = {
+        id: result.id,
+        name: datasetForm.value.name,
+        description: datasetForm.value.description
+      }
+      datasetList.value.push(newDataset)
+      
+      // 自动选择新创建的知识库
+      formData.value.datasetId = result.id
+    }
+  } catch (error) {
+    console.error('创建知识库失败', error)
+    message.error('创建知识库失败')
+  } finally {
+    datasetFormLoading.value = false
+  }
+}
 
 /** 添加匹配项 */
 const addMatchItem = () => {
@@ -124,6 +263,23 @@ const addMatchItem = () => {
 /** 删除匹配项 */
 const removeMatchItem = (index: number) => {
   formData.value.matchItems.splice(index, 1)
+}
+
+/** 验证知识库是否存在 */
+const validateDatasetExists = async (datasetId) => {
+  if (!datasetId) return false
+  
+  try {
+    // 获取所有知识库
+    const datasets = await ThemeLibraryApi.getDatasets()
+    
+    // 检查指定的知识库ID是否存在
+    const exists = datasets.some(dataset => dataset.id === datasetId)
+    return exists
+  } catch (error) {
+    console.error('验证知识库出错', error)
+    return false
+  }
 }
 
 /** 打开弹窗 */
@@ -147,7 +303,7 @@ const open = async (type: string, id?: number) => {
           matchItemsArray = JSON.parse(data.matchItems)
           
           // 确保每个匹配项都有matchCount和matchScore字段
-          matchItemsArray = matchItemsArray.map(item => ({
+          matchItemsArray = matchItemsArray.map((item: any) => ({
             ...item,
             matchCount: item.matchCount || 5,    // 如果不存在，设置默认值5
             matchScore: item.matchScore || 0.5   // 如果不存在，设置默认值0.5
@@ -155,6 +311,16 @@ const open = async (type: string, id?: number) => {
         } catch (e) {
           console.error('解析matchItems失败:', e)
           matchItemsArray = []
+        }
+      }
+
+      // 如果有关联的知识库ID，验证知识库是否存在
+      if (data.datasetId) {
+        const exists = await validateDatasetExists(data.datasetId)
+        if (!exists) {
+          // 如果知识库不存在，给出警告但仍允许编辑其他内容
+          message.warning('关联的知识库不存在，请重新选择知识库')
+          datasetExists.value = false
         }
       }
       
@@ -175,6 +341,19 @@ const emit = defineEmits(['success']) // 定义 success 事件，用于操作成
 const submitForm = async () => {
   // 校验表单
   await formRef.value.validate()
+
+  // 如果是创建或修改操作，先验证知识库是否存在
+  if (formData.value.datasetId) {
+    formLoading.value = true
+    const exists = await validateDatasetExists(formData.value.datasetId)
+    
+    if (!exists) {
+      message.error('所选知识库不存在，请联系管理员或者重新选择')
+      formLoading.value = false
+      return
+    }
+  }
+
   // 提交请求
   formLoading.value = true
   try {
@@ -183,7 +362,7 @@ const submitForm = async () => {
     
     // 将 matchItems 转换为 JSON 字符串，以便后端处理
     if (submitData.matchItems && Array.isArray(submitData.matchItems)) {
-      submitData.matchItems = JSON.stringify(submitData.matchItems) as unknown as Array<{ id?: number, content: string }>
+      submitData.matchItems = JSON.stringify(submitData.matchItems) as unknown as Array<{ id?: number, content: string, matchCount: number, matchScore: number }>
     }
     
     if (formType.value === 'create') {
@@ -217,6 +396,12 @@ const resetForm = () => {
 </script>
 
 <style lang="scss" scoped>
+.dataset-select-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .match-container {
   display: flex;
   width: 100%;
