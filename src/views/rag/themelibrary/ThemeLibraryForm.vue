@@ -15,7 +15,13 @@
       </el-form-item>
       <el-form-item label="知识库" prop="datasetId">
         <div class="dataset-select-container">
-          <el-select :disabled="!!formData.id && datasetExists" v-model="formData.datasetId" style="flex-grow: 1; margin-right: 8px;" placeholder="请选择知识库">
+          <el-select 
+            :disabled="!!formData.id && formData._datasetExists" 
+            v-model="formData.datasetId" 
+            style="flex-grow: 1; margin-right: 8px;" 
+            placeholder="请选择知识库"
+            @change="handleDatasetChange"
+          >
             <el-option
               v-for="item in datasetList"
               :key="item.id"
@@ -24,7 +30,13 @@
             />
           </el-select>
           <!-- 添加新的知识库按钮 -->
-          <el-button type="primary" plain size="small" @click="openCreateDatasetDialog">
+          <el-button 
+            type="primary" 
+            plain 
+            size="small" 
+            @click="openCreateDatasetDialog"
+            v-if="!formData.id || !formData._datasetExists"
+          >
             <el-icon><Plus /></el-icon>
           </el-button>
         </div>
@@ -155,7 +167,6 @@ const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
-const datasetExists = ref(true)  // 知识库是否存在
 const formData = ref({
   id: undefined,
   themeName: undefined,
@@ -163,7 +174,8 @@ const formData = ref({
   datasetId: undefined,
   fileCount: undefined,
   status: undefined,
-  matchItems: [] as Array<{ id?: number, content: string, matchCount: number, matchScore: number }>
+  matchItems: [] as Array<{ id?: number, content: string, matchCount: number, matchScore: number }>,
+  _datasetExists: true // 新增：知识库是否存在的状态，存储在表单数据中
 })
 const formRules = reactive({
   themeName: [{ required: true, message: '主题名称不能为空', trigger: 'blur' }]
@@ -186,6 +198,24 @@ const datasetFormRules = reactive({
   name: [{ required: true, message: '知识库名称不能为空', trigger: 'blur' }]
 })
 const datasetFormRef = ref()
+
+/** 处理知识库选择变更 */
+const handleDatasetChange = async (value) => {
+  if (!value) return
+  
+  // 验证新选择的知识库是否存在
+  formLoading.value = true
+  try {
+    const exists = await validateDatasetExists(value)
+    // 不立即更新_datasetExists状态，而是在提交表单成功后更新
+    
+    if (!exists) {
+      message.warning('所选知识库不存在，请重新选择')
+    }
+  } finally {
+    formLoading.value = false
+  }
+}
 
 /** 打开创建知识库弹窗 */
 const openCreateDatasetDialog = () => {
@@ -232,10 +262,17 @@ const submitDatasetForm = async () => {
         name: datasetForm.value.name,
         description: datasetForm.value.description
       }
-      datasetList.value.push(newDataset)
+      
+      // 避免重复添加
+      const existingIndex = datasetList.value.findIndex(item => item.id === result.id)
+      if (existingIndex === -1) {
+        datasetList.value.push(newDataset)
+      }
       
       // 自动选择新创建的知识库
       formData.value.datasetId = result.id
+      // 设置知识库存在状态为true
+      formData.value._datasetExists = true
     }
   } catch (error) {
     console.error('创建知识库失败', error)
@@ -289,6 +326,7 @@ const open = async (type: string, id?: number) => {
   dialogTitle.value = t('action.' + type)
   formType.value = type
   resetForm()
+  
   // 修改时，设置数据
   if (id) {
     formLoading.value = true
@@ -315,19 +353,21 @@ const open = async (type: string, id?: number) => {
       }
 
       // 如果有关联的知识库ID，验证知识库是否存在
+      let datasetExists = true
       if (data.datasetId) {
-        const exists = await validateDatasetExists(data.datasetId)
-        if (!exists) {
-          // 如果知识库不存在，给出警告但仍允许编辑其他内容
+        datasetExists = await validateDatasetExists(data.datasetId)
+        if (!datasetExists) {
+          // 如果知识库不存在，给出警告
           message.warning('关联的知识库不存在，请重新选择知识库')
-          datasetExists.value = false
         }
       }
       
       formData.value = {
         ...data,
         // 使用解析后的匹配项数组
-        matchItems: matchItemsArray || []
+        matchItems: matchItemsArray || [],
+        // 设置知识库存在状态
+        _datasetExists: datasetExists
       }
     } finally {
       formLoading.value = false
@@ -357,8 +397,10 @@ const submitForm = async () => {
   // 提交请求
   formLoading.value = true
   try {
-    // 深拷贝表单数据
+    // 深拷贝表单数据，排除内部状态属性
     const submitData = { ...formData.value }
+    // 删除内部状态属性，避免提交到后端
+    delete submitData._datasetExists
     
     // 将 matchItems 转换为 JSON 字符串，以便后端处理
     if (submitData.matchItems && Array.isArray(submitData.matchItems)) {
@@ -372,6 +414,11 @@ const submitForm = async () => {
       await ThemeLibraryApi.updateThemeLibrary(submitData as unknown as ThemeLibraryVO)
       message.success(t('common.updateSuccess'))
     }
+    
+    // 提交成功后，更新知识库存在状态为true
+    // 这样下次打开编辑弹窗时知识库选择框会恢复禁用状态
+    formData.value._datasetExists = true
+    
     dialogVisible.value = false
     // 发送操作成功的事件
     emit('success')
@@ -389,7 +436,8 @@ const resetForm = () => {
     datasetId: undefined,
     fileCount: undefined,
     status: undefined,
-    matchItems: []
+    matchItems: [],
+    _datasetExists: true
   }
   formRef.value?.resetFields()
 }
