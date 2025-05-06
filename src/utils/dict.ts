@@ -229,6 +229,8 @@ export enum DICT_TYPE {
   AI_WRITE_TONE = 'ai_write_tone', // AI 写作语气
   AI_WRITE_LANGUAGE = 'ai_write_language', // AI 写作语言
 
+  SCHEDULE_TYPE = 'schedule_type', // 调度类型
+
   // ========== IOT - 物联网模块  ==========
   IOT_NET_TYPE = 'iot_net_type', // IOT 联网方式
   IOT_VALIDATE_TYPE = 'iot_validate_type', // IOT 数据校验级别
