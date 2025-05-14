@@ -118,10 +118,8 @@ const handleJump = async (plugin: PluginsConfigVO) => {
     let url = ''
     if(plugin.code === 'elasticsearch' || plugin.code === 'dify') {
       url = 'http://' + `${plugin.host}${plugin.path}`
-    } else if (plugin.code === 'kkfile' || plugin.code === 'fastapi') {
+    } else if (plugin.code === 'kkfile' || plugin.code === 'kibana' || plugin.code === 'ollama') {
       url = `http://${plugin.host}:${plugin.port}${plugin.path}`
-    } else if (plugin.code === 'trwebocr') {
-      url = `http://${plugin.host}:${plugin.port}`
     } else {
       url = plugin.url || ''
     }
