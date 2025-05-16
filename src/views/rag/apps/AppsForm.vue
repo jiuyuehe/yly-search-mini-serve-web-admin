@@ -14,6 +14,14 @@
         <el-form-item label="应用名称" required>
           <el-input v-model="formData.appName" placeholder="请输入应用名称" />
         </el-form-item>
+
+        <el-form-item label="应用密钥" required>
+          <el-input v-model="formData.appKey" placeholder="请输入应用密钥">
+            <template #append>
+              <el-button @click="copyAppKey" :icon="CopyDocument" type="primary" text/>
+            </template>
+          </el-input>
+        </el-form-item>
         
         <el-form-item label="应用代码" required>
           <el-input v-model="formData.appCode" placeholder="请输入唯一应用代码" :disabled="!isAddMode" />
@@ -48,7 +56,7 @@
       <!-- API请求区域 -->
       <div class="form-section">
         <div class="section-header">API请求</div>
-        
+
         <el-form-item label="请求路径" required>
           <el-input v-model="apiConfigData.url" placeholder="请输入完整请求路径" />
         </el-form-item>
@@ -103,7 +111,7 @@
 <script setup lang="ts">
 import { RagAppsApi, RagAppsVO } from '@/api/rag/apps'
 import { useMessage } from '@/hooks/web/useMessage'
-import { Plus } from '@element-plus/icons-vue'
+import { CopyDocument, Plus } from '@element-plus/icons-vue'
 import { computed, reactive, ref } from 'vue'
 
 defineOptions({ name: 'AppsForm' })
@@ -194,6 +202,11 @@ const beforeIconUpload = (file) => {
     return false
   }
   
+  if (!formData.appKey) {
+    message.error('请先输入应用密钥!')
+    return false
+  }
+
   if (!formData.appCode) {
     message.error('请先输入应用代码!')
     return false
@@ -230,12 +243,6 @@ const handleIconError = (error) => {
   message.error(errorMsg)
 }
 
-// 生成唯一应用Key
-const generateAppKey = () => {
-  const timestamp = new Date().getTime()
-  return `app-${timestamp}-${Math.floor(Math.random() * 1000)}`
-}
-
 // 打开表单弹窗
 const open = (app: RagAppsVO | null, isAdd: boolean = false) => {
   dialogVisible.value = true
@@ -247,7 +254,7 @@ const open = (app: RagAppsVO | null, isAdd: boolean = false) => {
   if (isAdd) {
     // 新增模式
     title.value = '添加应用'
-    formData.appKey = generateAppKey()
+    formData.appKey = ''
     formData.status = false
     formData.sortOrder = 0
   } else if (app) {
@@ -284,6 +291,11 @@ const open = (app: RagAppsVO | null, isAdd: boolean = false) => {
 const validateForm = () => {
   if (!formData.appName) {
     message.error('应用名称不能为空')
+    return false
+  }
+
+  if (!formData.appKey) {
+    message.error('应用密钥不能为空')
     return false
   }
   
@@ -378,6 +390,23 @@ const resetForm = () => {
   if (formRef.value) {
     formRef.value.resetFields()
   }
+}
+
+// 复制应用密钥
+const copyAppKey = () => {
+  if (!formData.appKey) {
+    message.warning('应用密钥为空，无法复制')
+    return
+  }
+  
+  navigator.clipboard.writeText(formData.appKey)
+    .then(() => {
+      message.success('已复制应用密钥到剪贴板')
+    })
+    .catch(err => {
+      console.error('复制失败:', err)
+      message.error('复制失败')
+    })
 }
 
 // 对外暴露方法
