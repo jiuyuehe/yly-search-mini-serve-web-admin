@@ -123,6 +123,7 @@
             link
             type="info"
             @click="openDetail(scope.row.id)"
+            v-if="!isDatabaseStorage(scope.row.storageId)"
           >
             详情
           </el-button>
@@ -159,11 +160,12 @@ defineOptions({ name: 'ControlTask' })
 
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
-const { getStorageName } = useStorageMediumCache() // 存储介质缓存
+const { getStorageName, getStorageList } = useStorageMediumCache() // 存储介质缓存
 
 const loading = ref(true) // 列表的加载中
 const list = ref<ControlTaskVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
+const storageList = ref<any[]>([]) // <--- Add this line to store the fetched list
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -281,8 +283,24 @@ const handleExport = async () => {
   }
 }
 
+/** New implementation for isDatabaseStorage */
+const isDatabaseStorage = (storageId) => {
+  if (!storageList.value || storageList.value.length === 0) {
+    // console.warn('Storage list is not loaded yet or is empty.');
+    return false; // Return false if list isn't loaded or is empty
+  }
+  const storage = storageList.value.find(item => item.id === storageId);
+  if (!storage) {
+    // console.warn(`Storage with id ${storageId} not found.`);
+    return false; // Storage ID not found in the list
+  }
+  // Check if mediumType is '1' (which we infer means Database type)
+  return storage.mediumType === '1'; 
+}
+
 /** 初始化 **/
-onMounted(() => {
+onMounted(async () => {
+  storageList.value = await getStorageList() // Fetch and store the list
   getList()
 })
 </script>

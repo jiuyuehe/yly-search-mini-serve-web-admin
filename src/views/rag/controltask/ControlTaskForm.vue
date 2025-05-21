@@ -42,7 +42,13 @@
             </el-select>
           </el-form-item>
           <el-form-item label="调度类型" prop="scheduleType">
-            <el-select v-model="formData.scheduleType" placeholder="请选择类型" clearable class="form-item-width">
+            <el-select 
+              v-model="formData.scheduleType" 
+              placeholder="请选择类型" 
+              clearable 
+              class="form-item-width"
+              :disabled="isScheduleTypeDisabled"
+            >
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.SCHEDULE_TYPE)"
                 :key="dict.value"
@@ -145,6 +151,7 @@ import { ControlTaskApi, ControlTaskVO } from '@/api/rag/controltask'
 import { useEsIndexCache } from '@/hooks/web/useEsIndexCache'
 import { useStorageMediumCache } from '@/hooks/web/useStorageMediumCache'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { watch } from 'vue'
 
 /** 布控任务 表单 */
 defineOptions({ name: 'ControlTaskForm' })
@@ -212,10 +219,10 @@ const formData = ref({
   contentJson: undefined,
   totalFiles: undefined,
   fileType: undefined,
-  processTypes: undefined,
+  processTypes: '',
   storageId: undefined,
   knowledgeBaseId: undefined,
-  scheduleType: undefined,
+  scheduleType: undefined as number | undefined,
   scheduleConf: undefined,
   status: undefined,
   resultCount: undefined,
@@ -223,7 +230,7 @@ const formData = ref({
   faceCount: undefined,
   textCount: undefined,
   objectCount: undefined,
-  scanRulesJson: undefined,
+  scanRulesJson: '',
 })
 
 const formRules = reactive({
@@ -234,6 +241,29 @@ const formRules = reactive({
 })
 
 const formRef = ref() // 表单 Ref
+
+// Computed property to disable scheduleType select if storage is database
+const isScheduleTypeDisabled = computed(() => {
+  if (formData.value.storageId && storageList.value && storageList.value.length > 0) {
+    const selectedStorage = storageList.value.find(item => item.id === formData.value.storageId);
+    return selectedStorage && selectedStorage.mediumType === '1'; // Disable if database type
+  }
+  return false; // Default to not disabled
+});
+
+watch(() => formData.value.storageId, (newStorageId) => {
+  if (newStorageId && storageList.value && storageList.value.length > 0) {
+    const selectedStorage = storageList.value.find(item => item.id === newStorageId);
+    if (selectedStorage && selectedStorage.mediumType === '1') { // '1' for Database type
+      formData.value.scheduleType = 0; // Set to '手动执行' (assuming value 0)
+    }
+    // No 'else' block here: if not database, don't change scheduleType, let user choose or keep existing.
+  } else if (!newStorageId) {
+    // If storageId is cleared, also allow scheduleType to be changed (not disabled)
+    // and potentially reset scheduleType if desired, e.g.:
+    // formData.value.scheduleType = undefined; 
+  }
+}, { deep: true, immediate: true }); // Added immediate: true
 
 // 步骤切换功能
 const nextStep = async () => {
@@ -409,10 +439,10 @@ const resetForm = () => {
     contentJson: undefined,
     totalFiles: undefined,
     fileType: undefined,
-    processTypes: undefined,
+    processTypes: '',
     storageId: undefined,
     knowledgeBaseId: undefined,
-    scheduleType: undefined,
+    scheduleType: undefined as number | undefined,
     scheduleConf: undefined,
     status: undefined,
     resultCount: undefined,
@@ -420,7 +450,7 @@ const resetForm = () => {
     faceCount: undefined,
     textCount: undefined,
     objectCount: undefined,
-    scanRulesJson: undefined,
+    scanRulesJson: '',
   }
   
   // 重置扫描规则和任务
