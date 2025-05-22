@@ -114,6 +114,10 @@
               <span class="config-label">密码:</span>
               <el-input v-model="dbConfig.password" type="password" />
             </div>
+            <div class="config-item">
+              <span class="config-label">云盘密钥:</span>
+              <el-input v-model="dbConfig.appKey" />
+            </div>
             
             <!-- 测试连接按钮现在直接放在密码字段下方 -->
             <div class="config-item test-btn-container">
@@ -166,7 +170,7 @@ const dbConfig = reactive({
   port: '3306',
   username: 'root',
   password: '123456',
-  ct: 'sk-123456',
+  appKey: 'yliyun_123456789',
   userUrl: '/apps/users',
   previewUrl: '/apps/preview',
   downloadUrl: '/apps/file/down'
@@ -205,6 +209,7 @@ const handleTypeChange = (value) => {
     dbConfig.port = '3306'
     dbConfig.username = 'root'
     dbConfig.password = '123456'
+    dbConfig.appKey = 'yliyun_123456789'
   }
 }
 
@@ -355,7 +360,7 @@ const resetForm = () => {
     port: '3306',
     username: 'root',
     password: '123456',
-    ct: 'sk-123456',
+    appKey: 'yliyun_123456789',
     userUrl: '/apps/users',
     previewUrl: '/apps/preview',
     downloadUrl: '/apps/file/down'

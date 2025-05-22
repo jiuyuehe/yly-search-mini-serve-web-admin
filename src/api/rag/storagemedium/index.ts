@@ -46,7 +46,7 @@ export const StorageMediumApi = {
   },
 
   testNasConnection: async (data: any) => {
-    return await request.post({ url: `/rag/storage-medium/test-nas-connection`, data })
+    return await request.post({ url: `/rag/storage-medium/test-nas-mouthpath`, data })
   },
 
   // 导出存储介质 Excel
