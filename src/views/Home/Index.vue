@@ -18,7 +18,7 @@
               </div>
             </div>
           </el-col>
-          <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
+          <!-- <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
             <div class="h-70px flex items-center justify-end lt-sm:mt-10px">
               <div class="px-8px text-right">
                 <div class="mb-16px text-14px text-gray-400">{{ t('workplace.project') }}</div>
@@ -50,7 +50,7 @@
                 />
               </div>
             </div>
-          </el-col>
+          </el-col> -->
         </el-row>
       </el-skeleton>
     </el-card>
@@ -99,6 +99,7 @@
         </el-skeleton>
       </el-card>
 
+      <!--
       <el-card shadow="never" class="mt-8px">
         <el-skeleton :loading="loading" animated>
           <el-row :gutter="20" justify="space-between">
@@ -119,6 +120,7 @@
           </el-row>
         </el-skeleton>
       </el-card>
+      -->
     </el-col>
     <el-col :xl="8" :lg="8" :md="24" :sm="24" :xs="24" class="mb-8px">
       <el-card shadow="never">
@@ -172,14 +174,14 @@
   </el-row>
 </template>
 <script lang="ts" setup>
-import { set } from 'lodash-es'
-import { EChartsOption } from 'echarts'
 import { formatTime } from '@/utils'
+import { EChartsOption } from 'echarts'
+import { set } from 'lodash-es'
 
-import { useUserStore } from '@/store/modules/user'
 import { useWatermark } from '@/hooks/web/useWatermark'
-import type { WorkplaceTotal, Project, Notice, Shortcut } from './types'
-import { pieOptions, barOptions } from './echarts-data'
+import { useUserStore } from '@/store/modules/user'
+import { barOptions, pieOptions } from './echarts-data'
+import type { Notice, Project, Shortcut, WorkplaceTotal } from './types'
 
 defineOptions({ name: 'Home' })
 
@@ -377,12 +379,12 @@ const getWeeklyUserActivity = async () => {
 
 const getAllApi = async () => {
   await Promise.all([
-    getCount(),
-    getProject(),
-    getNotice(),
-    getShortcut(),
-    getUserAccessSource(),
-    getWeeklyUserActivity()
+    // getCount(),
+    // getProject(),
+    // getNotice(),
+    // getShortcut(),
+    // getUserAccessSource(),
+    // getWeeklyUserActivity()
   ])
   loading.value = false
 }
