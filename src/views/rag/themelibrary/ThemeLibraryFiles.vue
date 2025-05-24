@@ -1,6 +1,21 @@
 <template>
   <Dialog width="60%" :title="themeLibrary.themeName + ' - 文件列表'" v-model="dialogVisible">
     <div class="file-tabs-container">
+      <!-- 文件限制说明 -->
+      <div class="file-limit-notice">
+        <el-alert
+          title="Dify 文件限制说明"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          <template #default>
+            支持文件类型：{{ SUPPORTED_FILE_TYPES.join(', ') }} | 
+            最大文件大小：{{ MAX_FILE_SIZE_MB }}MB
+          </template>
+        </el-alert>
+      </div>
+
       <!-- 标签页 - 添加tab-change事件监听 -->
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
         <el-tab-pane label="待入库" name="pending">
@@ -20,10 +35,10 @@
             <!-- 新增批量入库按钮 -->
             <el-button 
               type="primary" 
-              :disabled="selectedPendingFiles.length === 0"
+              :disabled="selectedPendingFiles.length === 0 || !hasValidSelectedPendingFiles"
               @click="handleBatchAdd"
             >
-              批量入库
+              批量入库 ({{ validSelectedPendingCount }}/{{ selectedPendingFiles.length }})
             </el-button>
           </div>
           
@@ -35,10 +50,24 @@
             :stripe="true"
             :show-overflow-tooltip="true"
             @selection-change="handlePendingSelectionChange"
+            :row-class-name="getRowClassName"
           >
-            <el-table-column type="selection" width="55" />
+            <el-table-column type="selection" width="55" :selectable="isFileSelectable" />
             <el-table-column label="#" width="50" type="index" />
-            <el-table-column label="名称" prop="fileName" />
+            <el-table-column label="名称" prop="fileName">
+              <template #default="scope">
+                <div class="file-name-cell">
+                  <span>{{ scope.row.fileName }}</span>
+                  <el-tooltip 
+                    v-if="!isFileValid(scope.row)"
+                    :content="getFileErrorMessage(scope.row)"
+                    placement="top"
+                  >
+                    <el-icon class="invalid-file-icon"><Warning /></el-icon>
+                  </el-tooltip>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column label="大小" prop="fileSize" width="100">
               <template #default="scope">
                 {{ formatFileSize(scope.row.fileSize) }}
@@ -53,7 +82,13 @@
             <el-table-column label="更新时间" prop="updateTime" width="180" :formatter="dateFormatter" />
             <el-table-column label="操作" width="100" align="center">
               <template #default="scope">
-                <el-button type="primary" link @click="handleFileAdd(scope.row)">
+                <el-button 
+                  type="primary" 
+                  link 
+                  @click="handleFileAdd(scope.row)"
+                  :disabled="!isFileValid(scope.row)"
+                  :title="isFileValid(scope.row) ? '入库' : getFileErrorMessage(scope.row)"
+                >
                   <el-icon><Plus /></el-icon>
                 </el-button>
               </template>
@@ -154,11 +189,32 @@
 
 <script setup lang="ts">
 import { ThemeLibraryApi } from '@/api/rag/themelibrary'
-import { ThemeLibraryVO } from '@/api/rag/themelibrary/index'
 import { useMessage } from '@/hooks/web/useMessage'
 import { dateFormatter } from '@/utils/formatTime'
-import { Delete, Plus } from '@element-plus/icons-vue'
+import { Delete, Plus, Warning } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'
+
+// 文件类型和大小限制常量
+const SUPPORTED_FILE_TYPES = ['TXT', 'MARKDOWN', 'MDX', 'PDF', 'HTML', 'XLSX', 'XLS', 'DOCX', 'CSV', 'MD', 'HTM']
+const MAX_FILE_SIZE_MB = 15
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+// 文件接口定义
+interface FileItem {
+  id: number
+  fileName: string
+  fileSize: number
+  score?: number
+  createTime?: string
+  updateTime?: string
+}
+
+// 文件操作参数接口
+interface FileOperationParams {
+  id: number
+  status: boolean
+}
+
 // 组件属性
 const props = defineProps({
   themeLibraryId: {
@@ -177,21 +233,70 @@ const themeLibrary = ref({} as any)  // 主题库信息
 
 // 待入库状态
 const pendingFilesLoading = ref(false)
-const pendingFiles = ref([])
+const pendingFiles = ref<FileItem[]>([])
 const pendingSearchText = ref('')
 const pendingPage = ref(1)
 const pendingPageSize = ref(10)
 const pendingTotal = ref(0)
-const selectedPendingFiles = ref([]) // 新增：选中的待入库文件
+const selectedPendingFiles = ref<FileItem[]>([]) // 选中的待入库文件
 
 // 已入库状态
 const storedFilesLoading = ref(false)
-const storedFiles = ref([])
+const storedFiles = ref<FileItem[]>([])
 const storedSearchText = ref('')
 const storedPage = ref(1)
 const storedPageSize = ref(10)
 const storedTotal = ref(0)
-const selectedStoredFiles = ref([]) // 新增：选中的已入库文件
+const selectedStoredFiles = ref<FileItem[]>([]) // 选中的已入库文件
+
+// 文件验证函数
+const getFileExtension = (fileName: string): string => {
+  const lastDot = fileName.lastIndexOf('.')
+  return lastDot > 0 ? fileName.slice(lastDot + 1).toUpperCase() : ''
+}
+
+const isFileTypeValid = (fileName: string): boolean => {
+  const extension = getFileExtension(fileName)
+  return SUPPORTED_FILE_TYPES.includes(extension)
+}
+
+const isFileSizeValid = (fileSize: number): boolean => {
+  return fileSize <= MAX_FILE_SIZE_BYTES
+}
+
+const isFileValid = (file: FileItem): boolean => {
+  return isFileTypeValid(file.fileName) && isFileSizeValid(file.fileSize)
+}
+
+const getFileErrorMessage = (file: FileItem): string => {
+  const errors = []
+  if (!isFileTypeValid(file.fileName)) {
+    errors.push(`不支持的文件类型（${getFileExtension(file.fileName)}）`)
+  }
+  if (!isFileSizeValid(file.fileSize)) {
+    errors.push(`文件过大（${formatFileSize(file.fileSize)}，限制${MAX_FILE_SIZE_MB}MB）`)
+  }
+  return errors.join('，')
+}
+
+// 表格行样式
+const getRowClassName = ({ row }: { row: FileItem }): string => {
+  return isFileValid(row) ? '' : 'invalid-file-row'
+}
+
+// 文件选择性判断
+const isFileSelectable = (row: FileItem): boolean => {
+  return isFileValid(row)
+}
+
+// 计算有效选中文件数量
+const validSelectedPendingCount = computed(() => {
+  return selectedPendingFiles.value.filter(file => isFileValid(file)).length
+})
+
+const hasValidSelectedPendingFiles = computed(() => {
+  return validSelectedPendingCount.value > 0
+})
 
 // 计算属性：根据搜索过滤文件
 const filteredPendingFiles = computed(() => {
@@ -240,16 +345,30 @@ const handleStoredSelectionChange = (selection) => {
   selectedStoredFiles.value = selection
 }
 
-// 新增：批量入库处理
+// 批量入库处理
 const handleBatchAdd = async () => {
   if (selectedPendingFiles.value.length === 0) {
     message.warning('请至少选择一个文件')
     return
   }
   
+  // 过滤出有效文件
+  const validFiles = selectedPendingFiles.value.filter(file => isFileValid(file))
+  const invalidFiles = selectedPendingFiles.value.filter(file => !isFileValid(file))
+  
+  if (validFiles.length === 0) {
+    message.warning('所选文件均不符合入库条件')
+    return
+  }
+  
   try {
+    let confirmMessage = `确定要将选中的${validFiles.length}个文件入库吗？`
+    if (invalidFiles.length > 0) {
+      confirmMessage += `\n注意：${invalidFiles.length}个文件不符合条件将被跳过`
+    }
+    
     // 显示确认对话框
-    await message.confirm('确定要将选中的' + selectedPendingFiles.value.length + '个文件入库吗？')
+    await message.confirm(confirmMessage)
     
     // 批量处理的加载状态
     pendingFilesLoading.value = true
@@ -257,15 +376,16 @@ const handleBatchAdd = async () => {
     // 存储成功和失败的数量
     let successCount = 0
     let failCount = 0
+    let validationFailCount = invalidFiles.length
     
-    // 循环处理每个选中的文件
-    for (const file of selectedPendingFiles.value) {
+    // 循环处理每个有效的选中文件
+    for (const file of validFiles) {
       try {
-        const params: ThemeLibraryVO = {
+        const params: FileOperationParams = {
           id: file.id,
           status: true
         }
-        await ThemeLibraryApi.handleThemeLibraryFile(params)
+        await ThemeLibraryApi.handleThemeLibraryFile(params as any)
         successCount++
       } catch (error) {
         console.error('文件入库失败', error)
@@ -274,12 +394,23 @@ const handleBatchAdd = async () => {
     }
     
     // 显示结果消息
+    let resultMessage = ''
+    if (successCount > 0) {
+      resultMessage += `成功入库${successCount}个文件`
+    }
+    if (failCount > 0) {
+      resultMessage += `${resultMessage ? '，' : ''}${failCount}个文件入库失败`
+    }
+    if (validationFailCount > 0) {
+      resultMessage += `${resultMessage ? '，' : ''}${validationFailCount}个文件因不符合条件被跳过`
+    }
+    
     if (successCount > 0 && failCount === 0) {
-      message.success(`成功入库${successCount}个文件`)
-    } else if (successCount > 0 && failCount > 0) {
-      message.warning(`成功入库${successCount}个文件，失败${failCount}个文件`)
+      message.success(resultMessage)
+    } else if (successCount > 0) {
+      message.warning(resultMessage)
     } else {
-      message.error(`所有文件入库失败`)
+      message.error(resultMessage || '所有文件入库失败')
     }
     
     // 重新加载两个标签页的数据
@@ -313,11 +444,11 @@ const handleBatchDelete = async () => {
     // 循环处理每个选中的文件
     for (const file of selectedStoredFiles.value) {
       try {
-        const params: ThemeLibraryVO = {
+        const params: FileOperationParams = {
           id: file.id,
           status: false
         }
-        await ThemeLibraryApi.handleThemeLibraryFile(params)
+        await ThemeLibraryApi.handleThemeLibraryFile(params as any)
         successCount++
       } catch (error) {
         console.error('文件出库失败', error)
@@ -420,13 +551,19 @@ const loadStoredFiles = async () => {
 }
 
 // 处理入库操作
-const handleFileAdd = async (file) => {
+const handleFileAdd = async (file: FileItem) => {
+  // 验证文件
+  if (!isFileValid(file)) {
+    message.error(getFileErrorMessage(file))
+    return
+  }
+  
   try {
-    const params: ThemeLibraryVO = {
+    const params: FileOperationParams = {
       id: file.id,
       status: true
     }
-    await ThemeLibraryApi.handleThemeLibraryFile(params)
+    await ThemeLibraryApi.handleThemeLibraryFile(params as any)
     message.success('文件入库成功')
     // 重新加载两个标签页的数据
     await loadPendingFiles()
@@ -438,13 +575,13 @@ const handleFileAdd = async (file) => {
 }
 
 // 处理出库操作
-const handleFileDelete = async (file) => {
+const handleFileDelete = async (file: FileItem) => {
   try {
-    const params: ThemeLibraryVO = {
+    const params: FileOperationParams = {
       id: file.id,
       status: false
     }
-    await ThemeLibraryApi.handleThemeLibraryFile(params)
+    await ThemeLibraryApi.handleThemeLibraryFile(params as any)
     message.success('文件出库成功')
     // 重新加载两个标签页的数据
     await loadPendingFiles()
@@ -524,5 +661,34 @@ defineExpose({
   display: flex;
   margin-top: 16px;
   justify-content: center;
+}
+
+.file-limit-notice {
+  margin-bottom: 16px;
+}
+
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.invalid-file-icon {
+  font-size: 16px;
+  color: #f56c6c;
+}
+
+.invalid-file-row {
+  background-color: #fef3f2 !important;
+}
+
+.invalid-file-row:hover {
+  background-color: #fde8e7 !important;
+}
+
+// 禁用状态的按钮样式
+.el-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 </style>
