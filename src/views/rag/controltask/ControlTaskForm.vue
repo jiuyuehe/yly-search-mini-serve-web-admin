@@ -59,6 +59,21 @@
           </el-form-item>
           <el-form-item label="调度配置" prop="scheduleConf" v-if="formData.scheduleType === 1">
             <el-input v-model="formData.scheduleConf" placeholder="请输入调度配置(cron表达式或时间配置)" class="form-item-width" />
+            <div class="cron-examples mt-2">
+              <div class="flex flex-wrap gap-2">
+                <el-button 
+                  v-for="item in cronExamples" 
+                  :key="item.value"
+                  size="small" 
+                  type="primary" 
+                  plain
+                  @click="selectCronExample(item.value)"
+                  class="cron-example-btn"
+                >
+                  {{ item.label }}
+                </el-button>
+              </div>
+            </div>
           </el-form-item>
         </el-form>
 
@@ -198,6 +213,17 @@ const taskOptions = [
 const CONTENT_DEPENDENCIES = ['4', '8', '16', '32', '64'] // 依赖于内容提取的功能
 const CONTENT_EXTRACT_VALUE = '2' // 内容提取值
 
+// Cron表达式示例配置
+const cronExamples = [
+  { label: '每5分钟', value: '0 */5 * * * ?' },
+  { label: '每30分钟', value: '0 */30 * * * ?' },
+  { label: '每小时', value: '0 0 0/1 * * ?' },
+  { label: '每6小时', value: '0 0 0/6 * * ?' },
+  { label: '每天', value: '0 0 0 * * ?' },
+  { label: '每周一', value: '0 0 0 ? * MON' },
+  { label: '每月', value: '0 0 0 1 * ?' },
+]
+
 // 复选框状态
 const scanRules = reactive({
   indeterminate: false,
@@ -223,7 +249,7 @@ const formData = ref({
   storageId: undefined,
   knowledgeBaseId: undefined,
   scheduleType: undefined as number | undefined,
-  scheduleConf: undefined,
+  scheduleConf: undefined as string | undefined,
   status: undefined,
   resultCount: undefined,
   lastExecuteTime: undefined,
@@ -324,6 +350,12 @@ const onCheckAllTasksChange = (e: any) => {
 
 const removeRule = (rule: string) => {
   selectedSensitiveRules.value = selectedSensitiveRules.value.filter(item => item !== rule)
+}
+
+// 选择Cron表达式示例
+const selectCronExample = (cronValue: string) => {
+  formData.value.scheduleConf = cronValue
+  message.success(`已设置调度配置: ${cronValue}`)
 }
 
 // 初始化加载选项数据
@@ -443,7 +475,7 @@ const resetForm = () => {
     storageId: undefined,
     knowledgeBaseId: undefined,
     scheduleType: undefined as number | undefined,
-    scheduleConf: undefined,
+    scheduleConf: undefined as string | undefined,
     status: undefined,
     resultCount: undefined,
     lastExecuteTime: undefined,
@@ -517,5 +549,19 @@ const resetForm = () => {
 
 .task-desc {
   margin-bottom: 6px;
+}
+
+.cron-examples {
+  margin-top: 8px;
+}
+
+.cron-example-btn {
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.cron-example-btn:hover {
+  color: white;
+  background-color: #409eff;
 }
 </style>
