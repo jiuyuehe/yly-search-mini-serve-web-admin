@@ -280,10 +280,16 @@ const isScheduleTypeDisabled = computed(() => {
 watch(() => formData.value.storageId, (newStorageId) => {
   if (newStorageId && storageList.value && storageList.value.length > 0) {
     const selectedStorage = storageList.value.find(item => item.id === newStorageId);
-    if (selectedStorage && selectedStorage.mediumType === '1') { // '1' for Database type
-      formData.value.scheduleType = 0; // Set to '手动执行' (assuming value 0)
+    if (selectedStorage) {
+      if (selectedStorage.mediumType === '1') {
+        // 数据库类型：设置为手动执行
+        formData.value.scheduleType = 0;
+      } else if (selectedStorage.mediumType === '2') {
+        // NAS类型：自动设置为定时执行
+        formData.value.scheduleType = 1;
+      }
+      // 其他类型不自动设置，保持用户选择
     }
-    // No 'else' block here: if not database, don't change scheduleType, let user choose or keep existing.
   } else if (!newStorageId) {
     // If storageId is cleared, also allow scheduleType to be changed (not disabled)
     // and potentially reset scheduleType if desired, e.g.:
