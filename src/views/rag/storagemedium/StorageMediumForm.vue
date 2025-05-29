@@ -34,11 +34,29 @@
       <!-- NAS类型特有字段 -->
       <template v-if="formData.mediumType === '2'">
         <el-form-item label="NAS ID" prop="configJson.nasId">
-          <el-input v-model="nasConfig.nasId" placeholder="挂载到服务器的NAS ID" />
+          <el-input 
+            v-model="nasConfig.nasId" 
+            placeholder="挂载到服务器的NAS ID" 
+            @blur="validateNasIdAndPath"
+          />
         </el-form-item>
         
         <el-form-item label="挂载路径" prop="mountPath">
-          <el-input v-model="formData.mountPath" placeholder="挂载到服务器的绝对路径" />
+          <el-input 
+            v-model="formData.mountPath" 
+            placeholder="挂载到服务器的绝对路径" 
+            @blur="validateNasIdAndPath"
+          />
+        </el-form-item>
+        
+        <!-- NAS ID与挂载路径不一致的警告提示 -->
+        <el-form-item v-if="showNasIdWarning">
+          <el-alert
+            title="当前NAS ID与挂载路径不一致，请确认NAS ID是否无误"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
         </el-form-item>
         
         <el-form-item>
@@ -153,6 +171,7 @@ const formLoading = ref(false) // 表单的加载中：1）修改时的数据加
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
 const testing = ref(false) // 测试连接中状态
 const configSet = ref(true) // 是否显示配置项
+const showNasIdWarning = ref(false) // 是否显示NAS ID与挂载路径不一致的警告
 
 // NAS配置对象
 const nasConfig = reactive({
@@ -213,6 +232,34 @@ const handleTypeChange = (value) => {
   }
 }
 
+// 验证NAS ID与挂载路径是否一致
+const validateNasIdAndPath = () => {
+  // 只在NAS类型时进行验证
+  if (formData.value.mediumType !== '2') {
+    showNasIdWarning.value = false
+    return
+  }
+  
+  const nasId = nasConfig.nasId?.trim()
+  const mountPath = formData.value.mountPath?.trim()
+  
+  // 如果任一字段为空，不显示警告
+  if (!nasId || !mountPath) {
+    showNasIdWarning.value = false
+    return
+  }
+  
+  // 从挂载路径中提取最后的数字部分
+  const pathMatch = mountPath.match(/\/([^\/]+)$/)
+  if (pathMatch) {
+    const pathLastPart = pathMatch[1]
+    // 检查NAS ID是否与路径最后部分一致
+    showNasIdWarning.value = nasId !== pathLastPart
+  } else {
+    showNasIdWarning.value = false
+  }
+}
+
 // 处理测试路径
 const handleTestMouthExist = async () => {
   try {
@@ -223,6 +270,9 @@ const handleTestMouthExist = async () => {
     const res = await StorageMediumApi.testNasConnection(params)
     if (res) {
       message.success('路径存在，已成功挂载')
+      // 测试成功后隐藏配置项并更新挂载状态
+      configSet.value = false
+      formData.value.mountStatus = 1
     } else {
       message.error('路径不存在，请检查是否成功挂载')
     }
@@ -344,6 +394,9 @@ const resetForm = () => {
     mountStatus: 0,
     mountPath: '',
   }
+  
+  // 重置警告状态
+  showNasIdWarning.value = false
   
   // 重置配置对象
   Object.assign(nasConfig, {
