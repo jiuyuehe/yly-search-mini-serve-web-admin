@@ -93,12 +93,20 @@
             <span>自定义范围</span>
           </div>
           <div class="mt-2 ml-6 flex items-center">
-            <span class="w-24 text-right mr-2">文件名匹配: </span>
+            <span class="w-32 text-right mr-2">文件名匹配: </span>
             <el-input v-model="fileNamePattern" placeholder="正则表达式" class="form-item-width" />
           </div>
           <div class="mt-2 ml-6 flex items-center">
-            <span class="w-24 text-right mr-2">文件内容匹配: </span>
+            <span class="w-32 text-right mr-2">文件内容匹配: </span>
             <el-input v-model="contentPattern" placeholder="正则表达式" class="form-item-width" />
+          </div>
+          <div class="mt-2 ml-6 flex items-center">
+            <span class="w-32 text-right mr-2">文件后缀名排除: </span>
+            <el-input v-model="fileSuffixExcludePattern" placeholder="支持多个后缀名，用英文逗号 , 分隔，例如：.txt,.doc,.docx" class="form-item-width" />
+          </div>
+          <div class="mt-2 ml-6 flex items-center">
+            <span class="w-32 text-right mr-2">文件夹名排除: </span>
+            <el-input v-model="folderNameExcludePattern" placeholder="支持多个文件夹名，用英文逗号 , 分隔，例如：/tmp,/data" class="form-item-width" />
           </div>
           <el-divider />
           <div class="mt-2">
@@ -187,8 +195,10 @@ const formType = ref('') // 表单的类型：create - 新增；update - 修改
 
 // 步骤相关
 const currentStep = ref(0)
-const fileNamePattern = ref('')
+const fileNamePattern = ref('^(?!\\.deleted|\\.yli\\.part\\.).*')  // 默认过滤掉以.deleted和.yli.part.开头的文件
 const contentPattern = ref('')
+const fileSuffixExcludePattern = ref('')
+const folderNameExcludePattern = ref('')
 const selectedSensitiveRules = ref([])
 
 // 扫描规则选项
@@ -264,6 +274,7 @@ const formRules = reactive({
   taskName: [{ required: true, message: '布控任务名称不能为空', trigger: 'blur' }],
   storageId: [{ required: true, message: '存储介质不能为空', trigger: 'change' }],
   scheduleType: [{ required: true, message: '调度类型不能为空', trigger: 'change' }],
+  scheduleConf: [{ required: true, message: '调度配置不能为空', trigger: 'blur' }],
 })
 
 const formRef = ref() // 表单 Ref
@@ -398,6 +409,8 @@ const open = async (type: string, id?: number) => {
         scanRules.checkedList = rules.fileTypes || []
         fileNamePattern.value = rules.fileNamePattern || ''
         contentPattern.value = rules.contentPattern || ''
+        fileSuffixExcludePattern.value = rules.fileSuffixExcludePattern || ''
+        folderNameExcludePattern.value = rules.folderNameExcludePattern || ''
         selectedSensitiveRules.value = rules.sensitiveRules || []
         
         // 更新全选和半选状态
@@ -438,6 +451,8 @@ const submitForm = async () => {
       fileTypes: scanRules.checkedList,
       fileNamePattern: fileNamePattern.value,
       contentPattern: contentPattern.value,
+      fileSuffixExcludePattern: fileSuffixExcludePattern.value,
+      folderNameExcludePattern: folderNameExcludePattern.value,
       sensitiveRules: selectedSensitiveRules.value
     })
 
@@ -500,8 +515,10 @@ const resetForm = () => {
   scanTasks.checkAll = false
   scanTasks.checkedList = ['2', '32', '4']
   
-  fileNamePattern.value = ''
+  fileNamePattern.value = '^(?!\\.deleted|\\.yli\\.part\\.).*'  // 默认过滤掉以.deleted和.yli.part.开头的文件
   contentPattern.value = ''
+  fileSuffixExcludePattern.value = ''
+  folderNameExcludePattern.value = ''
   selectedSensitiveRules.value = []
   
   formRef.value?.resetFields()
