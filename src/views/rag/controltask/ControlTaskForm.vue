@@ -258,7 +258,7 @@ const formData = ref({
   processTypes: '',
   storageId: undefined,
   knowledgeBaseId: undefined,
-  scheduleType: undefined as number | undefined,
+  scheduleType: 0 as number | undefined, // 默认为手动执行
   scheduleConf: undefined as string | undefined,
   status: undefined,
   resultCount: undefined,
@@ -279,34 +279,19 @@ const formRules = reactive({
 
 const formRef = ref() // 表单 Ref
 
-// Computed property to disable scheduleType select if storage is database
+// Computed property to disable scheduleType select - 始终禁用
 const isScheduleTypeDisabled = computed(() => {
-  if (formData.value.storageId && storageList.value && storageList.value.length > 0) {
-    const selectedStorage = storageList.value.find(item => item.id === formData.value.storageId);
-    return selectedStorage && selectedStorage.mediumType === '1'; // Disable if database type
-  }
-  return false; // Default to not disabled
+  return true; // 始终禁用调度类型选择
 });
 
+// 简化watch逻辑，移除自动设置scheduleType的部分
 watch(() => formData.value.storageId, (newStorageId) => {
-  if (newStorageId && storageList.value && storageList.value.length > 0) {
-    const selectedStorage = storageList.value.find(item => item.id === newStorageId);
-    if (selectedStorage) {
-      if (selectedStorage.mediumType === '1') {
-        // 数据库类型：设置为手动执行
-        formData.value.scheduleType = 0;
-      } else if (selectedStorage.mediumType === '2') {
-        // NAS类型：自动设置为定时执行
-        formData.value.scheduleType = 1;
-      }
-      // 其他类型不自动设置，保持用户选择
-    }
-  } else if (!newStorageId) {
-    // If storageId is cleared, also allow scheduleType to be changed (not disabled)
-    // and potentially reset scheduleType if desired, e.g.:
-    // formData.value.scheduleType = undefined; 
+  // 保持scheduleType为手动执行，不再根据存储介质类型自动设置
+  if (!newStorageId) {
+    // If storageId is cleared, keep scheduleType as manual
+    formData.value.scheduleType = 0;
   }
-}, { deep: true, immediate: true }); // Added immediate: true
+}, { deep: true, immediate: true });
 
 // 步骤切换功能
 const nextStep = async () => {
@@ -495,7 +480,7 @@ const resetForm = () => {
     processTypes: '',
     storageId: undefined,
     knowledgeBaseId: undefined,
-    scheduleType: undefined as number | undefined,
+    scheduleType: 0 as number | undefined, // 重置时也设置为手动执行
     scheduleConf: undefined as string | undefined,
     status: undefined,
     resultCount: undefined,
