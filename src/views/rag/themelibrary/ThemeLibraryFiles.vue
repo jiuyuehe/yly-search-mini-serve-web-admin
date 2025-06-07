@@ -32,14 +32,26 @@
               class="search-box"
             />
             
-            <!-- 新增批量入库按钮 -->
-            <el-button 
-              type="primary" 
-              :disabled="selectedPendingFiles.length === 0 || !hasValidSelectedPendingFiles"
-              @click="handleBatchAdd"
-            >
-              批量入库 ({{ validSelectedPendingCount }}/{{ selectedPendingFiles.length }})
-            </el-button>
+            <div class="action-buttons">
+              <!-- 刷新按钮 -->
+              <el-button 
+                type="default" 
+                :loading="refreshLoading"
+                @click="handleRefreshFiles"
+              >
+                <el-icon><Refresh /></el-icon>
+                刷新
+              </el-button>
+              
+              <!-- 批量入库按钮 -->
+              <el-button 
+                type="primary" 
+                :disabled="selectedPendingFiles.length === 0 || !hasValidSelectedPendingFiles"
+                @click="handleBatchAdd"
+              >
+                批量入库 ({{ validSelectedPendingCount }}/{{ selectedPendingFiles.length }})
+              </el-button>
+            </div>
           </div>
           
           <!-- 文件列表 -->
@@ -191,7 +203,7 @@
 import { ThemeLibraryApi } from '@/api/rag/themelibrary'
 import { useMessage } from '@/hooks/web/useMessage'
 import { dateFormatter } from '@/utils/formatTime'
-import { Delete, Plus, Warning } from '@element-plus/icons-vue'
+import { Delete, Plus, Refresh, Warning } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'
 
 // 文件类型和大小限制常量
@@ -240,6 +252,9 @@ const pendingPageSize = ref(10)
 const pendingTotal = ref(0)
 const selectedPendingFiles = ref<FileItem[]>([]) // 选中的待入库文件
 
+// 刷新状态
+const refreshLoading = ref(false)
+
 // 已入库状态
 const storedFilesLoading = ref(false)
 const storedFiles = ref<FileItem[]>([])
@@ -269,7 +284,7 @@ const isFileValid = (file: FileItem): boolean => {
 }
 
 const getFileErrorMessage = (file: FileItem): string => {
-  const errors = []
+  const errors: string[] = []
   if (!isFileTypeValid(file.fileName)) {
     errors.push(`不支持的文件类型（${getFileExtension(file.fileName)}）`)
   }
@@ -343,6 +358,26 @@ const handlePendingSelectionChange = (selection) => {
 // 新增：处理已入库文件选择变化
 const handleStoredSelectionChange = (selection) => {
   selectedStoredFiles.value = selection
+}
+
+// 刷新文件处理
+const handleRefreshFiles = async () => {
+  try {
+    refreshLoading.value = true
+    
+    // 调用刷新接口
+    await ThemeLibraryApi.refreshThemeLibraryFile(themeLibrary.value.id)
+    
+    message.success('文件刷新成功')
+    
+    // 重新加载待入库文件列表
+    await loadPendingFiles()
+  } catch (error) {
+    console.error('刷新文件失败', error)
+    message.error('刷新文件失败')
+  } finally {
+    refreshLoading.value = false
+  }
 }
 
 // 批量入库处理
@@ -655,6 +690,12 @@ defineExpose({
 
 .search-box {
   width: 240px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .pagination-container {

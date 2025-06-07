@@ -72,5 +72,10 @@ export const ThemeLibraryApi = {
   handleThemeLibraryFile: async (data: ThemeLibraryVO) => {
     return await request.put({ url: `/rag/theme-library/file/handle`, data })
   },
+
+  // 刷新主题库文件
+  refreshThemeLibraryFile: async (id: number) => {
+    return await request.get({ url: `/rag/theme-library/file/refresh?id=` + id })
+  },
   
 }
