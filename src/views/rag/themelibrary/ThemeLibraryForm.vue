@@ -167,14 +167,23 @@ const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
-const formData = ref({
+const formData = ref<{
+  id?: number
+  themeName?: string
+  themeDesc?: string
+  datasetId?: number
+  fileCount?: number
+  status?: number
+  matchItems: Array<{ id?: number, content: string, matchCount: number, matchScore: number }>
+  _datasetExists?: boolean
+}>({
   id: undefined,
   themeName: undefined,
   themeDesc: undefined,
   datasetId: undefined,
   fileCount: undefined,
   status: undefined,
-  matchItems: [] as Array<{ id?: number, content: string, matchCount: number, matchScore: number }>,
+  matchItems: [],
   _datasetExists: true // 新增：知识库是否存在的状态，存储在表单数据中
 })
 const formRules = reactive({
@@ -334,14 +343,14 @@ const open = async (type: string, id?: number) => {
       const data = await ThemeLibraryApi.getThemeLibrary(id)
       
       // 处理匹配项，将JSON字符串转换为对象数组
-      let matchItemsArray = []
+      let matchItemsArray: Array<{ id?: number, content: string, matchCount: number, matchScore: number }> = []
       if (data.matchItems) {
         try {
           // 尝试解析JSON字符串
-          matchItemsArray = JSON.parse(data.matchItems)
+          const parsedItems = JSON.parse(data.matchItems)
           
           // 确保每个匹配项都有matchCount和matchScore字段
-          matchItemsArray = matchItemsArray.map((item: any) => ({
+          matchItemsArray = parsedItems.map((item: any) => ({
             ...item,
             matchCount: item.matchCount || 5,    // 如果不存在，设置默认值5
             matchScore: item.matchScore || 0.5   // 如果不存在，设置默认值0.5
@@ -435,7 +444,7 @@ const resetForm = () => {
     themeDesc: undefined,
     datasetId: undefined,
     fileCount: undefined,
-    status: undefined,
+    status: 0, // 默认设置为开启状态
     matchItems: [],
     _datasetExists: true
   }
