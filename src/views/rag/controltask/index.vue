@@ -92,7 +92,7 @@
             @click="handleStart(scope.row)"
             v-hasPermi="['rag:control-task:update']"
           >
-            启动
+            {{ scope.row.lastExecuteTime ? '重新启动' : '启动' }}
           </el-button>
           <el-button
             link
@@ -101,7 +101,7 @@
             @click="handlePause(scope.row)"
             v-hasPermi="['rag:control-task:update']"
           >
-            暂停
+            停止
           </el-button>
           <el-button
             link
@@ -229,10 +229,17 @@ const openDetail = (id: number) => {
 
 /** 启动任务 */
 const handleStart = async (row: any) => {
+  if (row.lastExecuteTime) {
+    try {
+      await message.confirm('重新启动会清空之前的数据，请谨慎操作')
+    } catch {
+      return // 用户取消
+    }
+  }
   try {
     await ControlTaskApi.handleControlTask({
       id: row.id,
-      status: 2  // 处理中状态
+      status: 2 // 处理中状态
     })
     message.success('启动成功！')
     await getList()

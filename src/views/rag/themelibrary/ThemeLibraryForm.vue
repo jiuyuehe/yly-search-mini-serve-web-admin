@@ -187,7 +187,8 @@ const formData = ref<{
   _datasetExists: true // 新增：知识库是否存在的状态，存储在表单数据中
 })
 const formRules = reactive({
-  themeName: [{ required: true, message: '主题名称不能为空', trigger: 'blur' }]
+  themeName: [{ required: true, message: '主题名称不能为空', trigger: 'blur' }], 
+  datasetId: [{ required: true, message: '知识库不能为空', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 

@@ -150,22 +150,14 @@
 
         <el-pagination
           layout="prev, pager, next"
-          :total="totalFiles"
+          :total="cappedTotal"
           :page-size="pageInfo.pageSize"
           v-model:current-page="pageInfo.page"
           @current-change="handleCurrentChange"
           small
+          background
         />
 
-        <span class="ml-3">前往</span>
-        <el-input
-          v-model="goToPage"
-          size="small"
-          style="width: 50px"
-          class="mx-2"
-          @keyup.enter="handleGoToPage"
-        />
-        <span>页</span>
       </div>
     </div>
 
@@ -192,6 +184,14 @@ const goToPage = ref('')
 const pageInfo = reactive({
   page: 1,
   pageSize: 10
+})
+
+const cappedTotal = computed(() => {
+  const totalPages = Math.ceil(totalFiles.value / pageInfo.pageSize)
+  if (totalPages > 1000) {
+    return 1000 * pageInfo.pageSize
+  }
+  return totalFiles.value
 })
 
 // 计算完成百分比
@@ -226,8 +226,13 @@ const isTaskTypeError = (errStatus, type) => {
   return (errStatus & type) === type
 }
 
+type StatusInfo = {
+  type: 'success' | 'danger' | 'warning' | 'info'
+  text: string
+}
+
 // 获取整体状态
-const getOverallStatus = (row) => {
+const getOverallStatus = (row): StatusInfo => {
   if (row.succStatus == row.parseStatus) {
     return { type: 'success', text: '成功' }
   } else if (row.errStatus == row.parseStatus) {
