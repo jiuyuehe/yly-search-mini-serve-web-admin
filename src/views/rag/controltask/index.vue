@@ -90,6 +90,7 @@
             type="primary"
             v-if="scope.row.status !== 2"
             @click="handleStart(scope.row)"
+            :loading="actionLoading[scope.row.id]"
             v-hasPermi="['rag:control-task:update']"
           >
             {{ scope.row.lastExecuteTime ? '重新启动' : '启动' }}
@@ -99,6 +100,7 @@
             type="warning"
             v-if="scope.row.status === 2"
             @click="handlePause(scope.row)"
+            :loading="actionLoading[scope.row.id]"
             v-hasPermi="['rag:control-task:update']"
           >
             停止
@@ -190,6 +192,7 @@ const queryParams = reactive({
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
+const actionLoading = ref<{ [key: number]: boolean }>({}) // 操作按钮的加载中
 
 /** 查询列表 */
 const getList = async () => {
@@ -229,42 +232,64 @@ const openDetail = (id: number) => {
 
 /** 启动任务 */
 const handleStart = async (row: any) => {
+  if (actionLoading.value[row.id]) {
+    return
+  }
   if (row.lastExecuteTime) {
     try {
-      await message.confirm('重新启动会清空之前的数据，请谨慎操作')
+      await message.confirm('重新启动会重新扫描文件夹，请谨慎操作！！！')
     } catch {
       return // 用户取消
     }
   }
-  try {
-    await ControlTaskApi.handleControlTask({
-      id: row.id,
-      status: 2 // 处理中状态
-    })
-    message.success('启动成功！')
-    await getList()
-  } catch (error) {
-    console.error('任务启动失败', error)
-  }
+  actionLoading.value[row.id] = true
+  setTimeout(async () => {
+    try {
+      await ControlTaskApi.handleControlTask({
+        id: row.id,
+        status: 2 // 处理中状态
+      })
+      message.success('启动成功！')
+      await getList()
+    } catch (error) {
+      console.error('任务启动失败', error)
+    } finally {
+      actionLoading.value[row.id] = false
+    }
+  }, 3000)
 }
 
 /** 暂停任务 */
-const handlePause = async (row: any) => {
-  try {
-    await ControlTaskApi.handleControlTask({
-      id: row.id,
-      status: 3  // 已暂停状态
-    })
-    message.success('暂停成功！')
-    await getList()
-  } catch (error) {
-    console.error('任务暂停失败', error)
+const handlePause = (row: any) => {
+  if (actionLoading.value[row.id]) {
+    return
   }
+  actionLoading.value[row.id] = true
+  setTimeout(async () => {
+    try {
+      await ControlTaskApi.handleControlTask({
+        id: row.id,
+        status: 3 // 已暂停状态
+      })
+      message.success('暂停成功！')
+      await getList()
+    } catch (error) {
+      console.error('任务暂停失败', error)
+    } finally {
+      actionLoading.value[row.id] = false
+    }
+  }, 3000)
 }
 
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
+    // 查找要删除的任务
+    const taskToDelete = list.value.find(item => item.id === id)
+    if (taskToDelete?.status === 2) {
+      message.warning('请先停止任务后再删除！！！')
+      return
+    }
     // 删除的二次确认
     await message.delConfirm()
     // 发起删除
