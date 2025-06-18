@@ -47,63 +47,50 @@
       <!-- Dify 特有配置 -->
       <template v-else-if="formData.code === 'dify'">
         <el-form-item label="Secret" prop="secret">
-          <el-input 
-            v-model="formData.secret" 
-            placeholder="请输入Dify服务的接口密钥" 
-          />
+          <el-input v-model="formData.secret" placeholder="请输入Dify服务的接口密钥" />
           <div class="el-form-item-msg">调用Dify接口服务的密钥</div>
         </el-form-item>
-        <el-form-item label="聊天服务地址" prop="chatUrl">
-          <el-input 
-            v-model="spareConfig.chatUrl" 
-            placeholder="请输入聊天服务地址" 
-          />
-        </el-form-item>
-        <el-form-item label="聊天服务密钥" prop="chatApiKey">
-          <el-input 
-            v-model="spareConfig.chatApiKey" 
-            placeholder="请输入聊天服务密钥" 
-          />
-        </el-form-item>
-        <el-form-item label="知识库服务地址" prop="kbUrl">
-          <el-input 
-            v-model="spareConfig.kbUrl" 
-            placeholder="请输入知识库服务地址" 
-          />
-        </el-form-item>
-        <el-form-item label="知识库密钥" prop="kbApiKey">
-          <el-input 
-            v-model="spareConfig.kbApiKey" 
-            placeholder="请输入知识库密钥" 
-          />
-        </el-form-item>
-      </template>
-      
-      <!-- FastAPI 特有配置 -->
-      <template v-else-if="formData.code === 'fastapi'">
-        <el-form-item label="标签提取Api" prop="keywordUrl">
-          <el-input 
-            v-model="spareConfig.keywordUrl" 
-            placeholder="请输入标签提取Api" 
-          />
-        </el-form-item>
-        <el-form-item label="文本翻译Api" prop="translationUrl">
-          <el-input 
-            v-model="spareConfig.translationUrl" 
-            placeholder="请输入文本翻译Api" 
-          />
-        </el-form-item>
-        <el-form-item label="摘要生成Api" prop="summaryUrl">
-          <el-input 
-            v-model="spareConfig.summaryUrl" 
-            placeholder="请输入摘要生成Api" 
-          />
-        </el-form-item>
-        <el-form-item label="语言识别Api" prop="languageUrl">
-          <el-input 
-            v-model="spareConfig.languageUrl" 
-            placeholder="请输入语言识别Api" 
-          />
+        
+        <!-- Dify 应用配置 -->
+        <div v-for="(item, index) in formData.difyApps" :key="index" class="dify-app-item">
+          <el-card>
+            <template #header>
+              <div class="card-header">
+                <span>应用 {{ index + 1 }}</span>
+                <el-button 
+                  type="danger" 
+                  :icon="Delete" 
+                  circle 
+                  @click="removeDifyApp(index)" 
+                />
+              </div>
+            </template>
+            <el-form-item 
+              :label="'应用名称'" 
+              :prop="'difyApps.' + index + '.name'" 
+              :rules="{ required: true, message: '请输入应用名称', trigger: 'blur' }"
+            >
+              <el-input v-model="item.name" placeholder="请输入应用名称" />
+            </el-form-item>
+            <el-form-item 
+              :label="'App Key'" 
+              :prop="'difyApps.' + index + '.appKey'" 
+              :rules="{ required: true, message: '请输入App Key', trigger: 'blur' }"
+            >
+              <el-input v-model="item.appKey" placeholder="请输入App Key" />
+            </el-form-item>
+            <el-form-item 
+              :label="'URL 地址'" 
+              :prop="'difyApps.' + index + '.url'"
+              :rules="{ required: true, message: '请输入URL地址', trigger: 'blur' }"
+            >
+              <el-input v-model="item.url" placeholder="请输入URL地址" />
+            </el-form-item>
+          </el-card>
+        </div>
+
+        <el-form-item>
+          <el-button type="primary" @click="addDifyApp">新增应用</el-button>
         </el-form-item>
       </template>
     </el-form>
@@ -117,6 +104,7 @@
 <script setup lang="ts">
 import { PluginsConfigApi, PluginsConfigVO } from '@/api/rag/pluginsconfig'
 import { useMessage } from '@/hooks/web/useMessage'
+import { Delete } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 
 defineOptions({ name: 'PluginsConfigForm' })
@@ -131,7 +119,7 @@ const formLoading = ref(false)
 const formRef = ref()
 
 // 表单数据
-const formData = reactive<PluginsConfigVO>({
+const formData = reactive<PluginsConfigVO & { difyApps: { name: string; appKey: string; url: string }[] }>({
   code: '',
   name: '',
   description: '',
@@ -141,16 +129,13 @@ const formData = reactive<PluginsConfigVO>({
   host: '',
   port: '',
   secret: '',
-  spare: ''
+  spare: '',
+  difyApps: []
 })
 
 // 特定配置 - 用于spare字段的JSON数据
 const spareConfig = reactive({
   watermarkTxt: '',
-  chatUrl: '',
-  chatApiKey: '',
-  kbUrl: '',
-  kbApiKey: '',
   keywordUrl: '',
   translationUrl: '',
   summaryUrl: '',
@@ -171,21 +156,40 @@ const open = (plugin: PluginsConfigVO) => {
     try {
       const spareData = JSON.parse(plugin.spare)
       
-      // 清空配置
-      Object.keys(spareConfig).forEach(key => {
-        spareConfig[key] = ''
-      })
-      
-      // 设置配置
-      Object.keys(spareData).forEach(key => {
-        if (key in spareConfig) {
-          spareConfig[key] = spareData[key]
+      if (plugin.code === 'dify') {
+        if (spareData.items) {
+          formData.difyApps = spareData.items
         }
-      })
+      } else {
+        // 清空配置
+        Object.keys(spareConfig).forEach(key => {
+          spareConfig[key] = ''
+        })
+        
+        // 设置配置
+        Object.keys(spareData).forEach(key => {
+          if (key in spareConfig) {
+            spareConfig[key] = spareData[key]
+          }
+        })
+      }
     } catch (e) {
       console.error('解析spare配置失败:', e)
+      if (plugin.code === 'dify') {
+        formData.difyApps = []
+      }
     }
   }
+}
+
+// 新增 Dify 应用
+const addDifyApp = () => {
+  formData.difyApps.push({ name: '', appKey: '', url: '' })
+}
+
+// 删除 Dify 应用
+const removeDifyApp = (index: number) => {
+  formData.difyApps.splice(index, 1)
 }
 
 // 提交表单
@@ -193,19 +197,12 @@ const submitForm = async () => {
   formLoading.value = true
   try {
     // 准备提交数据
-    const submitData: PluginsConfigVO = {
-      ...formData
-    }
+    const submitData = { ...formData }
+    delete (submitData as any).difyApps
     
     // 处理特定插件的spare字段
     if (formData.code === 'dify') {
-      const spareJson = {
-        chatUrl: spareConfig.chatUrl,
-        chatApiKey: spareConfig.chatApiKey,
-        kbUrl: spareConfig.kbUrl,
-        kbApiKey: spareConfig.kbApiKey
-      }
-      submitData.spare = JSON.stringify(spareJson)
+      submitData.spare = JSON.stringify({ items: formData.difyApps })
     } 
     else if (formData.code === 'kkfile') {
       submitData.spare = JSON.stringify({
@@ -248,7 +245,8 @@ const resetForm = () => {
     host: '',
     port: '',
     secret: '',
-    spare: ''
+    spare: '',
+    difyApps: []
   })
   
   // 重置spare配置
@@ -271,5 +269,15 @@ defineExpose({ open })
   margin-top: 4px;
   font-size: 12px;
   color: #909399;
+}
+
+.dify-app-item {
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
