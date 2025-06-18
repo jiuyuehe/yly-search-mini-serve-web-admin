@@ -31,18 +31,26 @@
               @input="handlePendingSearch"
               class="search-box"
             />
-            
             <div class="action-buttons">
               <!-- 刷新按钮 -->
-              <el-button 
-                type="default" 
+              <el-button
+                type="default"
+                :loading="pendingFilesLoading"
+                @click="loadPendingFiles"
+              >
+                <el-icon><Refresh /></el-icon>
+                刷新当前列表
+              </el-button>
+              <!-- 重新匹配按钮 -->
+              <el-button
+                type="default"
                 :loading="refreshLoading"
                 @click="handleRefreshFiles"
               >
                 <el-icon><Refresh /></el-icon>
-                刷新
+                重新匹配
               </el-button>
-              
+
               <!-- 批量入库按钮 -->
               <el-button 
                 type="primary" 
@@ -136,15 +144,17 @@
               @input="handleStoredSearch"
               class="search-box"
             />
-            
-            <!-- 新增批量出库按钮 -->
-            <el-button 
-              type="danger" 
-              :disabled="selectedStoredFiles.length === 0"
-              @click="handleBatchDelete"
-            >
-              批量出库
-            </el-button>
+
+            <div class="action-buttons">
+              <!-- 批量出库按钮 -->
+              <el-button
+                type="danger"
+                :disabled="selectedStoredFiles.length === 0"
+                @click="handleBatchDelete"
+              >
+                批量出库
+              </el-button>
+            </div>
           </div>
           
           <!-- 文件列表 -->
@@ -224,6 +234,7 @@ interface FileItem {
 // 文件操作参数接口
 interface FileOperationParams {
   id: number
+  themeName: string
   status: boolean
 }
 
@@ -418,6 +429,7 @@ const handleBatchAdd = async () => {
       try {
         const params: FileOperationParams = {
           id: file.id,
+          themeName: themeLibrary.value.themeName,
           status: true
         }
         await ThemeLibraryApi.handleThemeLibraryFile(params as any)
@@ -481,6 +493,7 @@ const handleBatchDelete = async () => {
       try {
         const params: FileOperationParams = {
           id: file.id,
+          themeName: themeLibrary.value.themeName,
           status: false
         }
         await ThemeLibraryApi.handleThemeLibraryFile(params as any)
@@ -596,6 +609,7 @@ const handleFileAdd = async (file: FileItem) => {
   try {
     const params: FileOperationParams = {
       id: file.id,
+      themeName: themeLibrary.value.themeName,
       status: true
     }
     await ThemeLibraryApi.handleThemeLibraryFile(params as any)
@@ -614,6 +628,7 @@ const handleFileDelete = async (file: FileItem) => {
   try {
     const params: FileOperationParams = {
       id: file.id,
+      themeName: themeLibrary.value.themeName,
       status: false
     }
     await ThemeLibraryApi.handleThemeLibraryFile(params as any)
