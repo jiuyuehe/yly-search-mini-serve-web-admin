@@ -66,6 +66,13 @@
               </div>
             </template>
             <el-form-item 
+              :label="'应用代码'" 
+              :prop="'difyApps.' + index + '.code'"
+              :rules="{ required: true, message: '请输入应用代码', trigger: 'blur' }"
+            >
+              <el-input v-model="item.code" placeholder="请输入应用代码" :disabled="item.code !== ''" />
+            </el-form-item>
+            <el-form-item 
               :label="'应用名称'" 
               :prop="'difyApps.' + index + '.name'" 
               :rules="{ required: true, message: '请输入应用名称', trigger: 'blur' }"
@@ -78,13 +85,6 @@
               :rules="{ required: true, message: '请输入App Key', trigger: 'blur' }"
             >
               <el-input v-model="item.appKey" placeholder="请输入App Key" />
-            </el-form-item>
-            <el-form-item 
-              :label="'URL 地址'" 
-              :prop="'difyApps.' + index + '.url'"
-              :rules="{ required: true, message: '请输入URL地址', trigger: 'blur' }"
-            >
-              <el-input v-model="item.url" placeholder="请输入URL地址" />
             </el-form-item>
           </el-card>
         </div>
@@ -119,7 +119,7 @@ const formLoading = ref(false)
 const formRef = ref()
 
 // 表单数据
-const formData = reactive<PluginsConfigVO & { difyApps: { name: string; appKey: string; url: string }[] }>({
+const formData = reactive<PluginsConfigVO & { difyApps: { name: string; appKey: string; code: string }[] }>({
   code: '',
   name: '',
   description: '',
@@ -184,7 +184,7 @@ const open = (plugin: PluginsConfigVO) => {
 
 // 新增 Dify 应用
 const addDifyApp = () => {
-  formData.difyApps.push({ name: '', appKey: '', url: '' })
+  formData.difyApps.push({ name: '', appKey: '', code: '' })
 }
 
 // 删除 Dify 应用
