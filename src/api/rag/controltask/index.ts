@@ -45,7 +45,7 @@ export const ControlTaskApi = {
 
   // 启动布控任务
   startControlTask: async (data: any) => {
-    return await request.post({ url: `/rag/control-task/start`, data })
+    return await request.post({ url: `/rag/control-task/start/`+data.id })
   },
 
   // 修改布控任务
@@ -59,7 +59,7 @@ export const ControlTaskApi = {
   },
 
   // 调整布控任务
-  handleControlTask: async (data: any) => {
+  stopControlTask: async (data: any) => {
     return await request.post({ url: `/rag/control-task/operation`, data })
   },
 

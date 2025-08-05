@@ -28,15 +28,22 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-        <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+        <el-button @click="handleQuery">
+          <Icon icon="ep:search" class="mr-5px"/>
+          搜索
+        </el-button>
+        <el-button @click="resetQuery">
+          <Icon icon="ep:refresh" class="mr-5px"/>
+          重置
+        </el-button>
         <el-button
           type="primary"
           plain
           @click="openForm('create')"
           v-hasPermi="['rag:control-task:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
+          <Icon icon="ep:plus" class="mr-5px"/>
+          新增
         </el-button>
         <el-button
           type="success"
@@ -45,7 +52,8 @@
           :loading="exportLoading"
           v-hasPermi="['rag:control-task:export']"
         >
-          <Icon icon="ep:download" class="mr-5px" /> 导出
+          <Icon icon="ep:download" class="mr-5px"/>
+          导出
         </el-button>
       </el-form-item>
     </el-form>
@@ -54,8 +62,8 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="ID" align="center" prop="id" />
-      <el-table-column label="任务名称" align="center" prop="taskName" />
+      <el-table-column label="ID" align="center" prop="id"/>
+      <el-table-column label="任务名称" align="center" prop="taskName"/>
       <el-table-column label="存储介质" align="center" prop="storageId">
         <template #default="scope">
           {{ getStorageName(scope.row.storageId) }}
@@ -73,7 +81,7 @@
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
-          <dict-tag :type="DICT_TYPE.CONTROL_STATUS" :value="scope.row.status" />
+          <dict-tag :type="DICT_TYPE.CONTROL_STATUS" :value="scope.row.status"/>
         </template>
       </el-table-column>
       <el-table-column
@@ -142,27 +150,27 @@
   </ContentWrap>
 
   <!-- 表单弹窗：添加/修改 -->
-  <ControlTaskForm ref="formRef" @success="getList" />
-  
+  <ControlTaskForm ref="formRef" @success="getList"/>
+
   <!-- 任务详情弹窗 -->
-  <TaskDetailModal ref="detailRef" />
+  <TaskDetailModal ref="detailRef"/>
 </template>
 
 <script setup lang="ts">
-import { ControlTaskApi, ControlTaskVO } from '@/api/rag/controltask'
-import { useStorageMediumCache } from '@/hooks/web/useStorageMediumCache'
-import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
+import {ControlTaskApi, ControlTaskVO} from '@/api/rag/controltask'
+import {useStorageMediumCache} from '@/hooks/web/useStorageMediumCache'
+import {DICT_TYPE, getStrDictOptions} from '@/utils/dict'
 import download from '@/utils/download'
-import { dateFormatter } from '@/utils/formatTime'
+import {dateFormatter} from '@/utils/formatTime'
 import ControlTaskForm from './ControlTaskForm.vue'
 import TaskDetailModal from './TaskDetailModal.vue'
 
 /** 布控任务 列表 */
-defineOptions({ name: 'ControlTask' })
+defineOptions({name: 'ControlTask'})
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
-const { getStorageName, getStorageList } = useStorageMediumCache() // 存储介质缓存
+const {t} = useI18n() // 国际化
+const {getStorageName, getStorageList} = useStorageMediumCache() // 存储介质缓存
 
 const loading = ref(true) // 列表的加载中
 const list = ref<ControlTaskVO[]>([]) // 列表的数据
@@ -245,9 +253,8 @@ const handleStart = async (row: any) => {
   actionLoading.value[row.id] = true
   setTimeout(async () => {
     try {
-      await ControlTaskApi.handleControlTask({
+      await ControlTaskApi.startControlTask({
         id: row.id,
-        status: 2 // 处理中状态
       })
       message.success('启动成功！')
       await getList()
@@ -256,7 +263,7 @@ const handleStart = async (row: any) => {
     } finally {
       actionLoading.value[row.id] = false
     }
-  }, 3000)
+  }, 1000)
 }
 
 /** 暂停任务 */
@@ -267,9 +274,8 @@ const handlePause = (row: any) => {
   actionLoading.value[row.id] = true
   setTimeout(async () => {
     try {
-      await ControlTaskApi.handleControlTask({
+      await ControlTaskApi.stopControlTask({
         id: row.id,
-        status: 3 // 已暂停状态
       })
       message.success('暂停成功！')
       await getList()
@@ -278,7 +284,7 @@ const handlePause = (row: any) => {
     } finally {
       actionLoading.value[row.id] = false
     }
-  }, 3000)
+  }, 1000) // 模拟延时60秒
 }
 
 /** 删除按钮操作 */
@@ -297,7 +303,8 @@ const handleDelete = async (id: number) => {
     message.success(t('common.delSuccess'))
     // 刷新列表
     await getList()
-  } catch {}
+  } catch {
+  }
 }
 
 /** 导出按钮操作 */
@@ -327,12 +334,12 @@ const isDatabaseStorage = (storageId) => {
     return false; // Storage ID not found in the list
   }
   // Check if mediumType is '1' (which we infer means Database type)
-  return storage.mediumType === '1'; 
+  return storage.mediumType === '1';
 }
 
 /** 初始化 **/
 onMounted(async () => {
-  storageList.value = await getStorageList() // Fetch and store the list
+  //storageList.value = await getStorageList() // Fetch and store the list
   getList()
 })
 </script>
