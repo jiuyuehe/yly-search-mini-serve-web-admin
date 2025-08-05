@@ -7,22 +7,24 @@
       label-width="100px"
       v-loading="formLoading"
     >
-      <el-form-item label="名称" prop="indexName">
-        <el-input disabled v-model="formData.indexName" placeholder="请输入名称" />
+      <el-form-item label="索引名称" prop="indexName">
+        <el-input v-model="formData.indexName" placeholder="请输入索引名称" />
       </el-form-item>
-      <el-form-item label="描述" prop="indexDesc">
-        <el-input v-model="formData.indexDesc" placeholder="请输入描述" />
-      </el-form-item>
-
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="formData.status" placeholder="请选择状态" clearable class="!w-240px">
-          <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+      <el-form-item label="映射文件" prop="mappingFile">
+        <el-upload
+          :auto-upload="false"
+          :limit="1"
+          accept=".json"
+          :on-change="handleFileChange"
+          :show-file-list="false"
+        >
+          <el-button type="primary">选择文件</el-button>
+          <template #tip>
+            <div class="el-upload__tip">
+              {{ formData.mappingFile ? formData.mappingFile.name : '请上传JSON格式的索引映射文件' }}
+            </div>
+          </template>
+        </el-upload>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -32,8 +34,7 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { EsIndexApi, EsIndexVO } from '@/api/rag/esindex'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { EsIndexApi } from '@/api/rag/esindex'
 /** ES索引管理 表单 */
 defineOptions({ name: 'EsIndexForm' })
 
@@ -45,18 +46,20 @@ const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
 const formData = ref({
-  id: undefined,
   indexName: undefined,
-  indexType: undefined,
-  indexDesc: undefined,
-  mappingJson: undefined,
-  status: undefined,
-  createdTime: undefined,
-  updatedTime: undefined
+  mappingFile: undefined as File | undefined
 })
+
+const handleFileChange = (file: { raw: File }) => {
+  if (file.raw.type !== 'application/json') {
+    message.error('请上传JSON格式的文件')
+    return false
+  }
+  formData.value.mappingFile = file.raw
+  return true
+}
 const formRules = reactive({
-  indexName: [{ required: true, message: 'ES索引名称不能为空', trigger: 'blur' }],
-  indexType: [{ required: true, message: '索引类型不能为空', trigger: 'change' }]
+  indexName: [{ required: true, message: '索引名称不能为空', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
 
@@ -86,12 +89,24 @@ const submitForm = async () => {
   // 提交请求
   formLoading.value = true
   try {
-    const data = formData.value as unknown as EsIndexVO
+    const formDataObj = new FormData()
+    formDataObj.append('indexName', formData.value.indexName || '')
+    if (formData.value.mappingFile) {
+      formDataObj.append('mappingFile', formData.value.mappingFile)
+    }
+
+    // 设置Content-Type为multipart/form-data
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }
+
     if (formType.value === 'create') {
-      await EsIndexApi.createEsIndex(data)
+      await EsIndexApi.createEsIndexFile(formDataObj, config)
       message.success(t('common.createSuccess'))
     } else {
-      await EsIndexApi.updateEsIndex(data)
+      await EsIndexApi.updateEsIndex(formDataObj, config)
       message.success(t('common.updateSuccess'))
     }
     dialogVisible.value = false
@@ -105,14 +120,8 @@ const submitForm = async () => {
 /** 重置表单 */
 const resetForm = () => {
   formData.value = {
-    id: undefined,
     indexName: undefined,
-    indexType: undefined,
-    indexDesc: undefined,
-    mappingJson: undefined,
-    status: undefined,
-    createdTime: undefined,
-    updatedTime: undefined
+    mappingFile: undefined
   }
   formRef.value?.resetFields()
 }

@@ -1,4 +1,5 @@
 import request from '@/config/axios'
+import type {AxiosRequestConfig} from "axios";
 
 // ES索引管理 VO
 export interface EsIndexVO {
@@ -33,9 +34,28 @@ export const EsIndexApi = {
     return await request.post({ url: `/rag/es-index/create`, data })
   },
 
+  // 创建ES索引管理
+  createEsIndexFile: async (data: FormData, config?: AxiosRequestConfig) => {
+    return await request.post({
+      url: '/rag/es-index/create-index',
+      data,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      ...config
+    })
+  },
+
   // 修改ES索引管理
-  updateEsIndex: async (data: EsIndexVO) => {
-    return await request.put({ url: `/rag/es-index/update`, data })
+  updateEsIndex:  async (data: FormData, config?: AxiosRequestConfig) => {
+    return await request.post({
+      url: '/rag/es-index/update',
+      data,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      ...config
+    })
   },
 
   // 删除ES索引管理
