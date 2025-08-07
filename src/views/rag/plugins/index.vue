@@ -32,7 +32,7 @@
         <div class="plugin-action">
           <el-button type="primary" link @click="handleConfig(plugin)">
             <Icon icon="ep:setting" class="mr-5px" />
-            配置服务
+            配置
           </el-button>
           <el-button 
             type="danger" 
@@ -59,8 +59,19 @@
             v-if="plugin.status === 0" 
           >
             <Icon icon="ep:link" class="mr-5px" />
-            跳转访问
+            跳转
           </el-button>
+
+          <el-button
+            type="primary"
+            link
+            @click="reConnect(plugin)"
+            v-if="plugin.code === 'elasticsearch' || plugin.code === 'kafka' "
+          >
+            <Icon icon="ep:link" class="mr-5px" />
+            重连
+          </el-button>
+
         </div>
       </div>
     </div>
@@ -86,6 +97,33 @@ const formRef = ref()
 // 获取插件图标URL
 const getPluginIconUrl = (code: string) => {
   return `/resource/img/plugins/${code}.png`
+}
+
+/**
+ * 重新连接
+ */
+const reConnect = async (plugin: PluginsConfigVO) => {
+  loading.value = true
+  try {
+    if(plugin.code === 'elasticsearch') {
+      await PluginsConfigApi.reConnectElasticsearch()
+    } else if (plugin.code === 'kafka') {
+     // await PluginsConfigApi.reConnectKafka(plugin)
+      message.error('还未实现')
+      return
+    } else {
+      message.error('不支持的插件类型')
+      return
+    }
+   // await PluginsConfigApi.reInit()
+    //pluginList.value = res
+    message.success('重连成功')
+  } catch (err) {
+    console.error('重连失败:', err)
+    message.error('重连失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 获取插件列表

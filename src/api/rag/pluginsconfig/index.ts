@@ -16,6 +16,14 @@ export interface PluginsConfigVO {
 
 // 插件配置API
 export const PluginsConfigApi = {
+
+  //重新连接服务
+
+  reConnectElasticsearch : async () => {
+    return await request.get({ url: '/rag/es-index/re-init' })
+  },
+
+
   // 查询插件配置列表
   getPluginsConfigList: async () => {
     return await request.get({ url: '/yly/plugins-config/list' })
