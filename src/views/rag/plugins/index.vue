@@ -106,9 +106,11 @@ const reConnect = async (plugin: PluginsConfigVO) => {
   loading.value = true
   try {
     if(plugin.code === 'elasticsearch') {
-      await PluginsConfigApi.reConnectElasticsearch()
+      const res = await PluginsConfigApi.reConnectElasticsearch()
+
     } else if (plugin.code === 'kafka') {
-     // await PluginsConfigApi.reConnectKafka(plugin)
+      const res =  await PluginsConfigApi.reConnectKafka()
+      console.log('Kafka重连结果:', res)
       message.error('还未实现')
       return
     } else {
