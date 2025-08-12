@@ -57,6 +57,7 @@
       <el-table-column label="ID" align="center" prop="id" />
       <el-table-column label="名称" align="center" prop="indexName" />
       <el-table-column label="描述" align="center" prop="indexDesc" />
+      <el-table-column label="文档数量" align="center" prop="docNum" />
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
@@ -85,6 +86,14 @@
             v-hasPermi="['rag:es-index:update']"
           >
             编辑
+          </el-button>
+          <el-button
+            link
+            type="warning"
+            @click="clearData(scope.row.id)"
+            v-hasPermi="['rag:es-index:delete']"
+          >
+            清空数据
           </el-button>
           <el-button
             link
@@ -132,6 +141,7 @@ const queryParams = reactive({
   indexName: undefined,
   indexType: undefined,
   indexDesc: undefined,
+  docNum: undefined,
   mappingJson: undefined,
   status: undefined,
   createTime: [],
@@ -178,6 +188,20 @@ const handleDelete = async (id: number) => {
     // 发起删除
     await EsIndexApi.deleteEsIndex(id)
     message.success(t('common.delSuccess'))
+    // 刷新列表
+    await getList()
+  } catch {}
+}
+
+
+/** 删除按钮操作 */
+const clearData = async (id: number) => {
+  try {
+    // 删除的二次确认
+    await message.delConfirm()
+    // 发起删除
+    await EsIndexApi.clearData(id)
+    message.success(t('清空索引数据成功'))
     // 刷新列表
     await getList()
   } catch {}

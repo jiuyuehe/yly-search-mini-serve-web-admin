@@ -59,6 +59,11 @@ export const EsIndexApi = {
   },
 
   // 删除ES索引管理
+  clearData: async (id: number) => {
+    return await request.post({ url: `/rag/es-index/clear?id=` + id })
+  },
+
+  // 删除ES索引管理
   deleteEsIndex: async (id: number) => {
     return await request.delete({ url: `/rag/es-index/delete?id=` + id })
   },
