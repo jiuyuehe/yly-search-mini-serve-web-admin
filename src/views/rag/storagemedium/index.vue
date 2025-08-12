@@ -107,6 +107,17 @@
           >
             编辑
           </el-button>
+
+          <el-button
+            link
+            type="success"
+            :disabled="loading"
+            @click="handleTestConnection(scope.row.id)"
+            v-hasPermi="['rag:storage-medium:delete']"
+          >
+            连接测试
+          </el-button>
+
           <el-button
             link
             type="danger"
@@ -188,6 +199,25 @@ const resetQuery = () => {
 const formRef = ref()
 const openForm = (type: string, id?: number) => {
   formRef.value.open(type, id)
+}
+
+// 处理测试数据库连接
+const handleTestConnection = async (id: number) => {
+  message.info('开始连接，请稍等10秒...')
+  loading.value = true
+  try {
+    const res = await StorageMediumApi.testDatabaseConnection(id)
+    if (res) {
+      message.success('连接成功')
+      getList();
+    } else {
+      message.error('连接失败，请检查各项参数的值')
+    }
+  } catch (error) {
+    message.error('连接失败: ' + error)
+  } finally {
+    loading.value = false
+  }
 }
 
 /** 删除按钮操作 */

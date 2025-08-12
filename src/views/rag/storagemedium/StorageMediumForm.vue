@@ -140,9 +140,7 @@
             <!-- 测试连接按钮现在直接放在密码字段下方 -->
             <div class="config-item test-btn-container">
               <span class="config-label"></span>
-              <el-button type="primary" @click="handleTestConnection" :loading="testing">
-                测试连接
-              </el-button>
+
             </div>
           </div>
         </el-form-item>
@@ -283,28 +281,7 @@ const handleTestMouthExist = async () => {
   }
 }
 
-// 处理测试数据库连接
-const handleTestConnection = async () => {
-  try {
-    testing.value = true
-    const params = {
-      database: dbConfig.database,
-      host: dbConfig.host,
-      username: dbConfig.username,
-      password: dbConfig.password
-    }
-    const res = await StorageMediumApi.testDatabaseConnection(params)
-    if (res) {
-      message.success('连接成功')
-    } else {
-      message.error('连接失败，请检查各项参数的值')
-    }
-  } catch (error) {
-    message.error('连接失败: ' + error)
-  } finally {
-    testing.value = false
-  }
-}
+
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
