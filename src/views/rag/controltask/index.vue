@@ -137,6 +137,15 @@
           >
             详情
           </el-button>
+
+          <el-button
+            link
+            type="info"
+            @click="handlereset(scope.row)"
+            v-if="!isDatabaseStorage(scope.row.storageId)"
+          >
+            重置
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -285,6 +294,28 @@ const handlePause = (row: any) => {
       actionLoading.value[row.id] = false
     }
   }, 1000) // 模拟延时60秒
+}
+
+
+/** 暂停任务 */
+const handlereset = (row: any) => {
+  if (!row || !row.id) {
+    message.error('操作失败，未找到有效的任务 ID')
+    return
+  }
+  message.info('重置任务中，请稍等10秒...')
+  setTimeout(async () => {
+    try {
+      await ControlTaskApi.resetTask({
+        id: row.id,
+      })
+      message.success('重置成功！')
+      await getList()
+    } catch (error) {
+      console.error('任务重置失败', error)
+    } finally {
+    }
+  }, 1000)
 }
 
 /** 删除按钮操作 */

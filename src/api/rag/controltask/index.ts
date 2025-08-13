@@ -48,6 +48,10 @@ export const ControlTaskApi = {
     return await request.post({ url: `/rag/control-task/start/`+data.id })
   },
 
+  // 清空布控任务
+  resetTask: async (data: any) => {
+    return await request.post({ url: `/rag/control-task/re-set/`+data.id })
+  },
   // 修改布控任务
   updateControlTask: async (data: ControlTaskVO) => {
     return await request.put({ url: `/rag/control-task/update`, data })
