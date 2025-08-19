@@ -69,14 +69,19 @@
           {{ getStorageName(scope.row.storageId) }}
         </template>
       </el-table-column>
-      <el-table-column label="基础信息扫描" align="center">
+      <el-table-column label="未处理/全部" align="center">
         <template #default="scope">
-          {{ (scope.row.basicFileInfoCount || 0) + '/' + (scope.row.totalFiles || 0) }}
+          {{ (scope.row.resultCount || 0) + '/' + (scope.row.totalFiles || 0) }}
         </template>
       </el-table-column>
-      <el-table-column label="内容扫描" align="center">
+      <el-table-column label="内容/基础" align="center">
         <template #default="scope">
-          {{ (scope.row.contentProcessedCount || 0) + '/' + (scope.row.totalFiles || 0) }}
+          {{ (scope.row.contentProcessedCount || 0) + '/' + (scope.row.basicFileInfoCount || 0) }}
+        </template>
+      </el-table-column>
+       <el-table-column label="内容错误" align="center">
+        <template #default="scope">
+          {{ (scope.row.contentErrorCount || 0)}}
         </template>
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
@@ -192,6 +197,7 @@ const queryParams = reactive({
   taskName: undefined,
   taskDesc: undefined,
   contentJson: undefined,
+  contentErrorCount: undefined,
   totalFiles: undefined,
   fileType: undefined,
   processTypes: undefined,
