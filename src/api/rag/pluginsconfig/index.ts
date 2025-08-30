@@ -18,7 +18,7 @@ export interface PluginsConfigVO {
 export const PluginsConfigApi = {
 
   reConnectKafka: async () => {
-    return await request.post({url: '/ai-rag/kafka-config/refresh'})
+    return await request.post({url: '/rag/kafka-config/refresh'})
   },
 
   //重新连接服务
@@ -30,27 +30,27 @@ export const PluginsConfigApi = {
 
   // 查询插件配置列表
   getPluginsConfigList: async () => {
-    return await request.get({url: '/yly/plugins-config/list'})
+    return await request.get({url: '/rag/plugins-config/list'})
   },
 
   // 查询插件配置详情
   getPluginsConfig: async (id: number) => {
-    return await request.get({url: `/yly/plugins-config/get?id=${id}`})
+    return await request.get({url: `/rag/plugins-config/get?id=${id}`})
   },
 
   // 新增插件配置
   createPluginsConfig: async (data: any) => {
-    return await request.post({url: '/yly/plugins-config/create', data})
+    return await request.post({url: '/rag/plugins-config/create', data})
   },
 
   // 修改插件配置
   updatePluginsConfig: async (data: any) => {
-    return await request.put({url: '/yly/plugins-config/update', data})
+    return await request.put({url: '/rag/plugins-config/update', data})
   },
 
   // 删除插件配置
   deletePluginsConfig: async (type: string) => {
-    return await request.delete({url: `/yly/plugins-config/delete?type=${type}`})
+    return await request.delete({url: `/rag/plugins-config/delete?type=${type}`})
   },
 
 }

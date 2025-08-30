@@ -18,31 +18,31 @@ export interface RagAppsVO {
 export const RagAppsApi = {
   // 查询应用配置分页
   getRagAppsPage: async (params: any) => {
-    return await request.get({ url: `/yly/rag-apps/page`, params })
+    return await request.get({ url: `/rag/rag-apps/page`, params })
   },
 
   // 查询应用配置详情
   getRagApps: async (id: number) => {
-    return await request.get({ url: `/yly/rag-apps/get?id=` + id })
+    return await request.get({ url: `/rag/rag-apps/get?id=` + id })
   },
 
   // 新增应用配置
   createRagApps: async (data: RagAppsVO) => {
-    return await request.post({ url: `/yly/rag-apps/create`, data })
+    return await request.post({ url: `/rag/rag-apps/create`, data })
   },
 
   // 修改应用配置
   updateRagApps: async (data: RagAppsVO) => {
-    return await request.put({ url: `/yly/rag-apps/update`, data })
+    return await request.put({ url: `/rag/rag-apps/update`, data })
   },
 
   // 删除应用配置
   deleteRagApps: async (id: number) => {
-    return await request.delete({ url: `/yly/rag-apps/delete?id=` + id })
+    return await request.delete({ url: `/rag/rag-apps/delete?id=` + id })
   },
 
   // 导出应用配置 Excel
   exportRagApps: async (params) => {
-    return await request.download({ url: `/yly/rag-apps/export-excel`, params })
+    return await request.download({ url: `/rag/rag-apps/export-excel`, params })
   },
 }
