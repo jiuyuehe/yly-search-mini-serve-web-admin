@@ -113,11 +113,11 @@
                           {{ t('login.remember') }}
                         </el-checkbox>
                       </el-col>
-                      <el-col :offset="6" :span="12">
+                      <!-- <el-col :offset="6" :span="12">
                         <el-link style="float: right" type="primary"
                           >{{ t('login.forgetPassword') }}
                         </el-link>
-                      </el-col>
+                      </el-col> -->
                     </el-row>
                   </el-form-item>
                 </el-col>
@@ -155,17 +155,17 @@ import { underlineToHump } from '@/utils'
 import { ElLoading } from 'element-plus'
 
 import { useDesign } from '@/hooks/web/useDesign'
-import { useAppStore } from '@/store/modules/app'
 import { useIcon } from '@/hooks/web/useIcon'
+import { useAppStore } from '@/store/modules/app'
 import { usePermissionStore } from '@/store/modules/permission'
 
 import * as LoginApi from '@/api/login'
-import * as authUtil from '@/utils/auth'
-import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
 import { LocaleDropdown } from '@/layout/components/LocaleDropdown'
-import { LoginStateEnum, useFormValid, useLoginState } from './components/useLogin'
-import LoginFormTitle from './components/LoginFormTitle.vue'
+import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
 import router from '@/router'
+import * as authUtil from '@/utils/auth'
+import LoginFormTitle from './components/LoginFormTitle.vue'
+import { LoginStateEnum, useFormValid, useLoginState } from './components/useLogin'
 
 defineOptions({ name: 'SocialLogin' })
 
@@ -199,7 +199,7 @@ const loginData = reactive({
   captchaEnable: import.meta.env.VITE_APP_CAPTCHA_ENABLE !== 'false',
   tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE !== 'false',
   loginForm: {
-    tenantName: '芋道源码',
+    tenantName: '一粒云RAG',
     username: 'admin',
     password: 'admin123',
     captchaVerification: '',

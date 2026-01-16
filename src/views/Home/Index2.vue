@@ -141,12 +141,12 @@
   </el-row>
 </template>
 <script lang="ts" setup>
-import { set } from 'lodash-es'
 import { EChartsOption } from 'echarts'
+import { set } from 'lodash-es'
 
 import { useDesign } from '@/hooks/web/useDesign'
-import type { AnalysisTotalTypes } from './types'
 import { barOptions, lineOptions, pieOptions } from './echarts-data'
+import type { AnalysisTotalTypes } from './types'
 
 defineOptions({ name: 'Home2' })
 
@@ -261,7 +261,12 @@ const getMonthlySales = async () => {
 }
 
 const getAllApi = async () => {
-  await Promise.all([getCount(), getUserAccessSource(), getWeeklyUserActivity(), getMonthlySales()])
+  await Promise.all([
+    // getCount(),
+    // getUserAccessSource(),
+    // getWeeklyUserActivity(),
+    // getMonthlySales()
+  ])
   loading.value = false
 }
 

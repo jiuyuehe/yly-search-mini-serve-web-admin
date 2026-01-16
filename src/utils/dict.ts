@@ -229,6 +229,10 @@ export enum DICT_TYPE {
   AI_WRITE_LANGUAGE = 'ai_write_language', // AI 写作语言
   AI_MCP_CLIENT_NAME = 'ai_mcp_client_name', // AI MCP Client 名字
 
+  SCHEDULE_TYPE = 'schedule_type', // 调度类型
+  STORAGE_MEDIUM_TYPE = 'storage_medium_type', // 存储介质类型
+  CONTROL_STATUS = 'control_status', // 控制状态
+
   // ========== IOT - 物联网模块  ==========
   IOT_NET_TYPE = 'iot_net_type', // IOT 联网方式
   IOT_PRODUCT_STATUS = 'iot_product_status', // IOT 产品状态

@@ -1,12 +1,12 @@
 <script lang="tsx">
-import { ElTable, ElTableColumn, ElPagination } from 'element-plus'
-import { defineComponent, PropType, ref, computed, unref, watch, onMounted } from 'vue'
-import { propTypes } from '@/utils/propTypes'
-import { setIndex } from './helper'
-import { getSlot } from '@/utils/tsxHelper'
-import type { TableProps } from './types'
-import { set } from 'lodash-es'
 import { Pagination, TableColumn, TableSetPropsType, TableSlotDefault } from '@/types/table'
+import { propTypes } from '@/utils/propTypes'
+import { getSlot } from '@/utils/tsxHelper'
+import { ElPagination, ElTable, ElTableColumn } from 'element-plus'
+import { set } from 'lodash-es'
+import { computed, defineComponent, onMounted, PropType, ref, unref, watch } from 'vue'
+import { setIndex } from './helper'
+import type { TableProps } from './types'
 
 export default defineComponent({
   // eslint-disable-next-line vue/no-reserved-component-names

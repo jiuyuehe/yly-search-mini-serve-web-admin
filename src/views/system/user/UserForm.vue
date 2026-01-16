@@ -96,12 +96,12 @@
   </Dialog>
 </template>
 <script lang="ts" setup>
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
-import { CommonStatusEnum } from '@/utils/constants'
-import { defaultProps, handleTree } from '@/utils/tree'
-import * as PostApi from '@/api/system/post'
 import * as DeptApi from '@/api/system/dept'
+import * as PostApi from '@/api/system/post'
 import * as UserApi from '@/api/system/user'
+import { CommonStatusEnum } from '@/utils/constants'
+import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { defaultProps, handleTree } from '@/utils/tree'
 import { FormRules } from 'element-plus'
 
 defineOptions({ name: 'SystemUserForm' })
