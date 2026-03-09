@@ -52,6 +52,7 @@
             <!-- 情况三：消息列表为空 -->
             <MessageListEmpty
               v-if="!activeMessageListLoading && messageList.length === 0 && activeConversation"
+              :conversation="activeConversation"
               @on-prompt="doSendMessage"
             />
             <!-- 情况四：消息列表不为空 -->
