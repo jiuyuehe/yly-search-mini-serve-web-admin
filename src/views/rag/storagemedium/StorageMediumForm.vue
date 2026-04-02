@@ -4,23 +4,54 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="100px"
+      label-width="120px"
       v-loading="formLoading"
     >
-      <el-form-item label="名称" prop="mediumName">
-        <el-input v-model="formData.mediumName" placeholder="请输入" />
+      <el-form-item prop="mediumName">
+        <template #label>
+          <span class="label-with-help">
+            名称
+            <el-tooltip content="用于 RAG 内部识别该数据源，建议填写业务上易理解的名称。" placement="top" effect="light">
+              <el-icon class="help-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-input v-model="formData.mediumName" placeholder="请输入数据源名称，例如：研发共享NAS" />
       </el-form-item>
-      <el-form-item label="描述" prop="mediumDesc">
-        <el-input v-model="formData.mediumDesc" placeholder="请输入描述信息" />
+
+      <el-form-item prop="mediumDesc">
+        <template #label>
+          <span class="label-with-help">
+            描述
+            <el-tooltip content="可补充说明数据源用途、目录范围或维护人，便于后续排查和管理。" placement="top" effect="light">
+              <el-icon class="help-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-input
+          v-model="formData.mediumDesc"
+          type="textarea"
+          :rows="2"
+          placeholder="请输入数据源描述，例如：挂载研发部共享资料目录"
+        />
       </el-form-item>
-      <el-form-item label="类型" prop="mediumType">
-        <el-select 
-          v-model="formData.mediumType" 
-          placeholder="请选择类型" 
-          clearable 
+
+      <el-form-item prop="mediumType">
+        <template #label>
+          <span class="label-with-help">
+            类型
+            <el-tooltip content="NAS 用于接入已在 NAS 中心登记的共享目录，数据库用于接入结构化业务数据。" placement="top" effect="light">
+              <el-icon class="help-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </span>
+        </template>
+        <el-select
+          v-model="formData.mediumType"
+          placeholder="请选择数据源类型"
+          clearable
           style="width: 100%"
-          @change="handleTypeChange"
           :disabled="formType === 'update'"
+          @change="handleTypeChange"
         >
           <el-option
             v-for="dict in getStrDictOptions(DICT_TYPE.STORAGE_MEDIUM_TYPE)"
@@ -30,122 +61,161 @@
           />
         </el-select>
       </el-form-item>
-      
-      <!-- NAS类型特有字段 -->
+
       <template v-if="formData.mediumType === '2'">
-        <el-form-item label="NAS ID" prop="configJson.nasId">
-          <el-input 
-            v-model="nasConfig.nasId" 
-            placeholder="挂载到服务器的NAS ID" 
-            @blur="validateNasIdAndPath"
-          />
+        <el-form-item prop="nasId">
+          <template #label>
+            <span class="label-with-help">
+              NAS资源
+              <el-tooltip content="RAG 只负责选择 NAS 中心中已有的 NAS 资源，不在此页面创建、修改或挂载 NAS。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <div class="nas-selector">
+            <el-select
+              v-model="formData.nasId"
+              filterable
+              clearable
+              placeholder="请选择 NAS 中心中的 NAS 资源"
+              style="width: 100%"
+              :loading="nasLoading"
+              @change="handleNasChange"
+            >
+              <el-option
+                v-for="item in nasOptions"
+                :key="item.nasId"
+                :label="`${item.nasName} (${item.nasCode})`"
+                :value="String(item.nasId)"
+              >
+                <div class="nas-option">
+                  <span>{{ item.nasName }} ({{ item.nasCode }})</span>
+                  <el-tag :type="item.isMounted ? 'success' : 'warning'" size="small">
+                    {{ item.isMounted ? '已挂载' : '未挂载' }}
+                  </el-tag>
+                </div>
+              </el-option>
+            </el-select>
+            <el-button @click="loadNasOptions" :loading="nasLoading">刷新</el-button>
+          </div>
         </el-form-item>
-        
-        <el-form-item label="挂载路径" prop="mountPath">
-          <el-input 
-            v-model="formData.mountPath" 
-            placeholder="挂载到服务器的绝对路径" 
-            @blur="validateNasIdAndPath"
-          />
+
+        <el-form-item label="资源信息">
+          <div class="nas-detail-card">
+            <div class="nas-detail-row">
+              <span class="detail-label">NAS名称</span>
+              <span>{{ selectedNas?.nasName || '-' }}</span>
+            </div>
+            <div class="nas-detail-row">
+              <span class="detail-label">NAS编码</span>
+              <span>{{ selectedNas?.nasCode || '-' }}</span>
+            </div>
+            <div class="nas-detail-row">
+              <span class="detail-label">NAS地址</span>
+              <span>{{ selectedNas?.nasUrl || '-' }}</span>
+            </div>
+            <div class="nas-detail-row">
+              <span class="detail-label">挂载协议</span>
+              <span>{{ selectedNas?.mountType || '-' }}</span>
+            </div>
+            <div class="nas-detail-row">
+              <span class="detail-label">本地路径</span>
+              <span>{{ selectedNas?.localPath || '-' }}</span>
+            </div>
+            <div class="nas-detail-row">
+              <span class="detail-label">挂载状态</span>
+              <el-tag :type="formData.mountStatus === 1 ? 'success' : 'warning'" size="small">
+                {{ formData.mountStatus === 1 ? '已挂载' : '未挂载' }}
+              </el-tag>
+            </div>
+          </div>
         </el-form-item>
-        
-        <!-- NAS ID与挂载路径不一致的警告提示 -->
-        <el-form-item v-if="showNasIdWarning">
+
+        <el-form-item>
           <el-alert
-            title="当前NAS ID与挂载路径不一致，请确认NAS ID是否无误"
-            type="warning"
+            title="NAS 的创建、修改、挂载和可读性校验统一在 NAS 模块完成；RAG 这里只保存业务绑定关系。"
+            type="info"
             :closable="false"
             show-icon
           />
         </el-form-item>
-        
-        <el-form-item>
-          <el-button type="primary" @click="handleTestMouthExist" :loading="testing">
-            测试路径
-          </el-button>
-        </el-form-item>
-        
-        <el-form-item label="挂载状态">
-          <div :class="formData.mountStatus === 0 ? 'text-red-500' : 'text-green-500'" class="flex items-center">
-            {{ formData.mountStatus === 0 ? '未挂载' : '已挂载' }}
-            <el-icon class="ml-5px"><InfoFilled /></el-icon>
-            <el-button 
-              v-if="formData.mountStatus === 0" 
-              type="primary" 
-              class="ml-10px"
-            >
-              挂载
-            </el-button>
-          </div>
-        </el-form-item>
-        
-        <el-form-item label="配置" v-if="configSet">
-          <div class="config-form">
-            <div class="config-item">
-              <span class="config-label">ID:</span>
-              <el-input v-model="nasConfig.nasId" />
-            </div>
-            <div class="config-item">
-              <span class="config-label">HOST:</span>
-              <el-input v-model="nasConfig.host" disabled />
-            </div>
-            <div class="config-item">
-              <span class="config-label">Type:</span>
-              <el-select v-model="nasConfig.type" disabled style="width: 100%">
-                <el-option label="NFS" value="NFS" />
-                <el-option label="CIFS" value="CIFS" />
-              </el-select>
-            </div>
-            <div class="config-item">
-              <span class="config-label">Account:</span>
-              <el-input v-model="nasConfig.account" disabled />
-            </div>
-            <div class="config-item">
-              <span class="config-label">Secret:</span>
-              <el-input v-model="nasConfig.secret" disabled />
-            </div>
-          </div>
-        </el-form-item>
       </template>
-      
-      <!-- 数据库类型特有字段 -->
-      <template v-else-if="formData.mediumType === '1'">
-        <el-form-item label="配置" v-if="configSet">
-          <div class="config-form">
-            <div class="config-item">
-              <span class="config-label">数据库:</span>
-              <el-input v-model="dbConfig.database" disabled />
-            </div>
-            <div class="config-item">
-              <span class="config-label">主机地址:</span>
-              <el-input v-model="dbConfig.host" />
-            </div>
-            <div class="config-item">
-              <span class="config-label">端口号:</span>
-              <el-input v-model="dbConfig.port" disabled />
-            </div>
-            <div class="config-item">
-              <span class="config-label">用户名:</span>
-              <el-input v-model="dbConfig.username" />
-            </div>
-            <div class="config-item">
-              <span class="config-label">密码:</span>
-              <el-input v-model="dbConfig.password" type="password" />
-            </div>
-            <div class="config-item">
-              <span class="config-label">云盘密钥:</span>
-              <el-input v-model="dbConfig.appKey" />
-            </div>
-            
-            <!-- 测试连接按钮现在直接放在密码字段下方 -->
-            <div class="config-item test-btn-container">
-              <span class="config-label"></span>
 
-            </div>
-          </div>
+      <template v-else-if="formData.mediumType === '1'">
+        <el-form-item>
+          <template #label>
+            <span class="label-with-help">
+              数据库名称
+              <el-tooltip content="当前数据库类型固定为系统默认库名称，用于构造数据库连接串。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-input v-model="dbConfig.database" disabled placeholder="数据库名称由系统预置" />
+        </el-form-item>
+
+        <el-form-item>
+          <template #label>
+            <span class="label-with-help">
+              主机地址
+              <el-tooltip content="填写数据库服务地址或域名，用于连接业务数据库。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-input v-model="dbConfig.host" placeholder="请输入数据库主机地址，例如：127.0.0.1" />
+        </el-form-item>
+
+        <el-form-item>
+          <template #label>
+            <span class="label-with-help">
+              端口号
+              <el-tooltip content="当前端口为默认值，如需调整请在后台数据库配置中统一处理。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-input v-model="dbConfig.port" disabled placeholder="数据库端口由系统预置" />
+        </el-form-item>
+
+        <el-form-item>
+          <template #label>
+            <span class="label-with-help">
+              用户名
+              <el-tooltip content="请输入具备读权限的数据库账号。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-input v-model="dbConfig.username" placeholder="请输入数据库账号" />
+        </el-form-item>
+
+        <el-form-item>
+          <template #label>
+            <span class="label-with-help">
+              密码
+              <el-tooltip content="建议使用只读账号密码，避免误操作生产数据。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <InputPassword v-model="dbConfig.password" placeholder="请输入数据库密码" inputmode="text" />
+        </el-form-item>
+
+        <el-form-item>
+          <template #label>
+            <span class="label-with-help">
+              云盘密钥
+              <el-tooltip content="用于访问配套文件服务接口，请与业务应用配置保持一致。" placement="top" effect="light">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
+          </template>
+          <el-input v-model="dbConfig.appKey" placeholder="请输入云盘应用密钥" />
         </el-form-item>
       </template>
     </el-form>
+
     <template #footer>
       <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
       <el-button @click="dialogVisible = false">取 消</el-button>
@@ -154,34 +224,27 @@
 </template>
 
 <script setup lang="ts">
+import InputPassword from '@/components/InputPassword/src/InputPassword.vue'
+import { NasApi, type NasVO } from '@/api/nas/nas'
 import { StorageMediumApi, StorageMediumVO } from '@/api/rag/storagemedium'
 import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
-import { InfoFilled } from '@element-plus/icons-vue'
-/** 存储介质 表单 */
+import { QuestionFilled } from '@element-plus/icons-vue'
+
 defineOptions({ name: 'StorageMediumForm' })
 
-const { t } = useI18n() // 国际化
-const message = useMessage() // 消息弹窗
+type FormDataType = {
+  id: number | undefined
+  mediumName: string | undefined
+  mediumType: string | undefined
+  mediumDesc: string | undefined
+  configJson: string | undefined
+  status: number | undefined
+  mountStatus: number
+  mountPath: string
+  nasId: string
+}
 
-const dialogVisible = ref(false) // 弹窗的是否展示
-const dialogTitle = ref('') // 弹窗的标题
-const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
-const formType = ref('') // 表单的类型：create - 新增；update - 修改
-const testing = ref(false) // 测试连接中状态
-const configSet = ref(true) // 是否显示配置项
-const showNasIdWarning = ref(false) // 是否显示NAS ID与挂载路径不一致的警告
-
-// NAS配置对象
-const nasConfig = reactive({
-  type: 'CIFS',
-  nasId: '',
-  host: '192.168.0.1',
-  account: 'admin',
-  secret: 'sk-123'
-})
-
-// 数据库配置对象
-const dbConfig = reactive({
+const defaultDbConfig = () => ({
   database: 'yliyun',
   host: 'localhost',
   port: '3306',
@@ -193,7 +256,7 @@ const dbConfig = reactive({
   downloadUrl: '/apps/file/down'
 })
 
-const formData = ref({
+const createEmptyFormData = (): FormDataType => ({
   id: undefined,
   mediumName: undefined,
   mediumType: undefined,
@@ -202,148 +265,174 @@ const formData = ref({
   status: undefined,
   mountStatus: 0,
   mountPath: '',
+  nasId: ''
 })
+
+const { t } = useI18n()
+const message = useMessage()
+
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const formLoading = ref(false)
+const formType = ref('')
+const nasLoading = ref(false)
+
+const nasOptions = ref<NasVO[]>([])
+const selectedNas = ref<NasVO>()
+
+const dbConfig = reactive(defaultDbConfig())
+const formData = ref<FormDataType>(createEmptyFormData())
+const formRef = ref()
+
+const parseJson = (json?: string) => {
+  if (!json) {
+    return {}
+  }
+  try {
+    return JSON.parse(json)
+  } catch {
+    return {}
+  }
+}
+
+const parseNasId = (configJson?: string) => {
+  const config = parseJson(configJson)
+  return config?.nasId ? String(config.nasId) : ''
+}
+
+const validateNasId = (_rule: any, value: string, callback: (error?: Error) => void) => {
+  if (formData.value.mediumType === '2' && !value) {
+    callback(new Error('请选择已有 NAS 资源'))
+    return
+  }
+  callback()
+}
 
 const formRules = reactive({
   mediumName: [{ required: true, message: '存储介质名称不能为空', trigger: 'blur' }],
   mediumType: [{ required: true, message: '存储介质类型不能为空', trigger: 'change' }],
+  nasId: [{ validator: validateNasId, trigger: 'change' }]
 })
 
-const formRef = ref() // 表单 Ref
+const buildNasConfigJson = () => JSON.stringify({
+  source: 'localfile',
+  nasId: formData.value.nasId
+})
 
-// 处理类型切换
-const handleTypeChange = (value) => {
-  // 重置配置对象
-  if (value === '2') { // NAS类型
-    nasConfig.type = 'CIFS'
-    nasConfig.nasId = '123456'
-    nasConfig.host = '192.168.0.1'
-    nasConfig.account = 'admin'
-    nasConfig.secret = 'sk-123'
-  } else if (value === '1') { // 数据库类型
-    dbConfig.database = 'yliyun'
-    dbConfig.host = 'localhost'
-    dbConfig.port = '3306'
-    dbConfig.username = 'root'
-    dbConfig.password = '123456'
-    dbConfig.appKey = 'yliyun_123456789'
-  }
+const syncSelectedNas = (nas?: NasVO) => {
+  selectedNas.value = nas
+  formData.value.mountPath = nas?.localPath || ''
+  formData.value.mountStatus = nas?.isMounted ? 1 : 0
 }
 
-// 验证NAS ID与挂载路径是否一致
-const validateNasIdAndPath = () => {
-  // 只在NAS类型时进行验证
-  if (formData.value.mediumType !== '2') {
-    showNasIdWarning.value = false
-    return
-  }
-  
-  const nasId = nasConfig.nasId?.trim()
-  const mountPath = formData.value.mountPath?.trim()
-  
-  // 如果任一字段为空，不显示警告
-  if (!nasId || !mountPath) {
-    showNasIdWarning.value = false
-    return
-  }
-  
-  // 从挂载路径中提取最后的数字部分
-  const pathMatch = mountPath.match(/\/([^\/]+)$/)
-  if (pathMatch) {
-    const pathLastPart = pathMatch[1]
-    // 检查NAS ID是否与路径最后部分一致
-    showNasIdWarning.value = nasId !== pathLastPart
-  } else {
-    showNasIdWarning.value = false
-  }
-}
-
-// 处理测试路径
-const handleTestMouthExist = async () => {
+const loadNasOptions = async () => {
+  nasLoading.value = true
   try {
-    testing.value = true
-    const params = {
-      mountPath: formData.value.mountPath
+    nasOptions.value = await NasApi.getAdminNasOptions()
+    if (formData.value.nasId) {
+      const current = nasOptions.value.find((item) => String(item.nasId) === formData.value.nasId)
+      if (current) {
+        syncSelectedNas(current)
+      }
     }
-    const res = await StorageMediumApi.testNasConnection(params)
-    if (res) {
-      message.success('路径存在，已成功挂载')
-      // 测试成功后隐藏配置项并更新挂载状态
-      configSet.value = false
-      formData.value.mountStatus = 1
-    } else {
-      message.error('路径不存在，请检查是否成功挂载')
-    }
-  } catch (error) {
-    message.error('连接失败: ' + error)
   } finally {
-    testing.value = false
+    nasLoading.value = false
   }
 }
 
+const handleTypeChange = async (value?: string) => {
+  selectedNas.value = undefined
+  formData.value.nasId = ''
+  formData.value.mountPath = ''
+  formData.value.mountStatus = 0
 
+  if (value === '2') {
+    await loadNasOptions()
+    return
+  }
 
-/** 打开弹窗 */
+  nasOptions.value = []
+  Object.assign(dbConfig, defaultDbConfig())
+}
+
+const handleNasChange = async (nasId?: string) => {
+  if (!nasId) {
+    syncSelectedNas(undefined)
+    return
+  }
+  const detail = await NasApi.getNasDetail(Number(nasId))
+  syncSelectedNas(detail)
+}
+
 const open = async (type: string, id?: number) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
   formType.value = type
   resetForm()
-  
-  // 默认显示配置项
-  configSet.value = true
-  
-  // 修改时，设置数据
-  if (id) {
-    formLoading.value = true
-    try {
-      const data = await StorageMediumApi.getStorageMedium(id)
-      formData.value = data
-      
-      // 处理configJson
-      if (typeof data.configJson === 'string') {
-        const configData = JSON.parse(data.configJson)
-        
-        if (data.mediumType === '2') { // NAS类型
-          Object.assign(nasConfig, configData)
-        } else if (data.mediumType === '1') { // 数据库类型
-          Object.assign(dbConfig, configData)
-        }
-      }
-      
-      // 已挂载的状态下，不显示配置
-      if (data.mountStatus === 1) {
-        configSet.value = false
-      }
-    } finally {
-      formLoading.value = false
-    }
-  }
-}
-defineExpose({ open }) // 提供 open 方法，用于打开弹窗
 
-/** 提交表单 */
-const emit = defineEmits(['success']) // 定义 success 事件，用于操作成功后的回调
-const submitForm = async () => {
-  // 校验表单
-  await formRef.value.validate()
-  
-  // 处理configJson
-  let configJson
-  if (formData.value.mediumType === '2') { // NAS类型
-    configJson = JSON.stringify(nasConfig)
-  } else if (formData.value.mediumType === '1') { // 数据库类型
-    configJson = JSON.stringify(dbConfig)
+  if (!id) {
+    return
   }
-  
-  // 提交请求
+
   formLoading.value = true
   try {
-    const data = {
-      ...formData.value,
-      configJson
-    } as unknown as StorageMediumVO
-    
+    const data = await StorageMediumApi.getStorageMedium(id)
+    formData.value = {
+      id: data.id,
+      mediumName: data.mediumName,
+      mediumType: data.mediumType,
+      mediumDesc: data.mediumDesc,
+      configJson: data.configJson,
+      status: data.status,
+      mountStatus: data.mountStatus || 0,
+      mountPath: data.mountPath || '',
+      nasId: parseNasId(data.configJson)
+    }
+
+    if (data.mediumType === '2') {
+      await loadNasOptions()
+      if (formData.value.nasId) {
+        try {
+          const detail = await NasApi.getNasDetail(Number(formData.value.nasId))
+          syncSelectedNas(detail)
+        } catch {
+          syncSelectedNas(undefined)
+        }
+      }
+    } else if (data.mediumType === '1' && typeof data.configJson === 'string') {
+      Object.assign(dbConfig, defaultDbConfig(), parseJson(data.configJson))
+    }
+  } finally {
+    formLoading.value = false
+  }
+}
+defineExpose({ open })
+
+const emit = defineEmits(['success'])
+
+const submitForm = async () => {
+  await formRef.value.validate()
+
+  let configJson
+  if (formData.value.mediumType === '2') {
+    configJson = buildNasConfigJson()
+  } else if (formData.value.mediumType === '1') {
+    configJson = JSON.stringify(dbConfig)
+  }
+
+  formLoading.value = true
+  try {
+    const data: StorageMediumVO = {
+      id: formData.value.id as number,
+      mediumName: formData.value.mediumName || '',
+      mediumType: formData.value.mediumType || '',
+      mediumDesc: formData.value.mediumDesc || '',
+      configJson,
+      status: formData.value.status ?? 0,
+      mountStatus: formData.value.mountStatus,
+      mountPath: formData.value.mountPath
+    }
+
     if (formType.value === 'create') {
       await StorageMediumApi.createStorageMedium(data)
       message.success(t('common.createSuccess'))
@@ -352,101 +441,67 @@ const submitForm = async () => {
       message.success(t('common.updateSuccess'))
     }
     dialogVisible.value = false
-    // 发送操作成功的事件
     emit('success')
   } finally {
     formLoading.value = false
   }
 }
 
-/** 重置表单 */
 const resetForm = () => {
-  formData.value = {
-    id: undefined,
-    mediumName: undefined,
-    mediumType: undefined,
-    mediumDesc: undefined,
-    configJson: undefined,
-    status: undefined,
-    mountStatus: 0,
-    mountPath: '',
-  }
-  
-  // 重置警告状态
-  showNasIdWarning.value = false
-  
-  // 重置配置对象
-  Object.assign(nasConfig, {
-    type: 'CIFS',
-    nasId: '',
-    host: '192.168.0.1',
-    account: 'admin',
-    secret: 'sk-123'
-  })
-  
-  Object.assign(dbConfig, {
-    database: 'yliyun',
-    host: 'localhost',
-    port: '3306',
-    username: 'root',
-    password: '123456',
-    appKey: 'yliyun_123456789',
-    userUrl: '/apps/users',
-    previewUrl: '/apps/preview',
-    downloadUrl: '/apps/file/down'
-  })
-  
+  formData.value = createEmptyFormData()
+  selectedNas.value = undefined
+  nasOptions.value = []
+  Object.assign(dbConfig, defaultDbConfig())
   formRef.value?.resetFields()
 }
 </script>
 
 <style scoped>
-.config-form {
+.label-with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.help-icon {
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+}
+
+.nas-selector {
   width: 100%;
+  display: flex;
+  gap: 12px;
 }
 
-.config-item {
+.nas-option {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.config-label {
-  width: 80px;
-  margin-right: 10px;
-  text-align: right;
+.nas-detail-card {
+  width: 100%;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--el-fill-color-blank);
 }
 
-.config-item .el-input,
-.config-item .el-select {
-  flex: 1;
-}
-
-.test-btn-container {
-  margin-top: 10px;
-}
-
-.flex {
+.nas-detail-row {
   display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--el-border-color-lighter);
 }
 
-.items-center {
-  align-items: center;
+.nas-detail-row:last-child {
+  border-bottom: none;
 }
 
-.text-red-500 {
-  color: #f56c6c;
-}
-
-.text-green-500 {
-  color: #67c23a;
-}
-
-.ml-5px {
-  margin-left: 5px;
-}
-
-.ml-10px {
-  margin-left: 10px;
+.detail-label {
+  color: var(--el-text-color-secondary);
 }
 </style>

@@ -7,7 +7,13 @@ export interface StorageMediumVO {
   mediumType: string // 存储介质类型：MYSQL/NAS
   mediumDesc: string // 存储介质描述
   configJson: string // 配置JSON，不同类型的介质会有不同的配置内容
-  status: boolean // 状态 1:启用 0:禁用
+  status: number | boolean // 状态 1:启用 0:禁用
+  mountStatus?: number
+  mountPath?: string
+}
+
+export interface StorageMediumNasCheckReqVO {
+  nasId?: string
 }
 
 // 存储介质 API
@@ -45,7 +51,7 @@ export const StorageMediumApi = {
     return await request.post({ url: `/rag/storage-medium/test-database-connection`, data })
   },
 
-  testNasConnection: async (data: any) => {
+  testNasConnection: async (data: StorageMediumNasCheckReqVO) => {
     return await request.post({ url: `/rag/storage-medium/test-nas-mouthpath`, data })
   },
 

@@ -6,7 +6,7 @@
   "private": false,
   "scripts": {
     "i": "pnpm install",
-    "dev": "vite --mode env.local",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite --mode env.local",
     "dev-server": "vite --mode dev",
     "ts:check": "vue-tsc --noEmit",
     "build:local": "node --max_old_space_size=4096 ./node_modules/vite/bin/vite.js build",
@@ -105,6 +105,8 @@
     "autoprefixer": "^10.4.17",
     "bpmn-js": "^17.9.2",
     "bpmn-js-properties-panel": "5.23.0",
+    "browserslist": "^4.28.1",
+    "caniuse-lite": "^1.0.30001780",
     "consola": "^3.2.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
