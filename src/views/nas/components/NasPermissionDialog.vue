@@ -149,7 +149,7 @@
             v-model="permissionFormModel.expireTime"
             class="!w-full"
             type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            value-format="x"
             placeholder="可选"
           />
         </el-form-item>
@@ -405,7 +405,7 @@ const openPermissionForm = async (mode: FormMode, row?: NasPermissionVO) => {
     permissionFormModel.perTargetName = row.perTargetName
     permissionFormModel.folder = row.folder ?? true
     permissionFormModel.permissions = row.permissions || 1
-    permissionFormModel.expireTime = row.expireTime
+    permissionFormModel.expireTime = row.expireTime !== undefined ? String(row.expireTime) : undefined
     permissionFormModel.mark = row.mark
     permissionFormModel.markType = row.markType
     permissionFormModel.attrs = row.attrs
