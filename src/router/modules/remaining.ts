@@ -469,6 +469,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/rag/ocr-management',
+    component: Layout,
+    name: 'OcrManagement',
+    meta: {
+      title: 'OCR任务管理',
+      icon: 'ep:document'
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/rag/ocr-management/index.vue'),
+        name: 'OcrManagementIndex',
+        meta: {
+          title: 'OCR任务管理',
+          icon: 'ep:document',
+          noCache: false
+        }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('@/views/Error/404.vue'),
     name: '',
