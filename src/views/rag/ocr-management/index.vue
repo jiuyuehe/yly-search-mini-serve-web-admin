@@ -1,5 +1,6 @@
 <template>
-  <div class="ocr-management">
+  <ContentWrap>
+    <div class="ocr-management">
     <!-- 顶部统计卡片 -->
     <el-row :gutter="20" class="mb-4">
       <el-col :span="8">
@@ -148,8 +149,10 @@
         @size-change="getList"
         @current-change="getList"
       />
+      <el-empty v-if="!loading && taskList.length === 0" description="暂无 OCR 任务数据" class="mt-4" />
     </el-card>
   </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
@@ -189,14 +192,11 @@ let refreshTimer: any = null
 const getStatistics = async () => {
   try {
     const res = await getEnhancedStatistics()
-    if (res.code === 200) {
-      statistics.value = {
-        runningTasks: res.data?.runningTasks || 0
-      }
-      // 从增强统计中获取总数、成功、失败、取消
-      todayCompleted.value = res.data?.completed || 0
-      todayFailed.value = (res.data?.failed || 0) + (res.data?.cancelled || 0)
+    statistics.value = {
+      runningTasks: res?.runningTasks || 0
     }
+    todayCompleted.value = res?.completed || 0
+    todayFailed.value = (res?.failed || 0) + (res?.cancelled || 0)
   } catch (error) {
     console.error('获取统计信息失败', error)
   }
@@ -213,10 +213,8 @@ const getList = async () => {
       pageNo: queryParams.pageNo,
       pageSize: queryParams.pageSize
     })
-    if (res.code === 200) {
-      taskList.value = res.data?.list || []
-      total.value = res.data?.total || 0
-    }
+    taskList.value = res?.list || []
+    total.value = res?.total || 0
   } catch (error) {
     console.error('获取任务列表失败', error)
   } finally {
@@ -259,17 +257,13 @@ const handleCancelTask = async (row: OcrHistoryItem) => {
 
     const res = await cancelOcrTask(row.esId)
 
-    if (res.code === 200) {
-      if (res.data) {
-        ElMessage.success('任务已终止')
-      } else {
-        ElMessage.warning('任务可能已完成或不存在')
-      }
-      getStatistics()
-      getList()
+    if (res) {
+      ElMessage.success('任务已终止')
     } else {
-      ElMessage.error(res.msg || '终止失败')
+      ElMessage.warning('任务可能已完成或不存在')
     }
+    getStatistics()
+    getList()
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('终止任务失败', error)

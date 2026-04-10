@@ -13,7 +13,7 @@
       <!-- 基本信息 -->
       <el-descriptions :column="2" border>
         <el-descriptions-item label="文档ID">
-          {{ progressInfo.esId || '-' }}
+          {{ getEsId(progressInfo) }}
         </el-descriptions-item>
         <el-descriptions-item label="用户ID">
           {{ progressInfo.userId || '-' }}
@@ -82,6 +82,7 @@
 
 interface ProgressInfo {
   esId?: string
+  bizId?: string | number
   userId?: string
   status?: string
   progress?: number
@@ -103,6 +104,11 @@ defineEmits<{
 /** 判断是否为终态 */
 const isTerminalStatus = (status?: string) => {
   return status === 'completed' || status === 'failed' || status === 'cancelled'
+}
+
+/** 提取文档 ID，兼容 esId / bizId */
+const getEsId = (progressInfo?: ProgressInfo) => {
+  return progressInfo?.esId || progressInfo?.bizId || '-'
 }
 
 /** 获取状态类型 */
