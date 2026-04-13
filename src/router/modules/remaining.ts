@@ -175,6 +175,29 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/rag',
+    component: Layout,
+    name: 'RagAiTaskLogPage',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'apps/ai-task-log',
+        component: () => import('@/views/rag/apps/ai-task-log/index.vue'),
+        name: 'RagAiTaskLog',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          icon: 'ep:histogram',
+          title: 'AI任务日志',
+          activeMenu: '/rag/apps'
+        }
+      }
+    ]
+  },
+  {
     path: '/login',
     component: () => import('@/views/Login/Login.vue'),
     name: 'Login',
