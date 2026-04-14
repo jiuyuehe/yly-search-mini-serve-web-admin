@@ -47,12 +47,7 @@
     </div>
     <div class="trend-box">
       <span class="trend-title">近 7 日趋势</span>
-      <div class="trend-list">
-        <div v-for="item in statistics.recentTrend || []" :key="item.date" class="trend-item">
-          <span>{{ item.date }}</span>
-          <el-tag size="small" type="info">{{ item.count }}</el-tag>
-        </div>
-      </div>
+      <div ref="trendChartRef" class="trend-chart"></div>
     </div>
   </ContentWrap>
 
@@ -176,7 +171,8 @@
 <script setup lang="ts">
 import { useMessage } from '@/hooks/web/useMessage'
 import { AiTaskLogApi, AiTaskLogVO } from '@/api/rag/aitasklog'
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, nextTick } from 'vue'
+import * as echarts from 'echarts'
 
 defineOptions({ name: 'RagAiTaskLog' })
 
@@ -188,6 +184,8 @@ const detail = ref<AiTaskLogVO | null>(null)
 const total = ref(0)
 const selectedIds = ref<string[]>([])
 const queryFormRef = ref()
+const trendChartRef = ref<HTMLElement>()
+let trendChart: echarts.ECharts | null = null
 
 const statistics = ref<any>({
   total: 0,
@@ -239,6 +237,8 @@ const getList = async () => {
     list.value = pageRes.list || []
     total.value = pageRes.total || 0
     statistics.value = statRes || {}
+    // 数据加载完成后更新图表
+    watchStatistics()
   } finally {
     loading.value = false
   }
@@ -315,9 +315,132 @@ const formatDuration = (value?: number) => {
   return `${(value / 60000).toFixed(1)} min`
 }
 
+// 初始化趋势图表
+const initTrendChart = () => {
+  if (!trendChartRef.value) return
+  
+  // 如果图表已存在，先销毁
+  if (trendChart) {
+    trendChart.dispose()
+  }
+  
+  trendChart = echarts.init(trendChartRef.value)
+  updateTrendChart()
+}
+
+// 更新趋势图表
+const updateTrendChart = () => {
+  if (!trendChart) return
+  
+  const trendData = statistics.value.recentTrend || []
+  const dates = trendData.map((item: any) => item.date)
+  const counts = trendData.map((item: any) => item.count)
+  
+  const option: echarts.EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      formatter: (params: any) => {
+        const data = params[0]
+        return `${data.name}<br/>任务数: ${data.value}`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      boundaryGap: false,
+      axisLine: {
+        lineStyle: {
+          color: '#e5e7eb'
+        }
+      },
+      axisLabel: {
+        color: '#6b7280',
+        fontSize: 12
+      }
+    },
+    yAxis: {
+      type: 'value',
+      minInterval: 1,
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#f3f4f6'
+        }
+      },
+      axisLabel: {
+        color: '#6b7280',
+        fontSize: 12
+      }
+    },
+    series: [
+      {
+        name: '任务数',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        data: counts,
+        itemStyle: {
+          color: '#3b82f6'
+        },
+        lineStyle: {
+          width: 3,
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#3b82f6' },
+            { offset: 1, color: '#8b5cf6' }
+          ])
+        },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+            { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
+          ])
+        },
+        emphasis: {
+          itemStyle: {
+            color: '#2563eb',
+            shadowBlur: 10,
+            shadowColor: 'rgba(59, 130, 246, 0.5)'
+          }
+        }
+      }
+    ]
+  }
+  
+  trendChart.setOption(option)
+}
+
 onMounted(() => {
   getList()
+  // 等待 DOM 更新后初始化图表
+  nextTick(() => {
+    initTrendChart()
+  })
 })
+
+// 监听统计数据变化，更新图表
+const watchStatistics = () => {
+  if (statistics.value.recentTrend && statistics.value.recentTrend.length > 0) {
+    nextTick(() => {
+      updateTrendChart()
+    })
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -399,19 +522,8 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.trend-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.trend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
+.trend-chart {
+  width: 100%;
+  height: 280px;
 }
 </style>

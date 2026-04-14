@@ -492,20 +492,20 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
-    path: '/rag/ocr-management',
+    path: '/rag/apps/ai-task-log',
     component: Layout,
-    name: 'OcrManagement',
+    name: 'AiTaskLog',
     meta: {
-      title: 'OCR任务管理',
+      title: 'AI任务管理',
       icon: 'ep:document'
     },
     children: [
       {
         path: '',
-        component: () => import('@/views/rag/ocr-management/index.vue'),
-        name: 'OcrManagementIndex',
+        component: () => import('@/views/rag/apps/ai-task-log/index.vue'),
+        name: 'AiTaskLogIndex',
         meta: {
-          title: 'OCR任务管理',
+          title: 'AI任务管理',
           icon: 'ep:document',
           noCache: false
         }
