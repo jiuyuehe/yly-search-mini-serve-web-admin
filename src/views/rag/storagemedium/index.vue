@@ -112,10 +112,10 @@
             link
             type="success"
             :disabled="loading"
-            @click="handleTestConnection(scope.row.id)"
+            @click="handleTestConnection(scope.row)"
             v-hasPermi="['rag:storage-medium:delete']"
           >
-            连接测试
+            {{ scope.row.mediumType === '2' ? '挂载校验' : '连接测试' }}
           </el-button>
 
           <el-button
@@ -202,19 +202,29 @@ const openForm = (type: string, id?: number) => {
 }
 
 // 处理测试数据库连接
-const handleTestConnection = async (id: number) => {
-  message.info('开始连接，请稍等10秒...')
+const handleTestConnection = async (row: StorageMediumVO) => {
+  message.info(row.mediumType === '2' ? '开始校验 NAS 挂载状态...' : '开始连接，请稍等10秒...')
   loading.value = true
   try {
-    const res = await StorageMediumApi.testDatabaseConnection(id)
+    const res = row.mediumType === '2'
+      ? await StorageMediumApi.testNasConnection({
+          nasId: (() => {
+            try {
+              return row.configJson ? String(JSON.parse(row.configJson)?.nasId || '') : ''
+            } catch {
+              return ''
+            }
+          })()
+        })
+      : await StorageMediumApi.testDatabaseConnection(row.id)
     if (res) {
-      message.success('连接成功')
-      getList();
+      message.success(row.mediumType === '2' ? 'NAS 挂载状态正常' : '连接成功')
+      getList()
     } else {
-      message.error('连接失败，请检查各项参数的值')
+      message.error(row.mediumType === '2' ? 'NAS 尚未挂载，请先完成挂载' : '连接失败，请检查各项参数的值')
     }
-  } catch (error) {
-    message.error('连接失败: ' + error)
+  } catch (error: any) {
+    message.error((row.mediumType === '2' ? 'NAS 校验失败: ' : '连接失败: ') + (error?.message || error))
   } finally {
     loading.value = false
   }

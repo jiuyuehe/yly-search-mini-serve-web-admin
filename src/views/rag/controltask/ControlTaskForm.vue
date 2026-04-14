@@ -36,10 +36,19 @@
               <el-option
                 v-for="item in storageList"
                 :key="item.id"
-                :label="item.mediumName"
+                :label="getStorageOptionLabel(item)"
                 :value="item.id"
+                :disabled="item.mediumType === '2' && item.mountStatus !== 1"
               />
             </el-select>
+          </el-form-item>
+          <el-form-item v-if="hasUnmountedNasStorage">
+            <el-alert
+              title="未挂载的 NAS 数据源不可用于布控任务，请先到“数据源接入”完成挂载。"
+              type="warning"
+              :closable="false"
+              show-icon
+            />
           </el-form-item>
           <el-form-item label="调度类型" prop="scheduleType">
             <el-select 
@@ -283,6 +292,17 @@ const formRef = ref() // 表单 Ref
 const isScheduleTypeDisabled = computed(() => {
   return true; // 始终禁用调度类型选择
 });
+
+const hasUnmountedNasStorage = computed(() => {
+  return storageList.value.some((item) => item.mediumType === '2' && item.mountStatus !== 1)
+})
+
+const getStorageOptionLabel = (item: any) => {
+  if (item.mediumType === '2') {
+    return `${item.mediumName}（${item.mountStatus === 1 ? 'NAS已挂载' : 'NAS未挂载'}）`
+  }
+  return item.mediumName
+}
 
 // 简化watch逻辑，移除自动设置scheduleType的部分
 watch(() => formData.value.storageId, (newStorageId) => {
