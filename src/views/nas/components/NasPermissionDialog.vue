@@ -135,14 +135,20 @@
           <el-switch v-model="permissionFormModel.folder" />
         </el-form-item>
         <el-form-item label="权限位" prop="permissions">
-          <el-checkbox-group v-model="permissionFormBits">
-            <el-checkbox v-for="item in PERMISSION_BIT_OPTIONS" :key="item.value" :label="item.value">
-              {{ item.label }}
-            </el-checkbox>
-          </el-checkbox-group>
-          <div class="permission-target-preview">
-            当前权限值：{{ permissionBitsValue }}{{ permissionBitsValue ? `（${formatPermissionBits(permissionBitsValue)}）` : '' }}
-          </div>
+          <el-row>
+            <el-col :span="24">
+              <el-checkbox-group v-model="permissionFormBits">
+                <el-checkbox v-for="item in PERMISSION_BIT_OPTIONS" :key="item.value" :label="item.value">
+                  {{ item.label }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </el-col>
+            <el-col :span="24">
+              <div class="permission-target-preview">
+                当前权限值：{{ permissionBitsValue }}{{ permissionBitsValue ? `（${formatPermissionBits(permissionBitsValue)}）` : '' }}
+              </div>
+            </el-col>
+          </el-row>
         </el-form-item>
         <el-form-item label="失效时间" prop="expireTime">
           <el-date-picker
