@@ -1,5 +1,7 @@
 import request from '@/config/axios'
 
+export const UNASSIGNED_DEPT_ID = -1
+
 export interface OrgDeptQuery {
   name?: string
   status?: number
@@ -16,6 +18,7 @@ export interface OrgDeptVO {
   email?: string
   sourceType?: string
   sourceTypeName?: string
+  virtualType?: 'unassigned'
   children?: OrgDeptVO[]
 }
 
@@ -51,20 +54,32 @@ export interface OrgUserRespVO {
   sourceType?: string
   sourceTypeName?: string
   createTime?: string | number
+  deptList?: Array<{
+    id: number
+    name: string
+  }>
 }
 
 export interface OrgUserUpdateReq {
   id: number
-  username?: string
-  nickname?: string
+  username: string
+  nickname: string
+  remark?: string
+  deptId?: number
+  postIds?: number[]
   mobile?: string
   email?: string
-  status: number
+  sex?: number
+  avatar?: string
 }
 
-export interface OrgUserQuery {
+export interface OrgUserQuery extends PageParam {
   name?: string
   account?: string
+  username?: string
+  mobile?: string
+  status?: number
+  createTime?: string[]
 }
 
 export interface ExtendedUserDTO {
@@ -107,7 +122,7 @@ export const deleteDept = (id: number) => {
 }
 
 export const getUsersByDept = (deptId: number, params?: OrgUserQuery) => {
-  return request.get<OrgUserRespVO[]>({
+  return request.get<PageResult<OrgUserRespVO[]>>({
     url: `/extends/org-structure/depts/${deptId}/users`,
     params
   })
@@ -158,4 +173,3 @@ export const deleteUser = (userId: number) => {
     url: `/extends/org-structure/users/${userId}`
   })
 }
-

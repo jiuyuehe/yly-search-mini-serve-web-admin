@@ -150,11 +150,17 @@ const loadUsers = async () => {
   userOptions.value = await UserApi.getSimpleUserList()
 }
 
-const open = async (type: string, id?: number) => {
+const open = async (type: string, id?: number, defaults?: Partial<EduApi.EduDeptExtVO>) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
   formType.value = type
   resetForm()
+  if (!id && defaults) {
+    formData.value = {
+      ...formData.value,
+      ...defaults
+    }
+  }
   await loadUsers()
   if (id) {
     formLoading.value = true

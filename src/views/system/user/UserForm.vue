@@ -151,7 +151,7 @@ const deptList = ref<Tree[]>([]) // 树形结构
 const postList = ref([] as PostApi.PostVO[]) // 岗位列表
 
 /** 打开弹窗 */
-const open = async (type: string, id?: number) => {
+const open = async (type: string, id?: number, defaults?: { deptId?: number }) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
   formType.value = type
@@ -167,6 +167,9 @@ const open = async (type: string, id?: number) => {
   }
   // 加载部门树
   deptList.value = handleTree(await DeptApi.getSimpleDeptList())
+  if (!id && defaults?.deptId !== undefined) {
+    formData.value.deptId = defaults.deptId
+  }
   // 加载岗位列表
   postList.value = await PostApi.getSimplePostList()
 }

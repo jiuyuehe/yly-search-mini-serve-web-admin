@@ -4,10 +4,22 @@
       <el-form-item label="组织名称" prop="name">
         <el-input v-model="queryParams.name" class="!w-240px" clearable placeholder="请输入组织名称" @keyup.enter="handleQuery" />
       </el-form-item>
+<!--      <el-form-item label="业务类型" prop="bizType">-->
+<!--        <el-select v-model="queryParams.bizType" class="!w-240px" clearable placeholder="请选择业务类型">-->
+<!--          <el-option v-for="dict in getStrDictOptions(DICT_TYPE.EDU_DEPT_BIZ_TYPE)" :key="dict.value" :label="dict.label" :value="dict.value" />-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="业务类型" prop="bizType">
-        <el-select v-model="queryParams.bizType" class="!w-240px" clearable placeholder="请选择业务类型">
-          <el-option v-for="dict in getStrDictOptions(DICT_TYPE.EDU_DEPT_BIZ_TYPE)" :key="dict.value" :label="dict.label" :value="dict.value" />
-        </el-select>
+        <el-radio-group v-model="queryParams.bizType" text-color="#fff" fill="#6c6cff" @change="handleQuery">
+          <el-radio-button label="">全部</el-radio-button>
+          <el-radio-button
+            v-for="dict in getStrDictOptions(DICT_TYPE.EDU_DEPT_BIZ_TYPE)"
+            :key="dict.value"
+            :label="dict.value"
+          >
+            {{ dict.label }}
+          </el-radio-button>
+        </el-radio-group>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" class="!w-240px" clearable placeholder="请选择状态">
@@ -58,10 +70,18 @@
       </el-table-column>
       <el-table-column label="联系电话" align="center" prop="phone" width="140" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180" :formatter="dateFormatter" />
-      <el-table-column label="操作" align="center" width="140" fixed="right">
+      <el-table-column label="操作" align="center" width="220" fixed="right">
         <template #default="scope">
           <el-button link type="primary" v-hasPermi="['edu:dept-ext:update']" @click="openForm('update', scope.row.id)">
             编辑
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            v-hasPermi="['edu:dept-ext:create']"
+            @click="openForm('create', undefined, { parentId: scope.row.id })"
+          >
+            新增下级
           </el-button>
           <el-button link type="danger" v-hasPermi="['edu:dept-ext:delete']" @click="handleDelete(scope.row.id)">
             删除
@@ -115,8 +135,8 @@ const resetQuery = () => {
   handleQuery()
 }
 
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+const openForm = (type: string, id?: number, defaults?: Partial<EduApi.EduDeptExtVO>) => {
+  formRef.value.open(type, id, defaults)
 }
 
 const handleDelete = async (id: number) => {
