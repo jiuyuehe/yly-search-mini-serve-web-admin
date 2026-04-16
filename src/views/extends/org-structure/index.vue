@@ -76,7 +76,7 @@
               <el-button
                 type="primary"
                 plain
-                @click="openUserForm('create')"
+                @click="openCreateUserDialog"
                 v-hasPermi="['system:user:create']"
               >
                 <Icon icon="ep:plus" class="mr-4px" /> 新增
@@ -107,11 +107,7 @@
                   <el-tag v-if="!row.deptIds?.length" size="small" type="info" effect="plain">
                     未分配
                   </el-tag>
-                  <el-tag
-                    v-for="deptId in row.deptIds"
-                    :key="deptId"
-                    size="small"
-                  >
+                  <el-tag v-for="deptId in row.deptIds" :key="deptId" size="small">
                     {{ getDeptName(deptId) }}
                   </el-tag>
                 </el-space>
@@ -212,23 +208,14 @@
   </el-row>
 
   <!-- 添加到部门 -->
-  <el-dialog
-    v-model="assignDialog.visible"
-    title="添加到部门"
-    width="480px"
-    destroy-on-close
-  >
+  <el-dialog v-model="assignDialog.visible" title="添加到部门" width="480px" destroy-on-close>
     <p class="text-13px text-gray-500 mb-10px">
-      勾选需要追加的部门，保存后会与用户当前所属部门合并。
+      勾选后会直接保存为用户当前所属部门；取消已勾选部门时，会一并移除对应归属。
     </p>
     <div class="mb-12px">
       <span class="text-13px text-gray-500 mr-8px">当前已归属：</span>
       <el-space wrap>
-        <el-tag
-          v-if="!assignDialog.user?.deptIds?.length"
-          size="small"
-          type="info"
-        >
+        <el-tag v-if="!assignDialog.user?.deptIds?.length" size="small" type="info">
           未分配
         </el-tag>
         <el-tag
@@ -245,29 +232,22 @@
       ref="assignTreeRef"
       :data="deptTreeOptions"
       show-checkbox
+      check-strictly
+      check-on-click-node
       node-key="id"
       default-expand-all
       :props="{ label: 'name', children: 'children' }"
     />
     <template #footer>
       <el-button @click="assignDialog.visible = false">取消</el-button>
-      <el-button type="primary" @click="handleAssignDept">添加</el-button>
+      <el-button type="primary" @click="handleAssignDept">保存</el-button>
     </template>
   </el-dialog>
 
   <!-- 从部门移除 -->
-  <el-dialog
-    v-model="removeDialog.visible"
-    title="从部门移除"
-    width="420px"
-    destroy-on-close
-  >
+  <el-dialog v-model="removeDialog.visible" title="从部门移除" width="420px" destroy-on-close>
     <el-checkbox-group v-model="removeDialog.checkedDeptIds">
-      <el-checkbox
-        v-for="deptId in removeDialog.availableDeptIds"
-        :key="deptId"
-        :label="deptId"
-      >
+      <el-checkbox v-for="deptId in removeDialog.availableDeptIds" :key="deptId" :label="deptId">
         {{ getDeptName(deptId) }}
       </el-checkbox>
     </el-checkbox-group>
@@ -277,7 +257,11 @@
     </template>
   </el-dialog>
 
-  <UserForm ref="userFormRef" @success="handleUserFormSuccess" />
+  <OrgUserCreateDialog
+    ref="createUserDialogRef"
+    :dept-tree-options="deptTreeOptions"
+    @success="handleCreateUserSuccess"
+  />
   <OrgUserEditDialog ref="editUserDialogRef" @success="fetchDeptUsers" />
 </template>
 
@@ -289,8 +273,8 @@ import { checkPermi } from '@/utils/permission'
 import type { FormInstance, ElTree } from 'element-plus'
 import * as OrgStructureApi from '@/api/extends/orgStructure'
 import DeptTreePanel from './components/DeptTreePanel.vue'
+import OrgUserCreateDialog from './components/OrgUserCreateDialog.vue'
 import OrgUserEditDialog from './components/OrgUserEditDialog.vue'
-import UserForm from '@/views/system/user/UserForm.vue'
 
 defineOptions({ name: 'ExtOrgStructure' })
 
@@ -411,19 +395,18 @@ const resolveSourceLabel = (
 const getUserSourceLabel = (user: OrgStructureApi.OrgUserRespVO) =>
   resolveSourceLabel(user.sourceTypeName, user.sourceType, '本地用户')
 
-const userFormRef = ref()
+const createUserDialogRef = ref()
 
-const openUserForm = (type: 'create' | 'update', id?: number) => {
-  userFormRef.value?.open(
-    type,
-    id,
-    type === 'create' && currentDeptId.value !== OrgStructureApi.UNASSIGNED_DEPT_ID
-      ? { deptId: currentDeptId.value }
-      : undefined
-  )
+const openCreateUserDialog = () => {
+  createUserDialogRef.value?.open({
+    defaultDeptId:
+      currentDeptId.value && currentDeptId.value !== OrgStructureApi.UNASSIGNED_DEPT_ID
+        ? currentDeptId.value
+        : undefined
+  })
 }
 
-const handleUserFormSuccess = () => {
+const handleCreateUserSuccess = () => {
   fetchDeptUsers()
 }
 
@@ -438,10 +421,7 @@ const buildUserEditPayload = (
   activeTab
 })
 
-const openUserEditDialog = (
-  user: OrgStructureApi.OrgUserRespVO,
-  activeTab: 'basic' | 'role'
-) => {
+const openUserEditDialog = (user: OrgStructureApi.OrgUserRespVO, activeTab: 'basic' | 'role') => {
   editUserDialogRef.value?.open(buildUserEditPayload(user, activeTab))
 }
 
@@ -462,12 +442,7 @@ const openAssignDept = (user: OrgStructureApi.OrgUserRespVO) => {
 const handleAssignDept = async () => {
   if (!assignDialog.user) return
   const checkedKeys = (assignTreeRef.value?.getCheckedKeys(false) as number[]) ?? []
-  if (!checkedKeys.length) {
-    message.warning('请选择至少一个要添加的部门')
-    return
-  }
-  const merged = Array.from(new Set([...(assignDialog.user.deptIds || []), ...checkedKeys]))
-  await OrgStructureApi.updateUserDepartments(assignDialog.user.id, merged)
+  await OrgStructureApi.updateUserDepartments(assignDialog.user.id, checkedKeys)
   message.success('用户部门已更新')
   assignDialog.visible = false
   fetchDeptUsers()

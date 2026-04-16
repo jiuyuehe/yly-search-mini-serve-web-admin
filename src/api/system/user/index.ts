@@ -29,7 +29,7 @@ export const getUser = (id: number) => {
 
 // 新增用户
 export const createUser = (data: UserVO) => {
-  return request.post({ url: '/system/user/create', data })
+  return request.post<number>({ url: '/system/user/create', data })
 }
 
 // 修改用户
