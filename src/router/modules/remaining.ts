@@ -192,7 +192,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           icon: 'ep:histogram',
           title: 'AI任务日志',
-          activeMenu: '/rag/apps'
+          activeMenu: '/rag/apps/ai-task-log'
         }
       }
     ]
@@ -507,6 +507,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: 'AI任务管理',
           icon: 'ep:document',
+          noCache: false,
+          activeMenu: '/rag/apps/ai-task-log'
+        }
+      }
+    ]
+  },
+  {
+    path: '/rag/tags',
+    component: Layout,
+    name: 'RagTagSystemPage',
+    meta: {
+      title: 'RAG标签管理',
+      icon: 'ep:collection-tag'
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/rag/tagsystem/index.vue'),
+        name: 'RagTagSystem',
+        meta: {
+          title: 'RAG标签管理',
+          icon: 'ep:collection-tag',
           noCache: false
         }
       }
