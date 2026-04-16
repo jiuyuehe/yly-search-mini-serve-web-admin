@@ -10,7 +10,11 @@
 
   <el-row :gutter="16">
     <el-col :xs="24" :lg="8" :xl="6">
-      <DeptTreePanel @dept-change="handleDeptChange" @tree-change="handleDeptTreeChange" />
+      <DeptTreePanel
+        :active-dept-id="preferredDeptId"
+        @dept-change="handleDeptChange"
+        @tree-change="handleDeptTreeChange"
+      />
     </el-col>
 
     <el-col :xs="24" :lg="16" :xl="18">
@@ -279,8 +283,10 @@ import OrgUserEditDialog from './components/OrgUserEditDialog.vue'
 defineOptions({ name: 'ExtOrgStructure' })
 
 const message = useMessage()
+const route = useRoute()
 
 const currentDeptId = ref<number>()
+const preferredDeptId = ref<number>()
 const deptTreeOptions = ref<OrgStructureApi.OrgDeptVO[]>([])
 const deptMap = shallowRef(new Map<number, OrgStructureApi.OrgDeptVO>())
 
@@ -296,6 +302,37 @@ const userQuery = reactive({
   status: undefined as number | undefined,
   createTime: [] as string[]
 })
+
+const normalizeRouteString = (value: unknown) => {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  if (typeof rawValue !== 'string') {
+    return undefined
+  }
+  const trimmed = rawValue.trim()
+  return trimmed || undefined
+}
+
+const normalizeRouteNumber = (value: unknown) => {
+  const text = normalizeRouteString(value)
+  if (!text) {
+    return undefined
+  }
+  const numberValue = Number(text)
+  return Number.isFinite(numberValue) ? numberValue : undefined
+}
+
+const applyRouteQuery = () => {
+  userQuery.username = normalizeRouteString(route.query.username)
+  userQuery.mobile = normalizeRouteString(route.query.mobile)
+  userQuery.status = undefined
+  userQuery.createTime = []
+  userQuery.pageNo = 1
+  preferredDeptId.value = normalizeRouteNumber(route.query.deptId)
+
+  if (preferredDeptId.value === undefined || preferredDeptId.value === currentDeptId.value) {
+    fetchDeptUsers()
+  }
+}
 
 const fetchDeptUsers = async () => {
   if (!currentDeptId.value) {
@@ -522,4 +559,14 @@ const handleResetPwd = async (user: OrgStructureApi.OrgUserRespVO) => {
 const handleAssignRole = (user: OrgStructureApi.OrgUserRespVO) => {
   openUserEditDialog(user, 'role')
 }
+
+watch(
+  () => route.query,
+  () => {
+    applyRouteQuery()
+  },
+  {
+    immediate: true
+  }
+)
 </script>

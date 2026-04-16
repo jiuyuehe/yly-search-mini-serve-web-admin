@@ -64,6 +64,10 @@ import { getDeptBizTypeMeta } from '@/views/extends/edu/components/deptBizTypeMe
 
 defineOptions({ name: 'OrgStructureDeptTreePanel' })
 
+const props = defineProps<{
+  activeDeptId?: number
+}>()
+
 const emit = defineEmits(['dept-change', 'tree-change'])
 
 const deptTree = ref<OrgStructureApi.OrgDeptVO[]>([])
@@ -72,6 +76,7 @@ const deptTreeLoading = ref(false)
 const deptKeyword = ref('')
 const treeExpandedAll = ref(true)
 const currentDeptId = ref<number>()
+const displayFlatList = ref<OrgStructureApi.OrgDeptVO[]>([])
 const treeProps = {
   label: 'name',
   children: 'children'
@@ -177,6 +182,23 @@ const toggleExpandAll = () => {
   applyExpandState(treeExpandedAll.value)
 }
 
+const syncCurrentDept = (deptId?: number) => {
+  if (deptId === undefined) {
+    return false
+  }
+  const dept = displayFlatList.value.find((item) => item.id === deptId)
+  if (!dept) {
+    return false
+  }
+  currentDeptId.value = dept.id
+  emit('dept-change', dept)
+  nextTick(() => {
+    deptTreeRef.value?.setCurrentKey(dept.id)
+    applyExpandState(treeExpandedAll.value)
+  })
+  return true
+}
+
 const emitCurrentDept = (flatList: OrgStructureApi.OrgDeptVO[]) => {
   const dept = currentDeptId.value !== undefined
     ? flatList.find((item) => item.id === currentDeptId.value)
@@ -188,8 +210,9 @@ const buildDeptTree = (list: OrgStructureApi.OrgDeptVO[]) => {
   const unassignedNode = createUnassignedNode()
   const deptMap = new Map(list.map((item) => [item.id, item]))
   const assignableTree = handleTree(list, 'id', 'parentId', 'children')
-  const displayFlatList = [unassignedNode, ...list]
+  const nextDisplayFlatList = [unassignedNode, ...list]
   deptTree.value = [unassignedNode, ...assignableTree]
+  displayFlatList.value = nextDisplayFlatList
   emit('tree-change', { tree: deptTree.value, assignableTree, flatList: list })
   if (
     currentDeptId.value !== undefined &&
@@ -198,16 +221,21 @@ const buildDeptTree = (list: OrgStructureApi.OrgDeptVO[]) => {
   ) {
     currentDeptId.value = undefined
   }
-  if (currentDeptId.value === undefined) {
+  const hasSyncedActiveDept = syncCurrentDept(props.activeDeptId)
+  if (!hasSyncedActiveDept && currentDeptId.value === undefined) {
     currentDeptId.value = assignableTree[0]?.id ?? OrgStructureApi.UNASSIGNED_DEPT_ID
   }
-  emitCurrentDept(displayFlatList)
-  nextTick(() => {
-    if (currentDeptId.value !== undefined) {
-      deptTreeRef.value?.setCurrentKey(currentDeptId.value)
-    }
-    applyExpandState(treeExpandedAll.value)
-  })
+  if (!hasSyncedActiveDept) {
+    emitCurrentDept(nextDisplayFlatList)
+  }
+  if (!hasSyncedActiveDept) {
+    nextTick(() => {
+      if (currentDeptId.value !== undefined) {
+        deptTreeRef.value?.setCurrentKey(currentDeptId.value)
+      }
+      applyExpandState(treeExpandedAll.value)
+    })
+  }
 }
 
 const fetchDeptTree = async () => {
@@ -240,6 +268,16 @@ const handleDeptClick = (dept: OrgStructureApi.OrgDeptVO) => {
   currentDeptId.value = dept.id
   emit('dept-change', dept)
 }
+
+watch(
+  () => props.activeDeptId,
+  (deptId) => {
+    if (!displayFlatList.value.length || deptId === undefined || deptId === currentDeptId.value) {
+      return
+    }
+    syncCurrentDept(deptId)
+  }
+)
 
 onMounted(() => {
   fetchDeptTree()

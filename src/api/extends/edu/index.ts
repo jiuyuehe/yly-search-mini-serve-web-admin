@@ -297,6 +297,51 @@ export interface EduClassroomQuery extends PageParam {
   status?: number
 }
 
+export interface CloudDeptVO {
+  deptId: number
+  parentId?: number
+  parentIds?: string
+  layer?: number
+  deptName: string
+  orderValue?: number
+  sourceType?: number
+  immutable?: number
+}
+
+export interface CloudUserVO {
+  cloudUserId: string
+  cloudUserName: string
+  cloudAccount: string
+  cloudDeptId?: string
+  cloudDeptName?: string
+}
+
+export interface EduCloudBindVO {
+  id?: number
+  campusUserId: number
+  cloudUserId?: string
+  cloudUserName?: string
+  cloudAccount?: string
+  cloudDeptId?: string
+  cloudDeptName?: string
+  bindStatus?: number
+  bindTime?: string
+  unbindTime?: string
+  remark?: string
+  createTime?: string
+  updateTime?: string
+}
+
+export interface EduCloudBindBindReqVO {
+  campusUserId: number
+  cloudUserId: string
+  cloudUserName: string
+  cloudAccount: string
+  cloudDeptId?: string
+  cloudDeptName?: string
+  remark?: string
+}
+
 export const getDeptExtList = (params?: EduDeptExtQuery) => {
   return request.get<EduDeptExtVO[]>({ url: '/edu/dept-ext/list', params })
 }
@@ -646,4 +691,27 @@ export const deleteClassroom = (id: number) => {
 
 export const exportClassroom = (params: EduClassroomQuery) => {
   return request.download({ url: '/edu/classroom/export-excel', params })
+}
+
+export const getCloudDeptList = (deptId = -1) => {
+  return request.get<CloudDeptVO[]>({ url: '/edu/cloud-bind/dept-list', params: { deptId } })
+}
+
+export const getCloudUserList = (deptId?: number) => {
+  return request.get<CloudUserVO[]>({
+    url: '/edu/cloud-bind/user-list',
+    params: deptId === undefined ? undefined : { deptId }
+  })
+}
+
+export const bindCloudUser = (data: EduCloudBindBindReqVO) => {
+  return request.post<boolean>({ url: '/edu/cloud-bind/bind', data })
+}
+
+export const unbindCloudUser = (campusUserId: number) => {
+  return request.post<boolean>({ url: '/edu/cloud-bind/unbind', data: { campusUserId } })
+}
+
+export const getCloudBind = (campusUserId: number) => {
+  return request.get<EduCloudBindVO | null>({ url: '/edu/cloud-bind/get', params: { campusUserId } })
 }
