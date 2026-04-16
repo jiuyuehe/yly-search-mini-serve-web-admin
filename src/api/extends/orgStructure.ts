@@ -13,6 +13,7 @@ export interface OrgDeptVO {
   parentId: number
   sort: number
   status: number
+  bizType?: string
   leaderUserId?: number
   phone?: string
   email?: string
