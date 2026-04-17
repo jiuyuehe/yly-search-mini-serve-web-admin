@@ -26,7 +26,7 @@
         <div class="panel-head">
           <div>
             <div class="panel-title">标签体系导航与维护</div>
-            <div class="panel-subtitle">树形展开查看 1 / 2 / 3 级标签，适配大规模主题</div>
+            <div class="panel-subtitle"></div>
           </div>
           <el-button type="primary" @click="openThemeDialog('create')">新增一级标签</el-button>
         </div>
@@ -49,9 +49,7 @@
         </div>
 
         <div class="tree-summary">
-          <span>点击一级标签查看二级</span>
-          <span>点击二级标签查看三级</span>
-          <span>点击三级标签查看文档</span>
+
         </div>
 
         <div class="tree-wrap">
@@ -115,7 +113,7 @@
         <div class="panel-head">
           <div>
             <div class="panel-title">三级标签与关联文档</div>
-            <div class="panel-subtitle">来自 enrich.tags，按已确认主题聚合；未匹配的显示为未归类</div>
+            <div class="panel-subtitle"></div>
           </div>
         </div>
 
