@@ -38,6 +38,18 @@ export const ControlTaskApi = {
     return await request.get({ url: `/rag/control-task/get-task-detail?id=${id}&page=${page}&pageSize=${pageSize}` })
   },
 
+  getControlTaskStatistics: async (id: number) => {
+    return await request.get({ url: `/rag/control-task/statistics?id=${id}` })
+  },
+
+  getUnifiedDetailPage: async (params: any) => {
+    return await request.get({ url: `/rag/control-task/detail-page`, params })
+  },
+
+  backfillFormatGroup: async (params?: any) => {
+    return await request.post({ url: `/rag/control-task/backfill-format-group`, params })
+  },
+
   // 新增布控任务
   createControlTask: async (data: ControlTaskVO) => {
     return await request.post({ url: `/rag/control-task/create`, data })

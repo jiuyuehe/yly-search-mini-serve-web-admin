@@ -278,16 +278,6 @@ const handleCurrentChange = (page: number) => {
   fetchTaskDetail()
 }
 
-// 处理手动跳转页面
-const handleGoToPage = () => {
-  const page = parseInt(goToPage.value)
-  if (page && page > 0 && page <= Math.ceil(totalFiles.value / pageInfo.pageSize)) {
-    pageInfo.page = page
-    fetchTaskDetail()
-  }
-  goToPage.value = ''
-}
-
 // 打开弹窗
 const open = (id: number) => {
   dialogVisible.value = true

@@ -22,7 +22,9 @@
     "lint:eslint": "eslint --fix --ext .js,.ts,.vue ./src",
     "lint:format": "prettier --write --loglevel warn \"src/**/*.{js,ts,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:style": "stylelint --fix \"./src/**/*.{vue,less,postcss,css,scss}\" --cache --cache-location node_modules/.cache/stylelint/",
-    "lint:lint-staged": "lint-staged -c "
+    "lint:lint-staged": "lint-staged -c ",
+    "build:zip": "pnpm build:prod && node scripts/build-zip.js",
+    "deploy:test": "node scripts/deploy-test.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
@@ -102,6 +104,7 @@
     "@vitejs/plugin-legacy": "^5.3.1",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
+    "archiver": "^7.0.1",
     "autoprefixer": "^10.4.17",
     "bpmn-js": "^17.9.2",
     "bpmn-js-properties-panel": "5.23.0",
@@ -123,6 +126,7 @@
     "rimraf": "^5.0.5",
     "rollup": "^4.12.0",
     "sass": "^1.69.5",
+    "ssh2": "^1.17.0",
     "stylelint": "^16.2.1",
     "stylelint-config-html": "^1.1.0",
     "stylelint-config-recommended": "^14.0.0",

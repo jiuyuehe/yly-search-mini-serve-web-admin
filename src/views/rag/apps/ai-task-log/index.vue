@@ -72,6 +72,15 @@
       <el-form-item label="文档ID" prop="esId">
         <el-input v-model="queryParams.esId" class="!w-240px" clearable placeholder="请输入 esId" />
       </el-form-item>
+      <el-form-item label="调度任务ID" prop="scheduleTaskId">
+        <el-input v-model="queryParams.scheduleTaskId" class="!w-200px" clearable placeholder="请输入 scheduleTaskId" />
+      </el-form-item>
+      <el-form-item label="触发来源" prop="triggerSource">
+        <el-select v-model="queryParams.triggerSource" class="!w-180px" clearable placeholder="请选择来源">
+          <el-option label="手动" value="manual" />
+          <el-option label="定时" value="schedule" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="用户ID" prop="userId">
         <el-input-number v-model="queryParams.userId" class="!w-200px" :min="0" :controls="false" />
       </el-form-item>
@@ -177,6 +186,7 @@ import * as echarts from 'echarts'
 defineOptions({ name: 'RagAiTaskLog' })
 
 const message = useMessage()
+const route = useRoute()
 const loading = ref(false)
 const detailVisible = ref(false)
 const list = ref<AiTaskLogVO[]>([])
@@ -204,6 +214,8 @@ const queryParams = reactive({
   status: undefined as string | undefined,
   fileName: undefined as string | undefined,
   userName: undefined as string | undefined,
+  scheduleTaskId: undefined as string | undefined,
+  triggerSource: undefined as string | undefined,
   createTime: [] as string[]
 })
 
@@ -426,6 +438,10 @@ const updateTrendChart = () => {
 }
 
 onMounted(() => {
+  if (route.query.scheduleTaskId) {
+    queryParams.scheduleTaskId = String(route.query.scheduleTaskId)
+    queryParams.triggerSource = 'schedule'
+  }
   getList()
   // 等待 DOM 更新后初始化图表
   nextTick(() => {
