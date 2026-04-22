@@ -79,6 +79,35 @@ export interface EduStudentQuery extends PageParam {
   studentStatus?: string
 }
 
+export interface EduMemberUserVO {
+  id?: number
+  mobile: string
+  password?: string
+  status: number
+  nickname: string
+  avatar?: string
+  name?: string
+  sex?: number
+  areaId?: number
+  areaName?: string
+  birthday?: number
+  mark?: string
+  tagIds?: number[]
+  levelId?: number
+  groupId?: number
+  registerIp?: string
+  loginIp?: string
+  loginDate?: number
+  createTime?: number
+}
+
+export interface EduMemberUserQuery extends PageParam {
+  mobile?: string
+  nickname?: string
+  status?: number
+  createTime?: string[]
+}
+
 export interface EduAcademicYearVO {
   id?: number
   name: string
@@ -425,6 +454,26 @@ export const exportStudent = (params: EduStudentQuery) => {
 
 export const getStudentSimpleList = (keyword?: string) => {
   return request.get<EduStudentVO[]>({ url: '/edu/student/simple-list', params: { keyword } })
+}
+
+export const getMemberUserPage = (params: EduMemberUserQuery) => {
+  return request.get({ url: '/edu/member-user/page', params })
+}
+
+export const getMemberUser = (id: number) => {
+  return request.get<EduMemberUserVO>({ url: '/edu/member-user/get', params: { id } })
+}
+
+export const createMemberUser = (data: EduMemberUserVO) => {
+  return request.post<number>({ url: '/edu/member-user/create', data })
+}
+
+export const updateMemberUser = (data: EduMemberUserVO) => {
+  return request.put<boolean>({ url: '/edu/member-user/update', data })
+}
+
+export const deleteMemberUser = (id: number) => {
+  return request.delete<boolean>({ url: '/edu/member-user/delete', params: { id } })
 }
 
 export const getAcademicYearPage = (params: EduAcademicYearQuery) => {
