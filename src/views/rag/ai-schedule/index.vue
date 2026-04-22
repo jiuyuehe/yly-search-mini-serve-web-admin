@@ -107,12 +107,32 @@
           <el-option v-for="item in aiTaskTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
-      <el-form-item label="模型">
-        <el-select v-model="formData.modelId" class="!w-full" clearable filterable placeholder="可选">
-          <el-option v-for="item in modelOptions" :key="item.id" :label="item.name" :value="item.id" />
+      <el-form-item :label="formData.aiTaskType === 'embedding' ? 'Embedding模型' : '模型'">
+        <el-select v-model="formData.modelId" class="!w-full" clearable filterable :placeholder="formData.aiTaskType === 'embedding' ? '请选择 type=5 向量模型' : '可选'">
+          <el-option v-for="item in currentModelOptions" :key="item.id" :label="`${item.name}${item.model ? `（${item.model}）` : ''}`" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="角色">
+      <template v-if="formData.aiTaskType === 'embedding'">
+        <el-form-item label="Reranker模型">
+          <el-select v-model="formData.rerankModelId" class="!w-full" clearable filterable placeholder="可选，推荐 Qwen/Qwen3-VL-Reranker-2B">
+            <el-option v-for="item in rerankModelOptions" :key="item.id" :label="`${item.name}${item.model ? `（${item.model}）` : ''}`" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="向量目标">
+          <el-radio-group v-model="formData.embeddingTarget">
+            <el-radio-button label="image">图片</el-radio-button>
+            <el-radio-button label="text">文本</el-radio-button>
+            <el-radio-button label="all">全部</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="覆盖已有向量">
+          <el-switch v-model="formData.embeddingOverwrite" />
+        </el-form-item>
+        <el-form-item label="批处理大小">
+          <el-input-number v-model="formData.embeddingBatchSize" :min="1" :max="500" />
+        </el-form-item>
+      </template>
+      <el-form-item v-if="formData.aiTaskType !== 'embedding'" label="角色">
         <el-select v-model="formData.roleId" class="!w-full" clearable filterable placeholder="可选">
           <el-option v-for="item in roleOptions" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
@@ -153,6 +173,8 @@ const dialogVisible = ref(false)
 const list = ref<any[]>([])
 const total = ref(0)
 const modelOptions = ref<any[]>([])
+const embeddingModelOptions = ref<any[]>([])
+const rerankModelOptions = ref<any[]>([])
 const roleOptions = ref<any[]>([])
 const scanTaskOptions = ref<any[]>([])
 const formOptions = ref<any[]>([])
@@ -176,6 +198,9 @@ const defaultFormData = (): AiScheduleTaskVO => ({
   formatGroups: [],
   fileExts: [],
   aiTaskType: 'summary',
+  embeddingTarget: 'image',
+  embeddingOverwrite: false,
+  embeddingBatchSize: 50,
   cronExpression: '0 0 2 * * ?'
 })
 
@@ -194,7 +219,8 @@ const aiTaskTypeOptions = [
   { label: '分类', value: 'document_classify' },
   { label: 'NER', value: 'ner' },
   { label: '翻译', value: 'translate' },
-  { label: '表单抽取', value: 'form_extract' }
+  { label: '表单抽取', value: 'form_extract' },
+  { label: '向量化 / Embedding', value: 'embedding' }
 ]
 
 const formatGroupOptions = [
@@ -225,17 +251,25 @@ const getList = async () => {
 }
 
 const loadOptions = async () => {
-  const [taskPage, models, roles, forms] = await Promise.all([
+  const [taskPage, models, embeddingModels, rerankModels, roles, forms] = await Promise.all([
     ControlTaskApi.getControlTaskPage({ pageNo: 1, pageSize: 200 }),
     ModelApi.getModelSimpleList(),
+    ModelApi.getModelSimpleList(5),
+    ModelApi.getModelSimpleList(6),
     ChatRoleApi.getChatRolePage({ pageNo: 1, pageSize: 100 }),
     AiFormApi.getPage({ pageNo: 1, pageSize: 100 })
   ])
   scanTaskOptions.value = taskPage.list || []
   modelOptions.value = models || []
+  embeddingModelOptions.value = embeddingModels || []
+  rerankModelOptions.value = rerankModels || []
   roleOptions.value = roles.list || roles.records || []
   formOptions.value = forms.list || []
 }
+
+const currentModelOptions = computed(() => {
+  return formData.aiTaskType === 'embedding' ? embeddingModelOptions.value : modelOptions.value
+})
 
 const handleQuery = () => {
   queryParams.pageNo = 1

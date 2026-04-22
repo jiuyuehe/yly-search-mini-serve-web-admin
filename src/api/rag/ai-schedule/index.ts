@@ -11,6 +11,10 @@ export interface AiScheduleTaskVO {
   fileExts?: string[]
   aiTaskType: string
   modelId?: number
+  rerankModelId?: number
+  embeddingTarget?: string
+  embeddingOverwrite?: boolean
+  embeddingBatchSize?: number
   roleId?: number
   targetLang?: string
   formId?: number
