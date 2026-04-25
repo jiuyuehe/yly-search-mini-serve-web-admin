@@ -37,7 +37,6 @@
             {{ formatPermissionBits(scope.row.permissions) }}
           </template>
         </el-table-column>
-        <el-table-column label="失效时间" prop="expireTime" width="180" :formatter="dateFormatter" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="scope">
             <el-button link type="primary" size="small" v-hasPermi="['nas:nas:permission']" @click="openPermissionForm('update', scope.row)">
@@ -150,15 +149,15 @@
             </el-col>
           </el-row>
         </el-form-item>
-        <el-form-item label="失效时间" prop="expireTime">
-          <el-date-picker
-            v-model="permissionFormModel.expireTime"
-            class="!w-full"
-            type="datetime"
-            value-format="x"
-            placeholder="可选"
-          />
-        </el-form-item>
+<!--        <el-form-item label="失效时间" prop="expireTime">-->
+<!--          <el-date-picker-->
+<!--            v-model="permissionFormModel.expireTime"-->
+<!--            class="!w-full"-->
+<!--            type="datetime"-->
+<!--            value-format="x"-->
+<!--            placeholder="可选"-->
+<!--          />-->
+<!--        </el-form-item>-->
       </el-form>
 
       <template #footer>
@@ -176,7 +175,6 @@ import * as DeptApi from '@/api/system/dept'
 import * as UserApi from '@/api/system/user'
 import { Icon } from '@/components/Icon'
 import { NasApi, type NasPermissionPageReqVO, type NasPermissionSaveReqVO, type NasPermissionVO, type NasVO } from '@/api/nas/nas'
-import { dateFormatter } from '@/utils/formatTime'
 import { defaultProps, handleTree } from '@/utils/tree'
 import NasFolderBrowserDialog from './NasFolderBrowserDialog.vue'
 import {
