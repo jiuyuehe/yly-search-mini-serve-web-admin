@@ -535,6 +535,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/rag/document-rag-v2',
+    component: Layout,
+    name: 'RagDocumentRagV2Page',
+    meta: {
+      title: '文档 RAG V2',
+      icon: 'ep:chat-dot-round'
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/rag/document-rag-v2/index.vue'),
+        name: 'RagDocumentRagV2',
+        meta: {
+          title: '文档 RAG V2',
+          icon: 'ep:chat-dot-round',
+          noCache: false,
+          activeMenu: '/rag/document-rag-v2'
+        }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('@/views/Error/404.vue'),
     name: '',
