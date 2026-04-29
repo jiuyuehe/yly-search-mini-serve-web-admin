@@ -1,198 +1,180 @@
 const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
-// 服务器配置
-// const SERVER_CONFIG = {
-//   host: '192.168.100.100',
-//   port: 22,
-//   username: 'huawei',
-//   password: 'huawei123'
-// };
-
-// 服务器配置
 const SERVER_CONFIG = {
-  host: '192.168.0.188',
+  host: '192.168.100.203',
   port: 22,
-  username: 'root',
-  password: 'yliyun123'
+  username: 'kuoyi',
+  password: 'password'
 };
 
-// 文件路径配置
 const PROJECT_ROOT = path.join(__dirname, '..');
-const BACKEND_JAR_PATH = "D:\\yliyun_project\\yliyun-rag-mini-backend\\yudao-server\\target\\yly-rag-mini-server.jar";
+const BACKEND_JAR_PATH = 'D:\\yliyun_project\\yliyun-rag-mini-backend\\yudao-server\\target\\yly-rag-mini-server.jar';
 
-
-// 远程路径配置
-const REMOTE_SERVER_PATH = '/opt/yly-rag-mini/server';
-const REMOTE_WEB_PATH = '/opt/yly-rag-mini/web';
+const REMOTE_BASE_PATH = '/opt/yly-rag-mini';
+const REMOTE_SERVER_PATH = `${REMOTE_BASE_PATH}/server`;
+const REMOTE_WEB_PATH = `${REMOTE_BASE_PATH}/web`;
 const REMOTE_JAR_NAME = 'yly-rag-mini-server.jar';
 
-console.log('========================================');
-console.log('  开始部署到测试服务器');
-console.log('========================================\n');
-
-// 步骤1: 检查本地文件是否存在
-console.log('步骤 1/6: 检查本地文件...');
-
-if (!fs.existsSync(BACKEND_JAR_PATH)) {
-  console.error(`❌ 错误: 后端jar包不存在: ${BACKEND_JAR_PATH}`);
-  console.error('   请先执行后端构建: mvn clean package -DskipTests');
-  process.exit(1);
-}
-console.log(`✓ 后端jar包存在: ${BACKEND_JAR_PATH}`);
-
-// 查找最新的zip文件
-const zipFiles = fs.readdirSync(path.join(PROJECT_ROOT))
-  .filter(file => file.startsWith('yly-rag-admin-web-') && file.endsWith('.zip'))
-  .map(file => path.join(PROJECT_ROOT, file));
-
-if (zipFiles.length === 0) {
-  console.error('❌ 错误: 未找到前端zip包');
-  console.error('   请先执行: pnpm build:zip');
-  process.exit(1);
+function log(title) {
+  console.log(`\n========== ${title} ==========`);
 }
 
-// 按修改时间排序,获取最新的zip文件
-zipFiles.sort((a, b) => {
-  return fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs;
-});
+function execRemote(conn, command, options = {}) {
+  const timeoutMs = options.timeoutMs || 120000;
 
-const latestZipFile = zipFiles[0];
-console.log(`✓ 前端zip包存在: ${latestZipFile}\n`);
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    let stderr = '';
+    let finished = false;
 
-// 步骤2: 连接服务器
-console.log('步骤 2/6: 连接到测试服务器...');
-
-const conn = new Client();
-
-conn.on('ready', () => {
-  console.log('✓ 服务器连接成功\n');
-  
-  // 步骤3: 上传后端jar包
-  console.log('步骤 3/6: 上传后端jar包...');
-  
-  conn.sftp((err, sftp) => {
-    if (err) {
-      console.error('❌ SFTP连接失败:', err);
-      conn.end();
-      process.exit(1);
-    }
-    
-    const remoteJarPath = path.posix.join(REMOTE_SERVER_PATH, REMOTE_JAR_NAME);
-    
-    // 先删除旧文件
-    sftp.unlink(remoteJarPath, (unlinkErr) => {
-      if (unlinkErr && unlinkErr.code !== 2) {
-        console.error('⚠️  删除旧jar包失败(可能不存在):', unlinkErr.message);
-      } else {
-        console.log('✓ 已删除旧的jar包');
+    const timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        reject(new Error(`远程命令超时: ${command}`));
       }
-      
-      // 上传新文件
-      console.log('正在上传jar包...');
-      sftp.fastPut(BACKEND_JAR_PATH, remoteJarPath, {}, (uploadErr) => {
-        if (uploadErr) {
-          console.error('❌ jar包上传失败:', uploadErr);
-          sftp.end();
-          conn.end();
-          process.exit(1);
+    }, timeoutMs);
+
+    conn.exec(command, { pty: false }, (err, stream) => {
+      if (err) {
+        clearTimeout(timer);
+        return reject(err);
+      }
+
+      stream.on('data', data => {
+        stdout += data.toString();
+      });
+
+      stream.stderr.on('data', data => {
+        stderr += data.toString();
+      });
+
+      stream.on('close', code => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+
+        if (code === 0) {
+          resolve({ stdout, stderr });
+        } else {
+          reject(new Error(`命令失败，退出码 ${code}\n命令: ${command}\nSTDERR: ${stderr}`));
         }
-        
-        const jarSize = (fs.statSync(BACKEND_JAR_PATH).size / 1024 / 1024).toFixed(2);
-        console.log(`✓ jar包上传成功 (${jarSize} MB)`);
-        console.log(`   远程路径: ${remoteJarPath}\n`);
-        
-        // 步骤4: 清空web目录并上传zip
-        console.log('步骤 4/6: 清理远程web目录...');
-        
-        conn.exec(`rm -rf ${REMOTE_WEB_PATH}/*`, (err, stream) => {
-          if (err) {
-            console.error('❌ 清理web目录失败:', err);
-            sftp.end();
-            conn.end();
-            process.exit(1);
-          }
-          
-          stream.on('close', (code, signal) => {
-            console.log('✓ web目录已清空');
-            
-            // 步骤5: 上传zip文件
-            console.log('\n步骤 5/6: 上传前端zip包...');
-            
-            const zipFileName = path.basename(latestZipFile);
-            const remoteZipPath = path.posix.join(REMOTE_WEB_PATH, zipFileName);
-            
-            console.log('正在上传zip包...');
-            sftp.fastPut(latestZipFile, remoteZipPath, {}, (uploadErr) => {
-              if (uploadErr) {
-                console.error('❌ zip包上传失败:', uploadErr);
-                sftp.end();
-                conn.end();
-                process.exit(1);
-              }
-              
-              const zipSize = (fs.statSync(latestZipFile).size / 1024 / 1024).toFixed(2);
-              console.log(`✓ zip包上传成功 (${zipSize} MB)`);
-              console.log(`   远程路径: ${remoteZipPath}\n`);
-              
-              // 步骤6: 解压zip文件
-              console.log('步骤 6/6: 解压前端zip包...');
-              
-              conn.exec(`cd ${REMOTE_WEB_PATH} && unzip -o ${zipFileName}`, (err, stream) => {
-                if (err) {
-                  console.error('❌ 解压失败:', err);
-                  sftp.end();
-                  conn.end();
-                  process.exit(1);
-                }
-                
-                stream.on('close', (code, signal) => {
-                  if (code === 0) {
-                    console.log('✓ zip包解压成功');
-                    
-                    // 删除zip文件
-                    sftp.unlink(remoteZipPath, (unlinkErr) => {
-                      if (unlinkErr) {
-                        console.log('⚠️  删除zip文件失败:', unlinkErr.message);
-                      } else {
-                        console.log('✓ 已删除zip文件');
-                      }
-                      
-                      sftp.end();
-                      conn.end();
-                      
-                      console.log('\n========================================');
-                      console.log('  ✅ 部署完成!');
-                      console.log('========================================');
-                      console.log(`后端服务: ${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}`);
-                      console.log(`前端文件: ${REMOTE_WEB_PATH}/`);
-                      console.log('\n请记得重启后端服务以应用更新。');
-                    });
-                  } else {
-                    console.error(`❌ 解压失败,退出码: ${code}`);
-                    sftp.end();
-                    conn.end();
-                    process.exit(1);
-                  }
-                }).on('data', (data) => {
-                  console.log('STDOUT:', data.toString());
-                }).stderr.on('data', (data) => {
-                  console.log('STDERR:', data.toString());
-                });
-              });
-            });
-          }).on('data', (data) => {
-            console.log('STDOUT:', data.toString());
-          }).stderr.on('data', (data) => {
-            console.log('STDERR:', data.toString());
-          });
-        });
       });
     });
   });
-}).on('error', (err) => {
-  console.error('❌ 服务器连接失败:', err);
+}
+
+function fastPut(sftp, localPath, remotePath) {
+  return new Promise((resolve, reject) => {
+    sftp.fastPut(localPath, remotePath, {}, err => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+function getLatestFrontendZip() {
+  const zipFiles = fs.readdirSync(PROJECT_ROOT)
+      .filter(file => file.startsWith('yly-rag-admin-web-') && file.endsWith('.zip'))
+      .map(file => path.join(PROJECT_ROOT, file))
+      .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+
+  if (zipFiles.length === 0) {
+    throw new Error('未找到前端 zip 包，请先执行 pnpm build:zip');
+  }
+
+  return zipFiles[0];
+}
+
+async function main() {
+  console.log('开始部署 yly-rag-mini...\n');
+
+  if (!fs.existsSync(BACKEND_JAR_PATH)) {
+    throw new Error(`后端 jar 不存在: ${BACKEND_JAR_PATH}`);
+  }
+
+  const latestZipFile = getLatestFrontendZip();
+
+  console.log(`后端 jar: ${BACKEND_JAR_PATH}`);
+  console.log(`前端 zip: ${latestZipFile}`);
+
+  const conn = new Client();
+
+  await new Promise((resolve, reject) => {
+    conn.on('ready', resolve);
+    conn.on('error', reject);
+    conn.connect(SERVER_CONFIG);
+  });
+
+  log('服务器连接成功');
+
+  const sftp = await new Promise((resolve, reject) => {
+    conn.sftp((err, sftp) => {
+      if (err) reject(err);
+      else resolve(sftp);
+    });
+  });
+
+  try {
+    log('1/6 检查远程目录权限');
+
+    await execRemote(conn, `
+      mkdir -p ${REMOTE_SERVER_PATH} ${REMOTE_WEB_PATH} &&
+      test -w ${REMOTE_SERVER_PATH} &&
+      test -w ${REMOTE_WEB_PATH}
+    `);
+
+    log('2/6 上传后端 jar');
+
+    const remoteJarTmp = `${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}.tmp`;
+    const remoteJarFinal = `${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}`;
+
+    await fastPut(sftp, BACKEND_JAR_PATH, remoteJarTmp);
+    await execRemote(conn, `mv -f ${remoteJarTmp} ${remoteJarFinal}`);
+
+    const jarSize = (fs.statSync(BACKEND_JAR_PATH).size / 1024 / 1024).toFixed(2);
+    console.log(`jar 上传完成: ${remoteJarFinal} (${jarSize} MB)`);
+
+    log('3/6 清理前端 web 目录');
+
+    await execRemote(conn, `find ${REMOTE_WEB_PATH} -mindepth 1 -maxdepth 1 -exec rm -rf {} +`);
+
+    log('4/6 上传前端 zip');
+
+    const zipFileName = path.basename(latestZipFile);
+    const remoteZipPath = `${REMOTE_WEB_PATH}/${zipFileName}`;
+
+    await fastPut(sftp, latestZipFile, remoteZipPath);
+
+    const zipSize = (fs.statSync(latestZipFile).size / 1024 / 1024).toFixed(2);
+    console.log(`zip 上传完成: ${remoteZipPath} (${zipSize} MB)`);
+
+    log('5/6 解压前端 zip');
+
+    await execRemote(conn, `
+      cd ${REMOTE_WEB_PATH} &&
+      unzip -oq ${zipFileName} &&
+      rm -f ${zipFileName}
+    `, { timeoutMs: 180000 });
+
+    log('6/6 部署完成');
+
+    console.log(`后端 jar: ${remoteJarFinal}`);
+    console.log(`前端目录: ${REMOTE_WEB_PATH}`);
+
+    // 如果你已经配置了 systemctl 免密 sudo，可以打开下面这行
+    // await execRemote(conn, 'sudo /bin/systemctl restart yly-rag-mini');
+
+    console.log('\n✅ 部署成功');
+  } finally {
+    sftp.end();
+    conn.end();
+  }
+}
+
+main().catch(err => {
+  console.error('\n❌ 部署失败:');
+  console.error(err.message);
   process.exit(1);
-}).connect(SERVER_CONFIG);
+});
