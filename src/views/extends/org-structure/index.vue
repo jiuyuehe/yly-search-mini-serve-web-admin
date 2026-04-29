@@ -451,14 +451,18 @@ const editUserDialogRef = ref()
 
 const buildUserEditPayload = (
   user: OrgStructureApi.OrgUserRespVO,
-  activeTab: 'basic' | 'role'
+  activeTab: 'basic' | 'role' | 'teacher'
 ) => ({
   id: user.id,
+  deptIds: user.deptIds || [],
   deptNames: (user.deptIds || []).map((deptId) => getDeptName(deptId)),
   activeTab
 })
 
-const openUserEditDialog = (user: OrgStructureApi.OrgUserRespVO, activeTab: 'basic' | 'role') => {
+const openUserEditDialog = (
+  user: OrgStructureApi.OrgUserRespVO,
+  activeTab: 'basic' | 'role' | 'teacher'
+) => {
   editUserDialogRef.value?.open(buildUserEditPayload(user, activeTab))
 }
 

@@ -104,6 +104,68 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
+
+        <el-tab-pane v-if="canManageTeacher" label="教师扩展" name="teacher">
+          <el-form
+            ref="teacherFormRef"
+            :model="teacherFormData"
+            :rules="teacherFormRules"
+            label-width="88px"
+          >
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="教师工号" prop="teacherNo">
+                  <el-input v-model="teacherFormData.teacherNo" placeholder="请输入教师工号" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="职称" prop="title">
+                  <el-input v-model="teacherFormData.title" placeholder="请输入职称" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="入职日期" prop="hireDate">
+                  <el-date-picker
+                    v-model="teacherFormData.hireDate"
+                    class="!w-100%"
+                    type="date"
+                    value-format="YYYY-MM-DD"
+                    placeholder="请选择入职日期"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="任职状态" prop="employmentStatus">
+                  <el-select
+                    v-model="teacherFormData.employmentStatus"
+                    class="!w-100%"
+                    clearable
+                    placeholder="请选择任职状态"
+                  >
+                    <el-option
+                      v-for="dict in getStrDictOptions(DICT_TYPE.EDU_TEACHER_EMPLOYMENT_STATUS)"
+                      :key="dict.value"
+                      :label="dict.label"
+                      :value="dict.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-form-item label="备注" prop="remark">
+              <el-input v-model="teacherFormData.remark" type="textarea" placeholder="请输入备注" />
+            </el-form-item>
+            <el-form-item label="扩展 JSON" prop="extraJson">
+              <el-input
+                v-model="teacherFormData.extraJson"
+                type="textarea"
+                placeholder="请输入扩展 JSON"
+              />
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
       </el-tabs>
     </div>
 
@@ -120,17 +182,21 @@ import * as PermissionApi from '@/api/system/permission'
 import * as PostApi from '@/api/system/post'
 import * as RoleApi from '@/api/system/role'
 import * as UserApi from '@/api/system/user'
+import * as EduApi from '@/api/extends/edu'
 import * as OrgStructureApi from '@/api/extends/orgStructure'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 import { checkPermi } from '@/utils/permission'
 
 defineOptions({ name: 'OrgStructureUserEditDialog' })
 
 type OpenPayload = {
   id: number
+  deptIds?: number[]
   deptNames?: string[]
-  activeTab?: 'basic' | 'role'
+  activeTab?: EditTab
 }
+
+type EditTab = 'basic' | 'role' | 'teacher'
 
 type FormData = OrgStructureApi.OrgUserUpdateReq & {
   roleIds: number[]
@@ -141,13 +207,19 @@ const emit = defineEmits(['success'])
 
 const canEditBasic = checkPermi(['system:user:update'])
 const canAssignRole = checkPermi(['system:permission:assign-user-role'])
+const canQueryTeacher = checkPermi(['edu:teacher:query'])
+const canCreateTeacher = checkPermi(['edu:teacher:create'])
+const canUpdateTeacher = checkPermi(['edu:teacher:update'])
+const canManageTeacher = canQueryTeacher && (canCreateTeacher || canUpdateTeacher)
 
 const dialogVisible = ref(false)
 const formLoading = ref(false)
 const submitLoading = ref(false)
-const activeTab = ref<'basic' | 'role'>('basic')
+const activeTab = ref<EditTab>('basic')
 const deptNames = ref<string[]>([])
+const defaultTeacherDeptIds = ref<number[]>([])
 const formRef = ref<FormInstance>()
+const teacherFormRef = ref<FormInstance>()
 const postList = ref<PostApi.PostVO[]>([])
 const roleList = ref<RoleApi.RoleVO[]>([])
 
@@ -167,6 +239,24 @@ const createDefaultFormData = (): FormData => ({
 
 const formData = ref<FormData>(createDefaultFormData())
 
+const normalizeDeptIds = (deptIds?: number[]) =>
+  Array.from(
+    new Set((deptIds ?? []).filter((deptId): deptId is number => typeof deptId === 'number'))
+  )
+
+const createDefaultTeacherFormData = (userId = 0, deptIds: number[] = []): EduApi.EduTeacherVO => ({
+  userId,
+  teacherNo: '',
+  title: '',
+  hireDate: '',
+  employmentStatus: '',
+  deptIds,
+  remark: '',
+  extraJson: ''
+})
+
+const teacherFormData = ref<EduApi.EduTeacherVO>(createDefaultTeacherFormData())
+
 const formRules: FormRules = {
   nickname: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
   email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
@@ -179,33 +269,79 @@ const formRules: FormRules = {
   ]
 }
 
-const resolveActiveTab = (tab?: 'basic' | 'role') => {
+function isFilled(value?: string | number | null) {
+  return `${value ?? ''}`.trim().length > 0
+}
+
+function hasTeacherInput() {
+  const data = teacherFormData.value
+  return (
+    isFilled(data.teacherNo) ||
+    isFilled(data.title) ||
+    isFilled(data.hireDate) ||
+    isFilled(data.employmentStatus) ||
+    isFilled(data.remark) ||
+    isFilled(data.extraJson)
+  )
+}
+
+function shouldSaveTeacher() {
+  return Boolean(teacherFormData.value.id || hasTeacherInput())
+}
+
+const validateTeacherEmploymentStatus = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
+  if (shouldSaveTeacher() && !isFilled(value)) {
+    callback(new Error('任职状态不能为空'))
+    return
+  }
+  callback()
+}
+
+const teacherFormRules: FormRules = {
+  employmentStatus: [{ validator: validateTeacherEmploymentStatus, trigger: 'change' }]
+}
+
+const resolveActiveTab = (tab?: EditTab) => {
+  if (tab === 'teacher' && canManageTeacher) {
+    return 'teacher'
+  }
   if (tab === 'role' && canAssignRole) {
     return 'role'
   }
   if (canEditBasic) {
     return 'basic'
   }
+  if (canManageTeacher) {
+    return 'teacher'
+  }
   return 'role'
 }
 
 const open = async (payload: OpenPayload) => {
   dialogVisible.value = true
+  defaultTeacherDeptIds.value = normalizeDeptIds(payload.deptIds)
   deptNames.value = payload.deptNames ?? []
   activeTab.value = resolveActiveTab(payload.activeTab)
   formData.value = createDefaultFormData()
+  teacherFormData.value = createDefaultTeacherFormData(payload.id, defaultTeacherDeptIds.value)
   postList.value = []
   roleList.value = []
   formRef.value?.clearValidate()
+  teacherFormRef.value?.clearValidate()
   formLoading.value = true
   try {
-    const [user, roleIds, posts, roles] = await Promise.all([
+    const [user, roleIds, posts, roles, teacher] = await Promise.all([
       UserApi.getUser(payload.id) as Promise<UserApi.UserVO & { remark?: string; avatar?: string }>,
       canAssignRole
         ? (PermissionApi.getUserRoleList(payload.id) as Promise<number[]>)
         : Promise.resolve([] as number[]),
       canEditBasic ? PostApi.getSimplePostList() : Promise.resolve([] as PostApi.PostVO[]),
-      canAssignRole ? RoleApi.getSimpleRoleList() : Promise.resolve([] as RoleApi.RoleVO[])
+      canAssignRole ? RoleApi.getSimpleRoleList() : Promise.resolve([] as RoleApi.RoleVO[]),
+      canManageTeacher ? EduApi.getTeacherByUserId(payload.id) : Promise.resolve(null)
     ])
     postList.value = posts
     roleList.value = roles
@@ -222,6 +358,21 @@ const open = async (payload: OpenPayload) => {
       avatar: user.avatar ?? '',
       roleIds
     }
+    teacherFormData.value = teacher
+      ? {
+          ...teacher,
+          userId: user.id,
+          teacherNo: teacher.teacherNo ?? '',
+          title: teacher.title ?? '',
+          hireDate: teacher.hireDate ?? '',
+          employmentStatus: teacher.employmentStatus ?? '',
+          deptIds: normalizeDeptIds(teacher.deptIds).length
+            ? normalizeDeptIds(teacher.deptIds)
+            : defaultTeacherDeptIds.value,
+          remark: teacher.remark ?? '',
+          extraJson: teacher.extraJson ?? ''
+        }
+      : createDefaultTeacherFormData(user.id, defaultTeacherDeptIds.value)
   } finally {
     formLoading.value = false
   }
@@ -229,8 +380,25 @@ const open = async (payload: OpenPayload) => {
 
 defineExpose({ open })
 
+const getTeacherDeptIds = () => {
+  const teacherDeptIds = normalizeDeptIds(teacherFormData.value.deptIds)
+  return teacherDeptIds.length ? teacherDeptIds : defaultTeacherDeptIds.value
+}
+
+const buildTeacherPayload = (): EduApi.EduTeacherVO => ({
+  ...teacherFormData.value,
+  userId: formData.value.id,
+  deptIds: getTeacherDeptIds(),
+  teacherNo: teacherFormData.value.teacherNo ?? '',
+  title: teacherFormData.value.title ?? '',
+  hireDate: teacherFormData.value.hireDate ?? '',
+  employmentStatus: teacherFormData.value.employmentStatus ?? '',
+  remark: teacherFormData.value.remark ?? '',
+  extraJson: teacherFormData.value.extraJson ?? ''
+})
+
 const submitForm = async () => {
-  if (!canEditBasic && !canAssignRole) {
+  if (!canEditBasic && !canAssignRole && !canManageTeacher) {
     message.warning('当前没有可操作权限')
     return
   }
@@ -238,6 +406,29 @@ const submitForm = async () => {
     const valid = await formRef.value?.validate().catch(() => false)
     if (!valid) {
       activeTab.value = 'basic'
+      return
+    }
+  }
+  const needSaveTeacher = canManageTeacher && shouldSaveTeacher()
+  if (needSaveTeacher) {
+    if (teacherFormData.value.id && !canUpdateTeacher) {
+      activeTab.value = 'teacher'
+      message.warning('当前没有修改教师扩展权限')
+      return
+    }
+    if (!teacherFormData.value.id && !canCreateTeacher) {
+      activeTab.value = 'teacher'
+      message.warning('当前没有新增教师扩展权限')
+      return
+    }
+    const valid = await teacherFormRef.value?.validate().catch(() => false)
+    if (!valid) {
+      activeTab.value = 'teacher'
+      return
+    }
+    if (!getTeacherDeptIds().length) {
+      activeTab.value = 'teacher'
+      message.warning('当前用户未分配组织，请先在列表页添加到部门')
       return
     }
   }
@@ -262,6 +453,14 @@ const submitForm = async () => {
         userId: formData.value.id,
         roleIds: formData.value.roleIds
       })
+    }
+    if (needSaveTeacher) {
+      const payload = buildTeacherPayload()
+      if (payload.id) {
+        await EduApi.updateTeacher(payload)
+      } else {
+        await EduApi.createTeacher(payload)
+      }
     }
     message.success('保存成功')
     dialogVisible.value = false

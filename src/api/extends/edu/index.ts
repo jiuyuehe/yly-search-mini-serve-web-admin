@@ -408,6 +408,13 @@ export const getTeacher = (id: number) => {
   return request.get<EduTeacherVO>({ url: '/edu/teacher/get', params: { id } })
 }
 
+export const getTeacherByUserId = (userId: number) => {
+  return request.get<EduTeacherVO | null>({
+    url: '/edu/teacher/get-by-user-id',
+    params: { userId }
+  })
+}
+
 export const createTeacher = (data: EduTeacherVO) => {
   return request.post<number>({ url: '/edu/teacher/create', data })
 }
@@ -434,6 +441,13 @@ export const getStudentPage = (params: EduStudentQuery) => {
 
 export const getStudent = (id: number) => {
   return request.get<EduStudentVO>({ url: '/edu/student/get', params: { id } })
+}
+
+export const getStudentByMemberUserId = (memberUserId: number) => {
+  return request.get<EduStudentVO | null>({
+    url: '/edu/student/get-by-member-user-id',
+    params: { memberUserId }
+  })
 }
 
 export const createStudent = (data: EduStudentVO) => {
