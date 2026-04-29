@@ -93,6 +93,28 @@
           <el-button type="primary" @click="addDifyApp">新增应用</el-button>
         </el-form-item>
       </template>
+      
+      <!-- MinerU 特有配置 -->
+      <template v-else-if="formData.code === 'mineru'">
+        <el-form-item label="完整URL" prop="url">
+          <el-input 
+            v-model="formData.url" 
+            placeholder="例如：http://127.0.0.1:8000/file_parse，留空则使用主机+端口" 
+          />
+          <div class="el-form-item-msg">如果填写完整URL，将忽略主机和端口配置</div>
+        </el-form-item>
+        <el-form-item label="超时时间(毫秒)" prop="timeout">
+          <el-input-number 
+            v-model="spareConfig.timeout" 
+            :min="1000" 
+            :max="3600000" 
+            :step="1000"
+            placeholder="默认600000毫秒(10分钟)"
+            style="width: 100%"
+          />
+          <div class="el-form-item-msg">PDF解析超时时间，默认600000毫秒(10分钟)</div>
+        </el-form-item>
+      </template>
     </el-form>
     <template #footer>
       <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
@@ -139,7 +161,8 @@ const spareConfig = reactive({
   keywordUrl: '',
   translationUrl: '',
   summaryUrl: '',
-  languageUrl: ''
+  languageUrl: '',
+  timeout: 600000
 })
 
 // 打开表单弹窗
@@ -160,6 +183,9 @@ const open = (plugin: PluginsConfigVO) => {
         if (spareData.items) {
           formData.difyApps = spareData.items
         }
+      } else if (plugin.code === 'mineru') {
+        // MinerU 配置：spare 直接存储超时时间字符串
+        spareConfig.timeout = parseInt(spareData) || 600000
       } else {
         // 清空配置
         Object.keys(spareConfig).forEach(key => {
@@ -177,6 +203,8 @@ const open = (plugin: PluginsConfigVO) => {
       console.error('解析spare配置失败:', e)
       if (plugin.code === 'dify') {
         formData.difyApps = []
+      } else if (plugin.code === 'mineru') {
+        spareConfig.timeout = 600000
       }
     }
   }
@@ -216,6 +244,10 @@ const submitForm = async () => {
         summaryUrl: spareConfig.summaryUrl,
         languageUrl: spareConfig.languageUrl
       })
+    }
+    else if (formData.code === 'mineru') {
+      // MinerU 配置：spare 直接存储超时时间字符串
+      submitData.spare = String(spareConfig.timeout || 600000)
     }
     
     // 提交数据

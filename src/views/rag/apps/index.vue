@@ -2,10 +2,18 @@
   <ContentWrap>
     <!-- 操作工具栏 -->
     <div class="toolbar">
-      <el-button @click="handleRefresh">
-        <Icon icon="ep:refresh" class="mr-5px" />
-        刷新
-      </el-button>
+      <div class="toolbar-left">
+        <el-button @click="handleRefresh">
+          <Icon icon="ep:refresh" class="mr-5px" />
+          刷新
+        </el-button>
+      </div>
+      <div class="toolbar-right">
+        <el-button type="primary" plain @click="goAiTaskLog">
+          <Icon icon="ep:histogram" class="mr-5px" />
+          AI任务日志
+        </el-button>
+      </div>
     </div>
 
     <!-- 空数据状态 -->
@@ -80,12 +88,14 @@
 <script setup lang="ts">
 import { RagAppsApi, RagAppsVO } from '@/api/rag/apps'
 import { useMessage } from '@/hooks/web/useMessage'
+import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import AppsForm from './AppsForm.vue'
 
 defineOptions({ name: 'Apps' })
 
 const message = useMessage()
+const router = useRouter()
 const loading = ref(false)
 const appsList = ref<RagAppsVO[]>([])
 const formRef = ref()
@@ -118,6 +128,10 @@ const getAppsList = async () => {
 // 刷新列表
 const handleRefresh = () => {
   getAppsList()
+}
+
+const goAiTaskLog = () => {
+  router.push('/rag/apps/ai-task-log')
 }
 
 // 添加新应用
@@ -196,6 +210,7 @@ onMounted(() => {
 .toolbar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
 }
 
