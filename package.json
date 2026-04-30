@@ -24,7 +24,9 @@
     "lint:style": "stylelint --fix \"./src/**/*.{vue,less,postcss,css,scss}\" --cache --cache-location node_modules/.cache/stylelint/",
     "lint:lint-staged": "lint-staged -c ",
     "build:zip": "pnpm build:prod && node scripts/build-zip.js",
-    "deploy:test": "node scripts/deploy-test.js"
+    "deploy:test": "node scripts/deploy-test.js",
+    "deploy:test:jar": "node scripts/deploy-test.js jar",
+    "deploy:test:web": "node scripts/deploy-test.js web"
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",

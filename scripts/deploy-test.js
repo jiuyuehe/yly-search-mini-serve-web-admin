@@ -88,16 +88,41 @@ function getLatestFrontendZip() {
 }
 
 async function main() {
-  console.log('开始部署 yly-rag-mini...\n');
+  // 解析命令行参数
+  const args = process.argv.slice(2);
+  const deployJar = args.includes('jar');
+  const deployWeb = args.includes('web');
+  const deployAll = !deployJar && !deployWeb; // 默认全部部署
 
-  if (!fs.existsSync(BACKEND_JAR_PATH)) {
-    throw new Error(`后端 jar 不存在: ${BACKEND_JAR_PATH}`);
+  console.log('开始部署 yly-rag-mini...\n');
+  
+  if (deployAll) {
+    console.log('部署模式: 全部部署 (后端 + 前端)');
+  } else if (deployJar) {
+    console.log('部署模式: 仅部署后端');
+  } else if (deployWeb) {
+    console.log('部署模式: 仅部署前端');
   }
 
-  const latestZipFile = getLatestFrontendZip();
+  // 检查后端jar是否存在（如果需要部署后端）
+  if (deployAll || deployJar) {
+    if (!fs.existsSync(BACKEND_JAR_PATH)) {
+      throw new Error(`后端 jar 不存在: ${BACKEND_JAR_PATH}`);
+    }
+  }
 
-  console.log(`后端 jar: ${BACKEND_JAR_PATH}`);
-  console.log(`前端 zip: ${latestZipFile}`);
+  // 获取前端zip文件（如果需要部署前端）
+  let latestZipFile = null;
+  if (deployAll || deployWeb) {
+    latestZipFile = getLatestFrontendZip();
+  }
+
+  if (deployAll || deployJar) {
+    console.log(`后端 jar: ${BACKEND_JAR_PATH}`);
+  }
+  if (deployAll || deployWeb) {
+    console.log(`前端 zip: ${latestZipFile}`);
+  }
 
   const conn = new Client();
 
@@ -125,43 +150,53 @@ async function main() {
       test -w ${REMOTE_WEB_PATH}
     `);
 
-    log('2/6 上传后端 jar');
+    // 部署后端jar（如果需要）
+    if (deployAll || deployJar) {
+      log('2/6 上传后端 jar');
 
-    const remoteJarTmp = `${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}.tmp`;
-    const remoteJarFinal = `${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}`;
+      const remoteJarTmp = `${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}.tmp`;
+      const remoteJarFinal = `${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}`;
 
-    await fastPut(sftp, BACKEND_JAR_PATH, remoteJarTmp);
-    await execRemote(conn, `mv -f ${remoteJarTmp} ${remoteJarFinal}`);
+      await fastPut(sftp, BACKEND_JAR_PATH, remoteJarTmp);
+      await execRemote(conn, `mv -f ${remoteJarTmp} ${remoteJarFinal}`);
 
-    const jarSize = (fs.statSync(BACKEND_JAR_PATH).size / 1024 / 1024).toFixed(2);
-    console.log(`jar 上传完成: ${remoteJarFinal} (${jarSize} MB)`);
+      const jarSize = (fs.statSync(BACKEND_JAR_PATH).size / 1024 / 1024).toFixed(2);
+      console.log(`jar 上传完成: ${remoteJarFinal} (${jarSize} MB)`);
+    }
 
-    log('3/6 清理前端 web 目录');
+    // 部署前端（如果需要）
+    if (deployAll || deployWeb) {
+      log('3/6 清理前端 web 目录');
 
-    await execRemote(conn, `find ${REMOTE_WEB_PATH} -mindepth 1 -maxdepth 1 -exec rm -rf {} +`);
+      await execRemote(conn, `find ${REMOTE_WEB_PATH} -mindepth 1 -maxdepth 1 -exec rm -rf {} +`);
 
-    log('4/6 上传前端 zip');
+      log('4/6 上传前端 zip');
 
-    const zipFileName = path.basename(latestZipFile);
-    const remoteZipPath = `${REMOTE_WEB_PATH}/${zipFileName}`;
+      const zipFileName = path.basename(latestZipFile);
+      const remoteZipPath = `${REMOTE_WEB_PATH}/${zipFileName}`;
 
-    await fastPut(sftp, latestZipFile, remoteZipPath);
+      await fastPut(sftp, latestZipFile, remoteZipPath);
 
-    const zipSize = (fs.statSync(latestZipFile).size / 1024 / 1024).toFixed(2);
-    console.log(`zip 上传完成: ${remoteZipPath} (${zipSize} MB)`);
+      const zipSize = (fs.statSync(latestZipFile).size / 1024 / 1024).toFixed(2);
+      console.log(`zip 上传完成: ${remoteZipPath} (${zipSize} MB)`);
 
-    log('5/6 解压前端 zip');
+      log('5/6 解压前端 zip');
 
-    await execRemote(conn, `
-      cd ${REMOTE_WEB_PATH} &&
-      unzip -oq ${zipFileName} &&
-      rm -f ${zipFileName}
-    `, { timeoutMs: 180000 });
+      await execRemote(conn, `
+        cd ${REMOTE_WEB_PATH} &&
+        unzip -oq ${zipFileName} &&
+        rm -f ${zipFileName}
+      `, { timeoutMs: 180000 });
+    }
 
     log('6/6 部署完成');
 
-    console.log(`后端 jar: ${remoteJarFinal}`);
-    console.log(`前端目录: ${REMOTE_WEB_PATH}`);
+    if (deployAll || deployJar) {
+      console.log(`后端 jar: ${REMOTE_SERVER_PATH}/${REMOTE_JAR_NAME}`);
+    }
+    if (deployAll || deployWeb) {
+      console.log(`前端目录: ${REMOTE_WEB_PATH}`);
+    }
 
     // 如果你已经配置了 systemctl 免密 sudo，可以打开下面这行
     // await execRemote(conn, 'sudo /bin/systemctl restart yly-rag-mini');
