@@ -62,6 +62,10 @@
           </div>
         </div>
         <div class="item-actions">
+          <el-button v-if="!file.folder" link type="primary" @click="$emit('kk-preview', file)">
+            <el-icon><Monitor /></el-icon>
+            KK查看
+          </el-button>
           <el-button link type="primary" @click="$emit('preview', file)">
             <el-icon><View /></el-icon>
             {{ file.folder ? '打开' : '在线查看' }}
@@ -90,7 +94,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Box, CopyDocument, Document, Download, Files, Folder, Headset, Location, Picture, VideoPlay, View } from '@element-plus/icons-vue'
+import { Box, CopyDocument, Document, Download, Files, Folder, Headset, Location, Monitor, Picture, VideoPlay, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CommonFile } from '@/api/rag/search'
 
@@ -106,6 +110,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  'kk-preview': [file: CommonFile]
   preview: [file: CommonFile]
   download: [file: CommonFile]
   'batch-download': []
@@ -233,7 +238,7 @@ const copyPath = async (path?: string) => {
 .result-item {
   position: relative;
   display: grid;
-  grid-template-columns: 24px 44px minmax(0, 1fr) 86px;
+  grid-template-columns: 24px 44px minmax(0, 1fr) 104px;
   gap: 14px;
   align-items: start;
   padding: 18px 20px;

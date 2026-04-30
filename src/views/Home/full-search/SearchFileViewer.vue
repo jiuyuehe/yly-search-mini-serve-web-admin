@@ -41,6 +41,10 @@
               <span>{{ item.updateTime || '-' }}</span>
             </div>
             <div class="folder-item-actions">
+              <el-button v-if="!item.folder" link type="primary" size="small" @click="handleFolderItemKkPreview(item)">
+                <el-icon><Monitor /></el-icon>
+                KK查看
+              </el-button>
               <el-button link type="primary" size="small" @click="handleFolderItemPreview(item)">
                 <el-icon><View /></el-icon>
                 {{ item.folder ? '打开' : '预览' }}
@@ -65,12 +69,13 @@
 </template>
 
 <script lang="ts" setup>
-import { Document, Download, Folder, FolderOpened, View } from '@element-plus/icons-vue'
+import { Document, Download, Folder, FolderOpened, Monitor, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CommonFile, FilePreviewMeta, NasFileEntry } from '@/api/rag/search'
 import {
   downloadFileBlob,
   downloadNasFileBlob,
+  getKkPreviewUrl,
   getNasFileViewUrl,
   getPreviewBlob,
   getPreviewMeta,
@@ -164,6 +169,37 @@ const formatSize = (size?: number) => {
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
 }
 
+const openExternalPreview = (url?: string) => {
+  if (url) {
+    window.open(url, '_blank')
+  } else {
+    ElMessage.warning('未获取到预览地址')
+  }
+}
+
+// 处理文件夹中子项的 KK 预览
+const handleFolderItemKkPreview = async (item: NasFileEntry) => {
+  if (item.folder) return
+
+  try {
+    if (item.esId) {
+      openExternalPreview(await getKkPreviewUrl(item.esId))
+      return
+    }
+
+    const nasId = currentFile.value?.nasId
+    if (!nasId) {
+      ElMessage.error('缺少 nasId，无法预览')
+      return
+    }
+    // NAS 目录接口当前不返回 esId 时，降级复用 NAS 在线查看 token，权限与“在线查看”一致。
+    const response = await getNasFileViewUrl(nasId, item.filePath)
+    openExternalPreview(response?.url)
+  } catch (e: any) {
+    ElMessage.error(e?.message || 'KK预览失败')
+  }
+}
+
 // 处理文件夹中子项的预览
 const handleFolderItemPreview = async (item: NasFileEntry) => {
   if (item.folder) {
@@ -199,12 +235,7 @@ const handleFolderItemPreview = async (item: NasFileEntry) => {
       
       const response = await getNasFileViewUrl(nasId, item.filePath)
       
-      if (response && response.url) {
-        // 在新窗口打开预览
-        window.open(response.url, '_blank')
-      } else {
-        ElMessage.warning('该文件类型暂不支持在线预览，请下载后查看')
-      }
+      openExternalPreview(response?.url)
     } catch (e: any) {
       ElMessage.error(e?.message || '预览失败')
     }

@@ -45,6 +45,7 @@
         :page="page"
         :page-size="filters.limit || 20"
         :search-time="result.searchTime"
+        @kk-preview="openKkPreview"
         @preview="openViewer"
         @download="downloadOne"
         @batch-download="downloadBatch"
@@ -66,6 +67,7 @@ import SearchResultList from './SearchResultList.vue'
 import {
   batchDownloadBlob,
   downloadFileBlob,
+  getKkPreviewUrl,
   searchDocuments,
   type CommonFile,
   type FilterResult,
@@ -187,6 +189,19 @@ const downloadBatch = async () => {
   const blob = await batchDownloadBlob(selectedIds.value)
   saveBlob(blob, '全文搜索结果.zip')
   ElMessage.success('批量下载已开始')
+}
+
+const openKkPreview = async (file: CommonFile) => {
+  if (!file.esId) {
+    ElMessage.warning('文件缺少 esId，无法打开 KK 预览')
+    return
+  }
+  const url = await getKkPreviewUrl(file.esId)
+  if (!url) {
+    ElMessage.warning('未获取到 KK 预览地址')
+    return
+  }
+  window.open(url, '_blank')
 }
 
 const openViewer = (file: CommonFile) => {

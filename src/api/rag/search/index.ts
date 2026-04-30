@@ -83,6 +83,7 @@ export interface FilePreviewMeta {
 }
 
 export interface NasFileEntry {
+  esId?: string
   fileName: string
   filePath: string
   parentPath?: string
@@ -138,6 +139,13 @@ export const getPreviewMeta = (esId: string) => {
 export const getPreviewBlob = (esId: string) => {
   return request.download<Blob>({
     url: '/rag/documents/preview/content',
+    params: { esId }
+  })
+}
+
+export const getKkPreviewUrl = (esId: string) => {
+  return request.get<string>({
+    url: '/rag/documents/preview/kk',
     params: { esId }
   })
 }
