@@ -14,7 +14,7 @@
 
     <el-table v-loading="loading" :data="fileList" border style="width: 100%">
       <el-table-column label="文件名" prop="fileName" min-width="160" />
-      <el-table-column label="元数据提取" width="100" align="center">
+      <el-table-column label="基础信息" width="100" align="center">
         <template #default="scope">
           <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.METADATA)">
             <Icon
@@ -34,94 +34,13 @@
       <el-table-column label="内容提取" width="100" align="center">
         <template #default="scope">
           <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.CONTENT)">
-            <Icon v-if="scope.row.status === 0" icon="ep:check" class="text-green-500" />
-            <span v-else-if="scope.row.status === 2 || scope.row.status === 3">🕒</span>
             <Icon
-              v-else-if="scope.row.status === 1 || scope.row.status === 4"
-              icon="ep:close"
-              class="text-red-500"
-            />
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="文档摘要" width="100" align="center">
-        <template #default="scope">
-          <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.SUMMARY)">
-            <Icon
-              v-if="isTaskTypeCompleted(scope.row.succStatus, TaskTypes.SUMMARY)"
+              v-if="isTaskTypeCompleted(scope.row.succStatus, TaskTypes.CONTENT)"
               icon="ep:check"
               class="text-green-500"
             />
             <Icon
-              v-else-if="isTaskTypeError(scope.row.errStatus, TaskTypes.SUMMARY)"
-              icon="ep:close"
-              class="text-red-500"
-            />
-            <span v-else>🕒</span>
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="语言识别" width="100" align="center">
-        <template #default="scope">
-          <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.LANGUAGE)">
-            <Icon
-              v-if="isTaskTypeCompleted(scope.row.succStatus, TaskTypes.LANGUAGE)"
-              icon="ep:check"
-              class="text-green-500"
-            />
-            <Icon
-              v-else-if="isTaskTypeError(scope.row.errStatus, TaskTypes.LANGUAGE)"
-              icon="ep:close"
-              class="text-red-500"
-            />
-            <span v-else>🕒</span>
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="文本翻译" width="100" align="center">
-        <template #default="scope">
-          <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.TRANSLATE)">
-            <Icon
-              v-if="isTaskTypeCompleted(scope.row.succStatus, TaskTypes.TRANSLATE)"
-              icon="ep:check"
-              class="text-green-500"
-            />
-            <Icon
-              v-else-if="isTaskTypeError(scope.row.errStatus, TaskTypes.TRANSLATE)"
-              icon="ep:close"
-              class="text-red-500"
-            />
-            <span v-else>🕒</span>
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="标签提取" width="100" align="center">
-        <template #default="scope">
-          <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.TAG)">
-            <Icon
-              v-if="isTaskTypeCompleted(scope.row.succStatus, TaskTypes.TAG)"
-              icon="ep:check"
-              class="text-green-500"
-            />
-            <Icon
-              v-else-if="isTaskTypeError(scope.row.errStatus, TaskTypes.TAG)"
-              icon="ep:close"
-              class="text-red-500"
-            />
-            <span v-else>🕒</span>
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="实体提取" width="100" align="center">
-        <template #default="scope">
-          <span v-if="isTaskTypeEnabled(scope.row.parseStatus, TaskTypes.ENTITY)">
-            <Icon
-              v-if="isTaskTypeCompleted(scope.row.succStatus, TaskTypes.ENTITY)"
-              icon="ep:check"
-              class="text-green-500"
-            />
-            <Icon
-              v-else-if="isTaskTypeError(scope.row.errStatus, TaskTypes.ENTITY)"
+              v-else-if="isTaskTypeError(scope.row.errStatus, TaskTypes.CONTENT)"
               icon="ep:close"
               class="text-red-500"
             />
@@ -178,7 +97,6 @@ const taskId = ref()
 const fileList = ref([])
 const totalFiles = ref(0)
 const completedFiles = ref(0)
-const goToPage = ref('')
 
 // 分页信息
 const pageInfo = reactive({
@@ -203,27 +121,25 @@ const progressPercent = computed(() => {
 // 任务类型和状态定义
 const TaskTypes = {
   METADATA: 1,
-  CONTENT: 2,
-  SUMMARY: 4,
-  LANGUAGE: 8,
-  TRANSLATE: 16,
-  TAG: 32,
-  ENTITY: 64
+  CONTENT: 2
 }
+const VISIBLE_TASK_MASK = TaskTypes.METADATA | TaskTypes.CONTENT
+
+const toTaskStatusNumber = (status: string | number | undefined | null) => Number(status || 0)
 
 // 判断任务类型是否启用
 const isTaskTypeEnabled = (parseStatus, type) => {
-  return (parseStatus & type) === type
+  return (toTaskStatusNumber(parseStatus) & type) === type
 }
 
 // 判断任务类型是否完成
 const isTaskTypeCompleted = (succStatus, type) => {
-  return (succStatus & type) === type
+  return (toTaskStatusNumber(succStatus) & type) === type
 }
 
 // 判断任务是否出错
 const isTaskTypeError = (errStatus, type) => {
-  return (errStatus & type) === type
+  return (toTaskStatusNumber(errStatus) & type) === type
 }
 
 type StatusInfo = {
@@ -233,11 +149,15 @@ type StatusInfo = {
 
 // 获取整体状态
 const getOverallStatus = (row): StatusInfo => {
-  if (row.succStatus == row.parseStatus) {
+  const parseStatus = toTaskStatusNumber(row.parseStatus) & VISIBLE_TASK_MASK
+  const succStatus = toTaskStatusNumber(row.succStatus) & VISIBLE_TASK_MASK
+  const errStatus = toTaskStatusNumber(row.errStatus) & VISIBLE_TASK_MASK
+
+  if (parseStatus > 0 && succStatus === parseStatus) {
     return { type: 'success', text: '成功' }
-  } else if (row.errStatus == row.parseStatus) {
+  } else if (parseStatus > 0 && errStatus === parseStatus) {
     return { type: 'danger', text: '失败' }
-  } else if (row.succStatus > 0 || row.errStatus > 0) {
+  } else if (succStatus > 0 || errStatus > 0) {
     return { type: 'warning', text: '部分成功' }
   } else if (row.status != undefined) {
     return { type: 'info', text: '已开始' }
@@ -278,22 +198,11 @@ const handleCurrentChange = (page: number) => {
   fetchTaskDetail()
 }
 
-// 处理手动跳转页面
-const handleGoToPage = () => {
-  const page = parseInt(goToPage.value)
-  if (page && page > 0 && page <= Math.ceil(totalFiles.value / pageInfo.pageSize)) {
-    pageInfo.page = page
-    fetchTaskDetail()
-  }
-  goToPage.value = ''
-}
-
 // 打开弹窗
 const open = (id: number) => {
   dialogVisible.value = true
   taskId.value = id
   pageInfo.page = 1
-  goToPage.value = ''
   fetchTaskDetail()
 }
 

@@ -5,7 +5,6 @@
       <el-steps :active="currentStep" finish-status="success">
         <el-step title="存储信息"/>
         <el-step title="布控范围"/>
-        <el-step title="高级配置"/>
       </el-steps>
 
       <div class="steps-content mt-4">
@@ -88,18 +87,8 @@
 
         <!-- 步骤2: 布控范围 -->
         <div v-show="currentStep === 1" class="step-scope">
-          <el-checkbox v-model="scanRules.checkAll" :indeterminate="scanRules.indeterminate" @change="onCheckAllRulesChange">
-            全选 (扫描范围)
-          </el-checkbox>
-          <el-divider />
-          <el-checkbox-group v-model="scanRules.checkedList" @change="onRulesChange" class="checkbox-horizontal">
-            <el-checkbox v-for="item in ruleOptions" :key="item.value" :label="item.value">
-              {{ item.title }}
-            </el-checkbox>
-          </el-checkbox-group>
-          
-          <div class="mt-4">
-            <span>自定义范围</span>
+          <div>
+            <span>自定义</span>
           </div>
           <div class="mt-2 ml-6 flex items-center">
             <span class="w-32 text-right mr-2">文件名匹配: </span>
@@ -121,46 +110,6 @@
             <span class="w-32 text-right mr-2">索引文件夹: </span>
             <el-switch v-model="folderIndexEnabled" active-text="开启" inactive-text="关闭" />
           </div>
-          <el-divider />
-          <div class="mt-2">
-            <span>敏感信息匹配: 
-              <el-button link type="primary" @click="nextStep">
-                <Icon icon="ep:plus" class="mr-5px" />选择敏感词库
-              </el-button>
-            </span>
-            <el-divider />
-            <div style="min-height: 50px;">
-              <el-tag
-                v-for="rule in selectedSensitiveRules"
-                :key="rule" 
-                class="mx-1 my-1"
-                closable
-                @close="removeRule(rule)"
-              >
-                {{ rule }}
-              </el-tag>
-            </div>
-          </div>
-        </div>
-
-        <!-- 步骤3: 高级配置 -->
-        <div v-show="currentStep === 2" class="step-tasks">
-          <el-checkbox v-model="scanTasks.checkAll" :indeterminate="scanTasks.indeterminate" @change="onCheckAllTasksChange">
-            全选
-          </el-checkbox>
-          <el-divider />
-          <el-checkbox-group v-model="scanTasks.checkedList" @change="onTasksChange" class="checkbox-horizontal">
-            <el-checkbox v-for="item in taskOptions" :key="item.value" :label="item.value" class="task-checkbox">
-              {{ item.title }}
-            </el-checkbox>
-          </el-checkbox-group>
-          
-          <!-- 任务描述（可选） -->
-          <div class="task-descriptions mt-4">
-            <div v-for="item in taskOptions" :key="item.value" class="task-desc">
-              <div class="text-gray-500">{{ item.title }}: {{ item.desc }}</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -168,10 +117,10 @@
         <el-button v-if="currentStep > 0" @click="prevStep">
           上一步
         </el-button>
-        <el-button v-if="currentStep < 2" type="primary" @click="nextStep">
+        <el-button v-if="currentStep < 1" type="primary" @click="nextStep">
           下一步
         </el-button>
-        <el-button v-if="currentStep === 2" type="primary" @click="submitForm" :loading="formLoading">
+        <el-button v-if="currentStep === 1" type="primary" @click="submitForm" :loading="formLoading">
           确定
         </el-button>
       </div>
@@ -209,34 +158,15 @@ const formType = ref('') // 表单的类型：create - 新增；update - 修改
 
 // 步骤相关
 const currentStep = ref(0)
-const fileNamePattern = ref('^(?!\\.deleted|\\.yli\\.part\\.).*')  // 默认过滤掉以.deleted和.yli.part.开头的文件
+const DEFAULT_FILE_TYPES = ['1', '2', '6']
+const DEFAULT_PROCESS_TYPES = '3'
+// 默认过滤掉以 .deleted、.yli.part.、._ 开头的文件，避免索引系统临时文件和 macOS 元数据文件。
+const DEFAULT_FILE_NAME_PATTERN = '^(?!\\.deleted|\\.yli\\.part\\.|\\._).*'
+const fileNamePattern = ref(DEFAULT_FILE_NAME_PATTERN)
 const contentPattern = ref('')
 const fileSuffixExcludePattern = ref('')
 const folderNameExcludePattern = ref('')
 const folderIndexEnabled = ref(true)
-const selectedSensitiveRules = ref<string[]>([])
-
-// 扫描规则选项
-const ruleOptions = [
-  { title: "文档", value: '1' },
-  { title: "音视频", value: '2' },
-  { title: "其它", value: '6' }
-]
-
-// 扫描任务选项
-const taskOptions = [
-  { title: "元数据提取", value: '1', desc: '从文件中提取基本信息如大小、创建时间等'},
-  { title: "内容提取", value: '2', desc: '提取文档的文本内容'},
-  { title: "文档摘要", value: '4', desc: '生成文档内容的简要摘要'},
-  { title: "语言识别", value: '8', desc: '识别文档的语言类型'},
-  { title: "文本翻译", value: '16', desc: '将文档内容翻译成指定语言'},
-  { title: "标签提取", value: '32', desc: '从文档内容提取关键标签'},
-  { title: "实体提取", value: '64', desc: '识别和提取文档中的实体信息'}
-]
-
-// 内容提取相关常量
-const CONTENT_DEPENDENCIES = ['4', '8', '16', '32', '64'] // 依赖于内容提取的功能
-const CONTENT_EXTRACT_VALUE = '2' // 内容提取值
 
 // Cron表达式示例配置
 const cronExamples = [
@@ -248,19 +178,6 @@ const cronExamples = [
   { label: '每周一', value: '0 0 0 ? * MON' },
   { label: '每月', value: '0 0 0 1 * ?' },
 ]
-
-// 复选框状态
-const scanRules = reactive({
-  indeterminate: false,
-  checkAll: true,
-  checkedList: ['1', '2', '6'] as string[],
-})
-
-const scanTasks = reactive({
-  indeterminate: false,
-  checkAll: false,
-  checkedList: ['2', '32', '4'] as string[],
-})
 
 const formData = ref({
   id: undefined,
@@ -339,48 +256,6 @@ const prevStep = () => {
   currentStep.value--
 }
 
-// 复选框处理逻辑
-const onRulesChange = (checkedValues: string[]) => {
-  scanRules.indeterminate = checkedValues.length > 0 && checkedValues.length < ruleOptions.length
-  scanRules.checkAll = checkedValues.length === ruleOptions.length
-}
-
-const onCheckAllRulesChange = (e: any) => {
-  scanRules.checkedList = e ? ruleOptions.map(item => item.value) : []
-  scanRules.indeterminate = false
-  scanRules.checkAll = e
-}
-
-// 修正任务选择逻辑，确保依赖关系正确
-const onTasksChange = (checkedValues: string[]) => {
-  // 检查是否选中了任何依赖于内容提取的选项
-  const hasContentDependency = checkedValues.some(value => CONTENT_DEPENDENCIES.includes(value))
-  
-  // 如果选中了依赖项，但没有选中内容提取，则自动选中内容提取
-  if (hasContentDependency && !checkedValues.includes(CONTENT_EXTRACT_VALUE)) {
-    checkedValues.push(CONTENT_EXTRACT_VALUE)
-    // 显示选中依赖项的提示消息
-    message.info('由于其他功能依赖于内容提取，已自动勾选内容提取')
-  }
-
-  // 更新选中列表
-  scanTasks.checkedList = checkedValues
-  
-  // 更新全选和半选状态
-  scanTasks.indeterminate = checkedValues.length > 0 && checkedValues.length < taskOptions.length
-  scanTasks.checkAll = checkedValues.length === taskOptions.length
-}
-
-const onCheckAllTasksChange = (e: any) => {
-  scanTasks.checkedList = e ? taskOptions.map(item => item.value) : []
-  scanTasks.indeterminate = false
-  scanTasks.checkAll = e
-}
-
-const removeRule = (rule: string) => {
-  selectedSensitiveRules.value = selectedSensitiveRules.value.filter(item => item !== rule)
-}
-
 // 选择Cron表达式示例
 const selectCronExample = (cronValue: string) => {
   formData.value.scheduleConf = cronValue
@@ -388,13 +263,13 @@ const selectCronExample = (cronValue: string) => {
 }
 
 const buildScanRules = (): ScanRules => ({
-  fileTypes: scanRules.checkedList,
+  fileTypes: DEFAULT_FILE_TYPES,
   fileNamePattern: fileNamePattern.value,
   contentPattern: contentPattern.value,
   fileSuffixExcludePattern: fileSuffixExcludePattern.value,
   folderNameExcludePattern: folderNameExcludePattern.value,
   folderIndexEnabled: folderIndexEnabled.value,
-  sensitiveRules: selectedSensitiveRules.value
+  sensitiveRules: []
 })
 
 const parseScanRulesJson = (scanRulesJson?: string): ScanRules | undefined => {
@@ -411,8 +286,7 @@ const parseScanRulesJson = (scanRulesJson?: string): ScanRules | undefined => {
 
 const applyScanRules = (rules?: ScanRules, defaultFolderIndexEnabled = false) => {
   const safeRules = rules || {}
-  scanRules.checkedList = safeRules.fileTypes || []
-  fileNamePattern.value = safeRules.fileNamePattern || ''
+  fileNamePattern.value = safeRules.fileNamePattern || DEFAULT_FILE_NAME_PATTERN
   contentPattern.value = safeRules.contentPattern || ''
   fileSuffixExcludePattern.value = safeRules.fileSuffixExcludePattern || ''
   folderNameExcludePattern.value = safeRules.folderNameExcludePattern || ''
@@ -420,10 +294,6 @@ const applyScanRules = (rules?: ScanRules, defaultFolderIndexEnabled = false) =>
     typeof safeRules.folderIndexEnabled === 'boolean'
       ? safeRules.folderIndexEnabled
       : defaultFolderIndexEnabled
-  selectedSensitiveRules.value = safeRules.sensitiveRules || []
-
-  scanRules.checkAll = scanRules.checkedList.length === ruleOptions.length
-  scanRules.indeterminate = scanRules.checkedList.length > 0 && scanRules.checkedList.length < ruleOptions.length
 }
 
 // 初始化加载选项数据
@@ -456,24 +326,6 @@ const open = async (type: string, id?: number) => {
       
       // 优先使用后端返回的类型化扫描规则，兼容旧接口的scanRulesJson
       applyScanRules(res.scanRules || parseScanRulesJson(res.scanRulesJson), false)
-      
-      // 解析processTypes字段
-      if (res.processTypes) {
-        const processTypesValue = parseInt(res.processTypes)
-        const types: string[] = []
-        
-        if (processTypesValue & 1) types.push('1')
-        if (processTypesValue & 2) types.push('2')
-        if (processTypesValue & 4) types.push('4')
-        if (processTypesValue & 8) types.push('8')
-        if (processTypesValue & 16) types.push('16')
-        if (processTypesValue & 32) types.push('32')
-        if (processTypesValue & 64) types.push('64')
-        
-        scanTasks.checkedList = types
-        scanTasks.checkAll = types.length === taskOptions.length
-        scanTasks.indeterminate = types.length > 0 && types.length < taskOptions.length
-      }
     } finally {
       formLoading.value = false
     }
@@ -486,10 +338,8 @@ const emit = defineEmits(['success']) // 定义 success 事件，用于操作成
 const submitForm = async () => {
   try {
     formData.value.scanRules = buildScanRules()
-
-    // 计算processTypes的位运算值
-    const processTypes = scanTasks.checkedList.reduce((acc, curr) => acc + parseInt(curr), 0)
-    formData.value.processTypes = String(processTypes)
+    // 当前扫描链路只展示并执行基础信息与内容提取，固定写入 1 + 2 的位标识。
+    formData.value.processTypes = DEFAULT_PROCESS_TYPES
 
     // 提交请求
     formLoading.value = true
@@ -538,21 +388,11 @@ const resetForm = () => {
     scanRules: undefined,
   }
   
-  // 重置扫描规则和任务
-  scanRules.indeterminate = false
-  scanRules.checkAll = true
-  scanRules.checkedList = ['1', '2', '6']
-  
-  scanTasks.indeterminate = false
-  scanTasks.checkAll = false
-  scanTasks.checkedList = ['2', '32', '4']
-  
-  fileNamePattern.value = '^(?!\\.deleted|\\.yli\\.part\\.).*'  // 默认过滤掉以.deleted和.yli.part.开头的文件
+  fileNamePattern.value = DEFAULT_FILE_NAME_PATTERN
   contentPattern.value = ''
   fileSuffixExcludePattern.value = ''
   folderNameExcludePattern.value = ''
   folderIndexEnabled.value = true
-  selectedSensitiveRules.value = []
   
   formRef.value?.resetFields()
 }
@@ -568,8 +408,7 @@ const resetForm = () => {
   border-radius: 6px;
 }
 
-.step-scope,
-.step-tasks {
+.step-scope {
   text-align: left;
 }
 
@@ -580,31 +419,6 @@ const resetForm = () => {
 .form-item-width {
   width: 100%;
   max-width: 560px; /* 统一表单元素宽度 */
-}
-
-.checkbox-horizontal {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.checkbox-horizontal .el-checkbox {
-  margin-right: 20px;
-  margin-bottom: 8px;
-}
-
-.task-checkbox {
-  width: 33%;
-  margin-bottom: 10px;
-}
-
-.task-descriptions {
-  padding-left: 8px;
-  margin-top: 16px;
-}
-
-.task-desc {
-  margin-bottom: 6px;
 }
 
 .cron-examples {
