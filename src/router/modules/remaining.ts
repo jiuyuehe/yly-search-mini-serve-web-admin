@@ -514,6 +514,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/rag/audio-asr',
+    component: Layout,
+    name: 'RagAudioAsrPage',
+    meta: {
+      title: '音视频智能转写',
+      icon: 'ep:video-play'
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/rag/audio-asr/index.vue'),
+        name: 'RagAudioAsr',
+        meta: {
+          title: '音视频智能转写',
+          icon: 'ep:video-play',
+          noCache: false
+        }
+      }
+    ]
+  },
+  {
     path: '/rag/tags',
     component: Layout,
     name: 'RagTagSystemPage',

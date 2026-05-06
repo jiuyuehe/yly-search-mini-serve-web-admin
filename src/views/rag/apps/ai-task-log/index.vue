@@ -226,6 +226,7 @@ const taskTypeOptions = [
   { label: 'NER', value: 'ner' },
   { label: '表单抽取', value: 'form_extract' },
   { label: 'OCR', value: 'ocr' },
+  { label: '音视频转写', value: 'audio_asr' },
   { label: '关联推荐', value: 'related_recommend' },
   { label: '文档分类', value: 'document_classify' },
   { label: '翻译', value: 'translate' }
@@ -441,6 +442,12 @@ onMounted(() => {
   if (route.query.scheduleTaskId) {
     queryParams.scheduleTaskId = String(route.query.scheduleTaskId)
     queryParams.triggerSource = 'schedule'
+  }
+  if (route.query.taskType) {
+    queryParams.taskType = String(route.query.taskType)
+  }
+  if (route.query.esId) {
+    queryParams.esId = String(route.query.esId)
   }
   getList()
   // 等待 DOM 更新后初始化图表
