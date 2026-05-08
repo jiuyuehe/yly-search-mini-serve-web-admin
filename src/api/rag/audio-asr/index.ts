@@ -11,6 +11,23 @@ export interface AudioAsrStartReqVO {
   summaryModelId?: number
 }
 
+export interface AudioAsrSummaryReqVO {
+  esId: string
+  modelId?: number
+  targetLength?: number
+  language?: string
+  chunkSize?: number
+  concurrency?: number
+}
+
+export interface AudioTtsReqVO {
+  text: string
+  modelId?: number
+  voice?: string
+  responseFormat?: string
+  speed?: number
+}
+
 export const AudioAsrApi = {
   start: async (data: AudioAsrStartReqVO) => {
     return await request.post({ url: '/rag/ai/audio-asr/start', data })
@@ -23,5 +40,15 @@ export const AudioAsrApi = {
   },
   cancel: async (esId: string) => {
     return await request.post({ url: `/rag/ai/audio-asr/cancel/${esId}` })
+  },
+  summarize: async (data: AudioAsrSummaryReqVO) => {
+    return await request.post({ url: '/rag/ai/audio-asr/summarize', data })
+  },
+  tts: async (data: AudioTtsReqVO) => {
+    return await request.postOriginal({
+      url: '/rag/ai/audio-asr/tts',
+      data,
+      responseType: 'blob'
+    })
   }
 }
