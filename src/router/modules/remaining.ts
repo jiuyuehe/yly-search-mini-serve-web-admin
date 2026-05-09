@@ -175,29 +175,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
-    path: '/rag',
-    component: Layout,
-    name: 'RagAiTaskLogPage',
-    meta: {
-      hidden: true
-    },
-    children: [
-      {
-        path: 'apps/ai-task-log',
-        component: () => import('@/views/rag/apps/ai-task-log/index.vue'),
-        name: 'RagAiTaskLog',
-        meta: {
-          noCache: true,
-          hidden: true,
-          canTo: true,
-          icon: 'ep:histogram',
-          title: 'AI任务日志',
-          activeMenu: '/rag/apps/ai-task-log'
-        }
-      }
-    ]
-  },
-  {
     path: '/login',
     component: () => import('@/views/Login/Login.vue'),
     name: 'Login',
@@ -487,70 +464,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           title: '设计 AI 工作流',
           activeMenu: '/ai/console/workflow'
-        }
-      }
-    ]
-  },
-  {
-    path: '/rag/apps/ai-task-log',
-    component: Layout,
-    name: 'AiTaskLog',
-    meta: {
-      title: 'AI任务管理',
-      icon: 'ep:document'
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/rag/apps/ai-task-log/index.vue'),
-        name: 'AiTaskLogIndex',
-        meta: {
-          title: 'AI任务管理',
-          icon: 'ep:document',
-          noCache: false,
-          activeMenu: '/rag/apps/ai-task-log'
-        }
-      }
-    ]
-  },
-  {
-    path: '/rag/audio-asr',
-    component: Layout,
-    name: 'RagAudioAsrPage',
-    meta: {
-      title: '音视频智能转写',
-      icon: 'ep:video-play'
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/rag/audio-asr/index.vue'),
-        name: 'RagAudioAsr',
-        meta: {
-          title: '音视频智能转写',
-          icon: 'ep:video-play',
-          noCache: false
-        }
-      }
-    ]
-  },
-  {
-    path: '/rag/tags',
-    component: Layout,
-    name: 'RagTagSystemPage',
-    meta: {
-      title: 'RAG标签管理',
-      icon: 'ep:collection-tag'
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/rag/tagsystem/index.vue'),
-        name: 'RagTagSystem',
-        meta: {
-          title: 'RAG标签管理',
-          icon: 'ep:collection-tag',
-          noCache: false
         }
       }
     ]

@@ -9,6 +9,9 @@
       <el-form-item label="文件名称">
         <el-input v-model="queryParams.fileName" class="!w-220px" clearable placeholder="请输入文件名称" />
       </el-form-item>
+      <el-form-item label="文档ID">
+        <el-input v-model="queryParams.esId" class="!w-220px" clearable placeholder="请输入 esId" />
+      </el-form-item>
       <el-form-item v-if="queryParams.taskType === 'form_extract'" label="表单ID">
         <el-input-number v-model="queryParams.formId" class="!w-180px" :controls="false" :min="1" />
       </el-form-item>
@@ -72,12 +75,14 @@ const detailVisible = ref(false)
 const detailRow = ref<any>()
 const detailData = ref<any>()
 const queryFormRef = ref()
+const route = useRoute()
 
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   taskType: 'summary',
   fileName: undefined,
+  esId: undefined as string | undefined,
   formId: undefined
 })
 
@@ -124,6 +129,12 @@ const taskTypeLabel = (value?: string) => {
 const formattedDetail = computed(() => JSON.stringify(detailData.value || {}, null, 2))
 
 onMounted(() => {
+  if (route.query.taskType) {
+    queryParams.taskType = String(route.query.taskType)
+  }
+  if (route.query.esId) {
+    queryParams.esId = String(route.query.esId)
+  }
   getList()
 })
 </script>

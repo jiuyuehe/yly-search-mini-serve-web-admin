@@ -45,10 +45,11 @@ export const AudioAsrApi = {
     return await request.post({ url: '/rag/ai/audio-asr/summarize', data })
   },
   tts: async (data: AudioTtsReqVO) => {
-    return await request.postOriginal({
+    const response = await request.postOriginal({
       url: '/rag/ai/audio-asr/tts',
       data,
       responseType: 'blob'
     })
+    return response.data as Blob
   }
 }

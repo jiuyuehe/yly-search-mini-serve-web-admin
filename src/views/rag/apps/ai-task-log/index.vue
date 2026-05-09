@@ -6,11 +6,11 @@
         <div class="subtitle">统一查看 OCR、问答、摘要、翻译、表单抽取与推荐分类任务</div>
       </div>
       <div class="header-actions">
-        <el-button @click="getList">
+        <el-button v-hasPermi="['rag:ai-task-log:query']" @click="getList">
           <Icon icon="ep:refresh" class="mr-5px" />
           刷新
         </el-button>
-        <el-button type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
+        <el-button type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete" v-hasPermi="['rag:ai-task-log:delete']">
           <Icon icon="ep:delete" class="mr-5px" />
           批量删除
         </el-button>
@@ -96,7 +96,7 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleQuery">
+        <el-button type="primary" @click="handleQuery" v-hasPermi="['rag:ai-task-log:query']">
           <Icon icon="ep:search" class="mr-5px" />
           搜索
         </el-button>
@@ -138,8 +138,8 @@
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="160">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleDetail(row.taskId)">详情</el-button>
-          <el-button link type="danger" @click="handleDelete(row.taskId)">删除</el-button>
+          <el-button link type="primary" @click="handleDetail(row.taskId)" v-hasPermi="['rag:ai-task-log:query']">详情</el-button>
+          <el-button link type="danger" @click="handleDelete(row.taskId)" v-hasPermi="['rag:ai-task-log:delete']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

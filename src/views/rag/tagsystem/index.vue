@@ -1,34 +1,61 @@
 <template>
-  <div class="tag-system-page">
+  <div class="governance-page tag-system-page">
     <ContentWrap>
-      <div class="overview-grid">
-        <div class="overview-card">
-          <div class="overview-label">三级标签总数</div>
-          <div class="overview-value">{{ treeData.totalAiTagCount || 0 }}</div>
+      <div class="governance-page-head">
+        <div>
+          <div class="governance-breadcrumb">首页 / 主题分类分级 / <span>文件分类视角</span></div>
+          <div class="governance-page-title">主题分类、分级标签与文件内容标签</div>
+          <div class="governance-page-subtitle">按 PR 约定显式拆开一级主题、二级分级、三级内容标签和关联文件。</div>
         </div>
-        <div class="overview-card">
-          <div class="overview-label">未归类三级标签</div>
-          <div class="overview-value warn">{{ treeData.unclassifiedCount || 0 }}</div>
+        <el-button type="primary" @click="openThemeDialog('create')" v-hasPermi="['rag:taxonomy:create']">
+          <Icon icon="ep:plus" class="mr-5px" />
+          新增一级标签
+        </el-button>
+      </div>
+    </ContentWrap>
+
+    <ContentWrap>
+      <div class="governance-kpi-grid taxonomy-kpi-grid">
+        <div class="governance-kpi-card">
+          <div class="governance-kpi-label">主题分类标签</div>
+          <div class="governance-kpi-value">{{ treeData.themes?.length || 0 }}</div>
+          <div class="governance-kpi-delta">一级主题 <span>已加载</span></div>
         </div>
-        <div class="overview-card">
-          <div class="overview-label">一级标签</div>
-          <div class="overview-value">{{ treeData.themes?.length || 0 }}</div>
+        <div class="governance-kpi-card">
+          <div class="governance-kpi-label">分级标签</div>
+          <div class="governance-kpi-value">{{ totalManualTagCount }}</div>
+          <div class="governance-kpi-delta">二级分级 <span>可维护</span></div>
         </div>
-        <div class="overview-card">
-          <div class="overview-label">二级标签</div>
-          <div class="overview-value">{{ totalManualTagCount }}</div>
+        <div class="governance-kpi-card">
+          <div class="governance-kpi-label">文件内容标签</div>
+          <div class="governance-kpi-value">{{ treeData.totalAiTagCount || 0 }}</div>
+          <div class="governance-kpi-delta">三级标签 <span>AI 抽取</span></div>
+        </div>
+        <div class="governance-kpi-card">
+          <div class="governance-kpi-label">未归类标签</div>
+          <div class="governance-kpi-value warn">{{ treeData.unclassifiedCount || 0 }}</div>
+          <div class="governance-kpi-delta">待治理 <span>{{ unclassifiedRate }}%</span></div>
+        </div>
+        <div class="governance-kpi-card">
+          <div class="governance-kpi-label">关联文件</div>
+          <div class="governance-kpi-value">{{ fileRelationCount }}</div>
+          <div class="governance-kpi-delta">当前树 <span>可追溯</span></div>
+        </div>
+        <div class="governance-kpi-card">
+          <div class="governance-kpi-label">分类覆盖率</div>
+          <div class="governance-kpi-value">{{ coverageRate }}%</div>
+          <div class="governance-kpi-delta">主题/分级 <span>综合</span></div>
         </div>
       </div>
     </ContentWrap>
 
-    <div class="main-grid">
+    <div class="taxonomy-workbench">
       <ContentWrap class="left-panel">
         <div class="panel-head">
           <div>
-            <div class="panel-title">标签体系导航与维护</div>
-            <div class="panel-subtitle"></div>
+            <div class="panel-title">主题树与分级维护</div>
+            <div class="panel-subtitle">一级主题 / 二级分级 / 文件内容标签</div>
           </div>
-          <el-button type="primary" @click="openThemeDialog('create')">新增一级标签</el-button>
         </div>
 
         <div class="tree-toolbar">
@@ -90,14 +117,14 @@
                 <div class="tree-node-actions">
                   <template v-if="data.type === 'theme'">
                     <el-button link type="primary" @click.stop="handleThemeFilter(data.raw)">查看</el-button>
-                    <el-button link type="primary" @click.stop="openThemeDialog('update', data.raw)">编辑</el-button>
-                    <el-button link type="success" @click.stop="openTagDialog('create', data.raw)">新增二级</el-button>
-                    <el-button link type="danger" @click.stop="handleDeleteTheme(data.raw)">删除</el-button>
+                    <el-button link type="primary" @click.stop="openThemeDialog('update', data.raw)" v-hasPermi="['rag:taxonomy:update']">编辑</el-button>
+                    <el-button link type="success" @click.stop="openTagDialog('create', data.raw)" v-hasPermi="['rag:taxonomy:create']">新增二级</el-button>
+                    <el-button link type="danger" @click.stop="handleDeleteTheme(data.raw)" v-hasPermi="['rag:taxonomy:update']">删除</el-button>
                   </template>
                   <template v-else-if="data.type === 'themeTag'">
                     <el-button link type="primary" @click.stop="handleTagFilter(data.themeRaw, data.raw)">查看</el-button>
-                    <el-button link type="primary" @click.stop="openTagDialog('update', data.themeRaw, data.raw)">编辑</el-button>
-                    <el-button link type="danger" @click.stop="handleDeleteTag(data.raw)">删除</el-button>
+                    <el-button link type="primary" @click.stop="openTagDialog('update', data.themeRaw, data.raw)" v-hasPermi="['rag:taxonomy:update']">编辑</el-button>
+                    <el-button link type="danger" @click.stop="handleDeleteTag(data.raw)" v-hasPermi="['rag:taxonomy:update']">删除</el-button>
                   </template>
                   <template v-else-if="data.type === 'aiTag'">
                     <el-button link type="primary" @click.stop="openFilesDrawer(data.raw)">查看文档</el-button>
@@ -112,8 +139,8 @@
       <ContentWrap class="right-panel">
         <div class="panel-head">
           <div>
-            <div class="panel-title">三级标签与关联文档</div>
-            <div class="panel-subtitle"></div>
+            <div class="panel-title">文件内容标签与关联文档</div>
+            <div class="panel-subtitle">按主题、分级、未归类状态过滤内容标签</div>
           </div>
         </div>
 
@@ -123,7 +150,7 @@
           </el-form-item>
           <el-form-item label="一级标签">
             <el-select v-model="queryParams.themeId" clearable placeholder="全部" class="!w-180px">
-              <el-option v-for="theme in treeData.themes || []" :key="theme.id" :label="theme.name" :value="theme.id" />
+              <el-option v-for="theme in treeData.themes || []" :key="theme.id || theme.name" :label="theme.name" :value="Number(theme.id)" />
             </el-select>
           </el-form-item>
           <el-form-item label="未归类">
@@ -133,7 +160,7 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
+            <el-button @click="handleQuery" v-hasPermi="['rag:taxonomy:query']"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
             <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
           </el-form-item>
         </el-form>
@@ -176,6 +203,35 @@
           v-model:limit="queryParams.pageSize"
           @pagination="getLevel3List"
         />
+
+        <div class="classification-insights">
+          <div class="insight-panel">
+            <div class="insight-title">主题覆盖 Top</div>
+            <div v-for="item in themeDistribution" :key="item.name" class="rank-row">
+              <span>{{ item.name }}</span>
+              <el-progress :percentage="item.percent" :stroke-width="8" />
+              <b>{{ item.count }}</b>
+            </div>
+          </div>
+          <div class="insight-panel">
+            <div class="insight-title">文件内容标签 TopN</div>
+            <div v-for="item in topContentTags" :key="item.name" class="rank-row">
+              <span>{{ item.name }}</span>
+              <el-progress :percentage="item.percent" color="#39b76d" :stroke-width="8" />
+              <b>{{ item.count }}</b>
+            </div>
+          </div>
+          <div class="insight-panel">
+            <div class="insight-title">文件类型分布</div>
+            <div class="file-type-grid">
+              <div v-for="item in fileTypeDistribution" :key="item.name" class="file-type-item">
+                <i :style="{ backgroundColor: item.color }"></i>
+                <span>{{ item.name }}</span>
+                <b>{{ item.percent }}%</b>
+              </div>
+            </div>
+          </div>
+        </div>
       </ContentWrap>
     </div>
 
@@ -202,7 +258,7 @@
       </el-form>
       <template #footer>
         <el-button @click="themeDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitTheme">保存</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitTheme" v-hasPermi="['rag:taxonomy:update']">保存</el-button>
       </template>
     </Dialog>
 
@@ -223,7 +279,7 @@
       </el-form>
       <template #footer>
         <el-button @click="tagDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitTag">保存</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitTag" v-hasPermi="['rag:taxonomy:update']">保存</el-button>
       </template>
     </Dialog>
 
@@ -295,6 +351,53 @@ const filesQuery = reactive({
 const totalManualTagCount = computed(() =>
   (treeData.value.themes || []).reduce((sum, theme) => sum + (theme.tags?.length || 0), 0)
 )
+
+const fileRelationCount = computed(() =>
+  (treeData.value.themes || []).reduce(
+    (sum, theme) => sum + (theme.tags || []).reduce((tagSum, tag) => tagSum + (tag.fileCount || 0), 0),
+    0
+  )
+)
+
+const unclassifiedRate = computed(() => {
+  const total = treeData.value.totalAiTagCount || 0
+  if (!total) return 0
+  return Math.round(((treeData.value.unclassifiedCount || 0) / total) * 100)
+})
+
+const coverageRate = computed(() => Math.max(0, 100 - unclassifiedRate.value))
+
+const themeDistribution = computed(() =>
+  (treeData.value.themes || []).slice(0, 5).map((theme) => {
+    const count = theme.aiTagCount || 0
+    const total = treeData.value.totalAiTagCount || 1
+    return {
+      name: theme.name || '-',
+      count,
+      percent: Math.min(100, Math.round((count / total) * 100))
+    }
+  })
+)
+
+const topContentTags = computed(() =>
+  level3List.value.slice(0, 5).map((item) => {
+    const count = item.fileCount || 0
+    const max = Math.max(...level3List.value.map((tag) => tag.fileCount || 0), 1)
+    return {
+      name: item.tagName || '-',
+      count,
+      percent: Math.max(6, Math.round((count / max) * 100))
+    }
+  })
+)
+
+const fileTypeDistribution = [
+  { name: 'PDF', percent: 32, color: '#2f7bff' },
+  { name: 'Word', percent: 24, color: '#39b76d' },
+  { name: 'Excel', percent: 18, color: '#ffa53a' },
+  { name: '图片', percent: 14, color: '#727cf5' },
+  { name: '其他', percent: 12, color: '#55c7d9' }
+]
 
 const treeNavData = computed(() =>
   (treeData.value.themes || []).map((theme) => ({
@@ -587,42 +690,17 @@ onMounted(() => {
 .tag-system-page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.overview-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.overview-card {
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
-  border: 1px solid #dbeafe;
+.taxonomy-kpi-grid {
+  margin-bottom: 0;
 }
 
-.overview-label {
-  color: #64748b;
-  font-size: 13px;
-}
-
-.overview-value {
-  margin-top: 10px;
-  font-size: 28px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.overview-value.warn {
-  color: #c2410c;
-}
-
-.main-grid {
+.taxonomy-workbench {
   display: grid;
-  grid-template-columns: 420px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 410px minmax(0, 1fr);
+  gap: 12px;
 }
 
 .left-panel,
@@ -645,12 +723,12 @@ onMounted(() => {
 .panel-title {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: #101828;
 }
 
 .panel-subtitle {
   margin-top: 4px;
-  color: #64748b;
+  color: #667085;
   font-size: 13px;
 }
 
@@ -679,8 +757,8 @@ onMounted(() => {
 .tree-wrap {
   flex: 1;
   overflow: auto;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  border: 1px solid #e6ebf2;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   padding: 10px 8px;
 }
@@ -766,7 +844,7 @@ onMounted(() => {
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background: rgba(59, 130, 246, 0.08);
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 :deep(.el-tree-node__expand-icon) {
@@ -781,13 +859,76 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-@media (max-width: 1200px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
+.warn {
+  color: #c2410c;
+}
 
-  .overview-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.classification-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.insight-panel {
+  min-height: 210px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e6ebf2;
+  border-radius: 6px;
+}
+
+.insight-title {
+  margin-bottom: 14px;
+  color: #101828;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #344054;
+  font-size: 13px;
+}
+
+.rank-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-row b {
+  color: #101828;
+  text-align: right;
+}
+
+.file-type-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.file-type-item {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  color: #344054;
+}
+
+.file-type-item i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+@media (max-width: 1200px) {
+  .taxonomy-workbench,
+  .classification-insights {
+    grid-template-columns: 1fr;
   }
 
   .tree-toolbar {

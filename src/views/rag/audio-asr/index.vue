@@ -1,13 +1,26 @@
 <template>
-  <ContentWrap>
-    <div class="page-head">
-      <div class="page-title">音视频智能转写</div>
-      <el-button @click="goTaskLog">
+  <div class="governance-page audio-page">
+    <ContentWrap>
+      <div class="governance-page-head">
+        <div>
+          <div class="governance-breadcrumb">首页 / AI 数据智能治理 / <span>音视频智能解析</span></div>
+          <div class="governance-page-title">音视频智能转写与语音合成</div>
+          <div class="governance-page-subtitle">转写任务、分片进度、摘要结果与 TTS 预览统一管理。</div>
+        </div>
+      <el-button v-hasPermi="['rag:ai-task-log:query']" @click="goTaskLog">
         <Icon icon="ep:document" class="mr-5px" />
         任务日志
       </el-button>
     </div>
   </ContentWrap>
+
+    <div class="governance-kpi-grid audio-kpi-grid">
+      <div v-for="item in audioKpiCards" :key="item.label" class="governance-kpi-card">
+        <div class="governance-kpi-label">{{ item.label }}</div>
+        <div class="governance-kpi-value">{{ item.value }}</div>
+        <div class="governance-kpi-delta">当前状态 <span>{{ item.delta }}</span></div>
+      </div>
+    </div>
 
   <el-tabs v-model="activeMode" class="audio-tabs">
     <el-tab-pane label="长音频转写" name="asr">
@@ -47,7 +60,7 @@
                 <el-switch v-model="formData.overwrite" />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" :loading="startLoading" @click="submitTask">
+                <el-button type="primary" :loading="startLoading" @click="submitTask" v-hasPermi="['rag:audio-asr:operate']">
                   <Icon icon="ep:video-play" class="mr-5px" />
                   开始转写
                 </el-button>
@@ -79,7 +92,7 @@
             <el-alert v-if="status.error" class="mt-18px" :title="status.error" type="error" show-icon :closable="false" />
 
             <div class="progress-actions">
-              <el-button type="danger" plain :disabled="!canCancel" @click="cancelTask">
+              <el-button type="danger" plain :disabled="!canCancel" @click="cancelTask" v-hasPermi="['rag:audio-asr:operate']">
                 <Icon icon="ep:close" class="mr-5px" />
                 取消任务
               </el-button>
@@ -101,6 +114,7 @@
                   size="small"
                   :loading="summarizeLoading"
                   @click="summarizeTranscript"
+                  v-hasPermi="['rag:audio-asr:operate']"
                 >
                   <Icon icon="ep:magic-stick" class="mr-5px" />
                   生成摘要
@@ -160,7 +174,7 @@
                 <el-input v-model="ttsForm.text" type="textarea" :rows="10" maxlength="4000" show-word-limit placeholder="请输入需要合成为语音的文本" />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" :loading="ttsLoading" @click="generateSpeech">
+                <el-button type="primary" :loading="ttsLoading" @click="generateSpeech" v-hasPermi="['rag:audio-asr:operate']">
                   <Icon icon="ep:microphone" class="mr-5px" />
                   生成语音
                 </el-button>
@@ -185,6 +199,7 @@
       </el-row>
     </el-tab-pane>
   </el-tabs>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -280,6 +295,15 @@ const durationText = computed(() => {
   if (seconds < 60) return `${seconds}s`
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
 })
+
+const audioKpiCards = computed(() => [
+  { label: '转写状态', value: statusLabel(status.value.status), delta: status.value.status || 'WAITING' },
+  { label: '分片进度', value: `${status.value.doneChunks || 0}/${status.value.totalChunks || 0}`, delta: `${status.value.progress || 0}%` },
+  { label: '默认切片', value: `${formData.chunkSeconds || 5}s`, delta: '模型友好' },
+  { label: '摘要结果', value: detail.value.summaryText || detail.value.organizedText ? '已生成' : '待生成', delta: detail.value.plainText ? '可摘要' : '待转写' },
+  { label: 'TTS 格式', value: String(ttsForm.responseFormat || 'mp3').toUpperCase(), delta: ttsForm.voice || 'alloy' },
+  { label: '语音预览', value: ttsAudioUrl.value ? '已生成' : '待生成', delta: `${ttsForm.speed || 1}x` }
+])
 
 const loadOptions = async () => {
   const [voiceList, chatModels] = await Promise.all([
@@ -427,21 +451,14 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.page-head {
+.audio-page {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2a37;
-}
-
-.audio-tabs {
-  margin-top: -8px;
+.audio-kpi-grid {
+  margin-bottom: 0;
 }
 
 .progress-line {

@@ -8,6 +8,7 @@ export interface ThemeVO {
   status?: number
   sort?: number
   tags?: ThemeTagVO[]
+  aiTagCount?: number
 }
 
 export interface ThemeTagVO {
