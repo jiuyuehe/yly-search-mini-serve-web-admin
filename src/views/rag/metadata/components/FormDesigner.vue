@@ -272,7 +272,7 @@ const dialogVisible = computed({
   set: (val) => emit('update:visible', val)
 })
 
-const isEdit = computed(() => !!props.form)
+const isEdit = computed(() => !!props.form?.id)
 
 const formData = ref({
   name: '',
@@ -298,10 +298,20 @@ const previewDialogVisible = ref(false)
 // 导入相关
 const importFileInput = ref(null)
 
+const parseSchema = (structure) => {
+  if (!structure) return []
+  try {
+    const parsed = typeof structure === 'string' ? JSON.parse(structure) : structure
+    return Array.isArray(parsed) ? parsed : parsed?.fields || parsed?.schema || []
+  } catch {
+    return []
+  }
+}
+
 // 监听 form 变化，初始化表单数据
 watch(() => props.form, (newForm) => {
   if (newForm) {
-    const schema = newForm.schema || (newForm.structure ? JSON.parse(newForm.structure) : [])
+    const schema = newForm.schema || parseSchema(newForm.structure)
     formData.value = {
       name: newForm.name,
       description: newForm.description,
@@ -340,6 +350,7 @@ const handleDeleteField = (index) => {
 
 // 字段类型改变
 const handleTypeChange = (row) => {
+  if (!row) return
   // 清除可能不适用的配置
   if (!isSelectType(row.type)) {
     delete row.options
@@ -351,6 +362,7 @@ const handleTypeChange = (row) => {
 
 // 配置选项
 const handleConfigOptions = (field) => {
+  if (!field) return
   currentFieldForOptions.value = field
   currentFieldOptions.value = field.options ? JSON.parse(JSON.stringify(field.options)) : []
   optionsDialogVisible.value = true
@@ -379,6 +391,7 @@ const handleSaveOptions = () => {
     return
   }
   
+  if (!currentFieldForOptions.value) return
   currentFieldForOptions.value.options = JSON.parse(JSON.stringify(currentFieldOptions.value))
   optionsDialogVisible.value = false
   ElMessage.success('选项配置已保存')
@@ -386,6 +399,7 @@ const handleSaveOptions = () => {
 
 // 配置子字段
 const handleConfigChildren = (field) => {
+  if (!field) return
   currentFieldForChildren.value = field
   currentFieldChildren.value = field.children ? JSON.parse(JSON.stringify(field.children)) : []
   childrenDialogVisible.value = true
@@ -413,6 +427,7 @@ const handleSaveChildren = () => {
     return
   }
   
+  if (!currentFieldForChildren.value) return
   currentFieldForChildren.value.children = JSON.parse(JSON.stringify(currentFieldChildren.value))
   childrenDialogVisible.value = false
   ElMessage.success('子字段配置已保存')

@@ -329,7 +329,10 @@ const handleDelete = async (id: number) => {
 }
 
 const goToTaskLog = (scheduleTaskId: number) => {
-  router.push({ path: '/rag/apps/ai-task-log', query: { scheduleTaskId: String(scheduleTaskId) } })
+  router.push({
+    path: '/data-governance-dashboard/ai-task',
+    query: { scheduleTaskId: String(scheduleTaskId), triggerSource: 'schedule' }
+  })
 }
 
 const aiTaskTypeLabel = (value?: string) => {

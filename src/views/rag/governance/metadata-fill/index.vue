@@ -195,7 +195,7 @@ const goMetadata = () => {
   router.push('/rag/metadata')
 }
 const goTaskLog = () => {
-  router.push({ path: '/rag/apps/ai-task-log', query: { taskId: form.taskId || undefined, esId: form.esId || undefined } })
+  router.push({ path: '/data-governance-dashboard/ai-task', query: { esId: form.esId || undefined } })
 }
 const goToolLog = () => {
   router.push('/rag/governance/tool-log')

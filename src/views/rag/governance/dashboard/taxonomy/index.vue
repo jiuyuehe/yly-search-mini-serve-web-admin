@@ -3,9 +3,12 @@
     <ContentWrap>
       <div class="page-head">
         <div>
-          <div class="breadcrumb">首页 / 数据治理看板 / <span>分类分级看板</span></div>
+          <div class="breadcrumb">首页 / 数据目录划分 / <span>分类分级看板</span></div>
           <div class="page-title">分类分级看板</div>
         </div>
+        <el-button type="primary" :loading="loading" @click="loadDashboard">
+          <Icon icon="ep:refresh" class="mr-5px" />刷新
+        </el-button>
       </div>
     </ContentWrap>
 
@@ -24,45 +27,61 @@
           <el-input v-model="keyword" placeholder="搜索主题名称" clearable>
             <template #prefix><Icon icon="ep:search" /></template>
           </el-input>
-          <div class="tree-list">
-            <div v-for="item in themes" :key="item.name" class="tree-item" :class="{ active: item.name === activeTheme }" @click="activeTheme = item.name">
+          <div v-loading="loading" class="tree-list">
+            <div
+              v-for="item in filteredThemes"
+              :key="item.id || item.name"
+              class="tree-item"
+              :class="{ active: item.id === activeThemeId }"
+              @click="selectTheme(item)"
+            >
               <Icon icon="ep:folder-opened" />
               <span>{{ item.name }}</span>
-              <em>{{ item.count }}</em>
+              <em>{{ formatNumber(item.fileCount) }}</em>
             </div>
           </div>
         </ContentWrap>
       </el-col>
+
       <el-col :xs="24" :lg="17">
         <ContentWrap class="panel">
-          <template #header>{{ activeTheme }} - 文件列表</template>
-          <el-form :inline="true">
-            <el-form-item label="分类状态">
-              <el-select class="!w-160px" placeholder="全部"><el-option label="全部" value="" /></el-select>
-            </el-form-item>
-            <el-form-item label="相关度">
-              <el-select class="!w-160px" placeholder="全部"><el-option label="全部" value="" /></el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary">搜索</el-button>
-              <el-button>导出</el-button>
-            </el-form-item>
-          </el-form>
-          <el-table :data="files" stripe class="dense-table">
+          <template #header>{{ activeTheme?.name || '全部主题' }} - 文件列表</template>
+          <div class="filter-bar">
+            <el-radio-group v-model="activeTagId" @change="handleSecondLevelChange">
+              <el-radio-button :label="undefined">全部二级主题</el-radio-button>
+              <el-radio-button v-for="tag in activeThemeTags" :key="tag.id" :label="tag.id">
+                {{ tag.keyword }}({{ formatNumber(tag.fileCount) }})
+              </el-radio-button>
+            </el-radio-group>
+          </div>
+
+          <el-table v-loading="filesLoading" :data="files" stripe class="dense-table">
             <el-table-column label="文件名称" prop="fileName" min-width="230" show-overflow-tooltip />
-            <el-table-column label="分类标签" prop="tag" width="120">
-              <template #default="{ row }"><el-tag>{{ row.tag }}</el-tag></template>
+            <el-table-column label="文件类型" min-width="110">
+              <template #default="{ row }">
+                <el-tag size="small">{{ row.fileCategory || row.fileExt || '-' }}</el-tag>
+              </template>
             </el-table-column>
             <el-table-column label="相关度" prop="score" width="100" sortable>
-              <template #default="{ row }"><span :class="row.score < 0.82 ? 'warn' : 'ok'">{{ row.score }}</span></template>
+              <template #default="{ row }">
+                <span :class="Number(row.score || 0) < 0.82 ? 'warn' : 'ok'">
+                  {{ formatScore(row.score) }}
+                </span>
+              </template>
             </el-table-column>
-            <el-table-column label="来源系统" prop="source" width="120" />
-            <el-table-column label="更新时间" prop="time" width="160" />
-            <el-table-column label="大小" prop="size" width="100" />
-            <el-table-column label="操作" width="90">
-              <template #default><el-button link type="primary">预览</el-button></template>
+            <el-table-column label="更新时间" prop="updateTime" width="170" show-overflow-tooltip />
+            <el-table-column label="大小" width="110">
+              <template #default="{ row }">{{ formatSize(row.fileSize) }}</template>
             </el-table-column>
+            <el-table-column label="ES ID" prop="esId" min-width="150" show-overflow-tooltip />
           </el-table>
+
+          <Pagination
+            v-model:page="pageNo"
+            v-model:limit="pageSize"
+            :total="filesTotal"
+            @pagination="loadFiles"
+          />
         </ContentWrap>
       </el-col>
     </el-row>
@@ -70,25 +89,30 @@
     <el-row :gutter="12" class="mt-12px">
       <el-col :xs="24" :lg="8">
         <ContentWrap>
-          <template #header>分类概览</template>
-          <div class="donut-card"><div class="donut"></div><b>14,256</b><span>文件数</span></div>
+          <template #header>二级主题统计</template>
+          <div v-for="item in activeThemeTags" :key="item.id" class="bar-row">
+            <span>{{ item.keyword }}</span>
+            <el-progress :percentage="calcPercent(item.fileCount, maxSecondLevelFileCount)" />
+          </div>
+          <el-empty v-if="!activeThemeTags.length" :image-size="72" description="暂无二级主题" />
         </ContentWrap>
       </el-col>
       <el-col :xs="24" :lg="8">
         <ContentWrap>
-          <template #header>相关度分布</template>
-          <div v-for="item in scoreBars" :key="item.name" class="bar-row">
-            <span>{{ item.name }}</span>
-            <el-progress :percentage="item.value" />
+          <template #header>文件类型分布</template>
+          <div v-for="item in fileTypeDistribution" :key="item.name" class="tag-row">
+            <span>{{ item.name }}</span><b>{{ item.count }}</b>
           </div>
+          <el-empty v-if="!fileTypeDistribution.length" :image-size="72" description="暂无文件" />
         </ContentWrap>
       </el-col>
       <el-col :xs="24" :lg="8">
         <ContentWrap>
           <template #header>内容标签 TopN</template>
-          <div v-for="item in topTags" :key="item.name" class="tag-row">
-            <span>{{ item.name }}</span><b>{{ item.count }}</b>
+          <div v-for="item in topTags" :key="`${item.themeId}-${item.themeTagId}-${item.tagName}`" class="tag-row">
+            <span>{{ item.tagName }}</span><b>{{ formatNumber(item.fileCount) }}</b>
           </div>
+          <el-empty v-if="!topTags.length" :image-size="72" description="暂无内容标签" />
         </ContentWrap>
       </el-col>
     </el-row>
@@ -96,52 +120,134 @@
 </template>
 
 <script setup lang="ts">
+import { GovernanceApi } from '@/api/rag/governance'
+import { TagSystemApi } from '@/api/rag/tagsystem'
+
 defineOptions({ name: 'RagGovernanceTaxonomyDashboard' })
 
+const loading = ref(false)
+const filesLoading = ref(false)
 const keyword = ref('')
-const activeTheme = ref('战略管理')
-const kpis = [
-  { label: '文件总数', value: '28,560,321', delta: '较昨日 ↑2.35%' },
-  { label: '已分类数量', value: '25,843,912', delta: '占比 90.46%' },
-  { label: '未分类数量', value: '2,716,409', delta: '占比 9.52%' },
-  { label: '高置信文件数', value: '21,362,587', delta: '占比 74.84%' },
-  { label: '平均置信度', value: '0.86', delta: '较昨日 ↑0.02' }
-]
-const themes = [
-  { name: '战略管理', count: 6 },
-  { name: '经营计划管理', count: 8 },
-  { name: '人力资源管理', count: 5 },
-  { name: '财务管理', count: 5 },
-  { name: '生产运营管理', count: 28 },
-  { name: '客户与市场管理', count: 18 },
-  { name: '风险与合规管理', count: 12 }
-]
-const files = [
-  { fileName: '公司战略规划(2024-2026).pdf', tag: '战略规划', score: 0.97, source: 'OA系统', time: '2024-05-30 10:30', size: '24.45 MB' },
-  { fileName: '年度经营计划.xlsx', tag: '经营计划', score: 0.92, source: 'ERP系统', time: '2024-05-29 09:21', size: '12.34 MB' },
-  { fileName: '战略评估报告.pptx', tag: '战略评估', score: 0.90, source: '汇报系统', time: '2024-05-28 16:45', size: '43.18 MB' },
-  { fileName: '竞争对手分析报告.pdf', tag: '竞争分析', score: 0.87, source: '市场系统', time: '2024-05-28 14:12', size: '3.41 MB' },
-  { fileName: '行业研究白皮书.docx', tag: '行业研究', score: 0.83, source: '研究系统', time: '2024-05-28 10:26', size: '5.92 MB' },
-  { fileName: '风险管理手册.xlsx', tag: '风险管理', score: 0.81, source: '风控系统', time: '2024-05-27 11:33', size: '2.54 MB' }
-]
-const scoreBars = [
-  { name: '0-0.2', value: 12 },
-  { name: '0.2-0.4', value: 28 },
-  { name: '0.4-0.6', value: 46 },
-  { name: '0.6-0.8', value: 72 },
-  { name: '0.8-1.0', value: 94 }
-]
-const topTags = [
-  { name: '战略规划', count: '3,256' },
-  { name: '经营计划', count: '2,845' },
-  { name: '战略评估', count: '2,312' },
-  { name: '竞争分析', count: '2,056' },
-  { name: '风险管理', count: '1,787' }
-]
+const dashboard = ref<any>({ overview: {}, themes: [], topTags: [] })
+const activeThemeId = ref<number | undefined>()
+const activeTagId = ref<number | undefined>()
+const files = ref<any[]>([])
+const filesTotal = ref(0)
+const pageNo = ref(1)
+const pageSize = ref(10)
+
+const overview = computed(() => dashboard.value.overview || {})
+const themes = computed<any[]>(() => dashboard.value.themes || [])
+const filteredThemes = computed(() => {
+  const text = keyword.value.trim().toLowerCase()
+  if (!text) return themes.value
+  return themes.value.filter((item) => (item.name || '').toLowerCase().includes(text))
+})
+const activeTheme = computed(() => themes.value.find((item) => item.id === activeThemeId.value) || themes.value[0])
+const activeThemeTags = computed<any[]>(() => activeTheme.value?.tags || [])
+const activeSecondLevel = computed(() => activeThemeTags.value.find((item) => item.id === activeTagId.value))
+const maxSecondLevelFileCount = computed(() => Math.max(...activeThemeTags.value.map((item) => Number(item.fileCount || 0)), 1))
+
+const kpis = computed(() => [
+  { label: '一级主题数', value: formatNumber(overview.value.themeCount), delta: `二级 ${formatNumber(overview.value.secondLevelCount)}` },
+  { label: '内容标签数', value: formatNumber(overview.value.contentTagCount), delta: `未归类 ${formatNumber(overview.value.unclassifiedTagCount)}` },
+  { label: '已分类文件', value: formatNumber(overview.value.classifiedFileCount), delta: `覆盖率 ${formatPercent(overview.value.coverageRate)}` },
+  { label: '未分类文件', value: formatNumber(overview.value.unclassifiedFileCount), delta: '等待治理任务处理' },
+  { label: '平均权重', value: formatScore(overview.value.averageWeight), delta: '内容标签综合权重' }
+])
+
+const topTags = computed(() => {
+  const tags = activeThemeTags.value.flatMap((item) => item.aiTags || [])
+  return tags
+    .slice()
+    .sort((a, b) => Number(b.fileCount || 0) - Number(a.fileCount || 0))
+    .slice(0, 8)
+})
+
+const fileTypeDistribution = computed(() => {
+  const acc = new Map<string, number>()
+  files.value.forEach((file) => {
+    const key = file.fileCategory || file.formatGroup || file.fileExt || '未知'
+    acc.set(key, (acc.get(key) || 0) + 1)
+  })
+  return Array.from(acc.entries()).map(([name, count]) => ({ name, count }))
+})
+
+const loadDashboard = async () => {
+  loading.value = true
+  try {
+    dashboard.value = await GovernanceApi.dashboardTaxonomy()
+    if (!activeThemeId.value && themes.value.length) {
+      activeThemeId.value = themes.value[0].id
+    }
+    await loadFiles()
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadFiles = async () => {
+  const tags = collectQueryTags()
+  if (!tags.length) {
+    files.value = []
+    filesTotal.value = 0
+    return
+  }
+  filesLoading.value = true
+  try {
+    const data = await TagSystemApi.getFilesByTags({
+      tags,
+      page: pageNo.value,
+      pageSize: pageSize.value,
+      matchMode: 'OR',
+      weightMode: 'DEFAULT',
+      minimumShouldMatch: 1
+    })
+    files.value = data.list || []
+    filesTotal.value = Number(data.total || 0)
+  } finally {
+    filesLoading.value = false
+  }
+}
+
+const collectQueryTags = () => {
+  const source = activeSecondLevel.value ? [activeSecondLevel.value] : activeThemeTags.value
+  const names = source.flatMap((item) => (item.aiTags || []).map((tag) => tag.tagName).filter(Boolean))
+  if (names.length) {
+    return Array.from(new Set(names)).slice(0, 20)
+  }
+  return source.map((item) => item.keyword).filter(Boolean)
+}
+
+const selectTheme = async (theme: any) => {
+  activeThemeId.value = theme.id
+  activeTagId.value = undefined
+  pageNo.value = 1
+  await loadFiles()
+}
+
+const handleSecondLevelChange = async () => {
+  pageNo.value = 1
+  await loadFiles()
+}
+
+const formatNumber = (value?: number | string) => Number(value || 0).toLocaleString()
+const formatPercent = (value?: number | string) => `${Number(value || 0).toFixed(2)}%`
+const formatScore = (value?: number | string) => Number(value || 0).toFixed(2)
+const calcPercent = (value?: number | string, max = 1) => Math.round((Number(value || 0) / max) * 100)
+const formatSize = (value?: number | string) => {
+  const size = Number(value || 0)
+  if (!size) return '-'
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+onMounted(loadDashboard)
 </script>
 
 <style scoped>
-.page-head { display: flex; align-items: center; justify-content: space-between; }
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .breadcrumb { color: #667085; }
 .breadcrumb span { color: #1f6fff; font-weight: 600; }
 .page-title { margin-top: 8px; font-size: 22px; font-weight: 700; }
@@ -151,19 +257,17 @@ const topTags = [
 .kpi-value { margin-top: 12px; font-size: 28px; font-weight: 800; }
 .kpi-delta { margin-top: 10px; color: #12a666; }
 .panel { min-height: 430px; }
-.tree-list { margin-top: 12px; display: grid; gap: 6px; }
+.filter-bar { margin-bottom: 12px; overflow-x: auto; }
+.tree-list { margin-top: 12px; display: grid; gap: 6px; max-height: 488px; overflow: auto; }
 .tree-item { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; padding: 10px; border-radius: 6px; cursor: pointer; }
 .tree-item.active { background: #eaf2ff; color: #1f6fff; }
 .tree-item em { font-style: normal; color: #667085; }
 .dense-table :deep(.el-table__cell) { padding: 8px 0; }
 .ok { color: #12a666; font-weight: 700; }
 .warn { color: #f04438; font-weight: 700; }
-.donut-card { min-height: 190px; display: grid; place-items: center; color: #101828; }
-.donut { width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#2f7bff 0 26%, #51bd63 26% 48%, #ffb020 48% 64%, #7a5af8 64% 78%, #55c7d9 78% 100%); }
-.donut-card b { margin-top: -104px; font-size: 24px; }
-.donut-card span { margin-top: -70px; color: #667085; }
-.bar-row { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
-.tag-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0f5; }
+.bar-row { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+.tag-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #edf0f5; }
+.tag-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .kpi-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .page-head { align-items: flex-start; flex-direction: column; } .kpi-grid { grid-template-columns: 1fr; } }
 </style>

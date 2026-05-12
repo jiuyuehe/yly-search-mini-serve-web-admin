@@ -30,6 +30,8 @@ export interface AiTaskLogPageReqVO {
   status?: string
   fileName?: string
   userName?: string
+  scheduleTaskId?: string
+  triggerSource?: string
   createTime?: string[]
 }
 

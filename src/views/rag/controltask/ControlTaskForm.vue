@@ -389,7 +389,7 @@ const loadOptions = async () => {
 }
 
 /** 打开弹窗 */
-const open = async (type: string, id?: number) => {
+const open = async (type: string, id?: number, defaults?: Partial<typeof formData.value>) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
   formType.value = type
@@ -400,6 +400,13 @@ const open = async (type: string, id?: number) => {
 
   // 加载选项数据
   await loadOptions()
+
+  if (!id && defaults) {
+    formData.value = {
+      ...formData.value,
+      ...defaults
+    }
+  }
 
   // 修改时，设置数据
   if (id) {

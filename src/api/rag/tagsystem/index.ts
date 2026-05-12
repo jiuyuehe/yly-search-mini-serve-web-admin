@@ -42,6 +42,19 @@ export interface ThemeTagTreeVO {
   unclassifiedCount: number
 }
 
+export interface TaxonomyMcpPublishVO {
+  name: string
+  canonicalName: string
+  module: string
+  description: string
+  writable: boolean
+  deleteTool: boolean
+  mcpPublished: boolean
+  publishStatus: string
+  endpoint: string
+  protocol: string
+}
+
 export const TagSystemApi = {
   getThemeListWithTags: async (status?: number) => {
     return await request.get({ url: '/rag/ai/theme/list-with-tags', params: { status } })
@@ -77,6 +90,10 @@ export const TagSystemApi = {
 
   getLevel3TagPage: async (params: any) => {
     return await request.get({ url: '/rag/ai/theme/tag-system/level3/page', params })
+  },
+
+  getTaxonomyMcpPublishCatalog: async () => {
+    return await request.get({ url: '/rag/ai/theme/mcp-publish/catalog' })
   },
 
   getFilesByTags: async (data: any) => {

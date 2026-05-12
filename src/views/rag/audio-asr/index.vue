@@ -419,7 +419,7 @@ const stopPolling = () => {
 
 const goTaskLog = () => {
   router.push({
-    path: '/rag/apps/ai-task-log',
+    path: '/data-governance-dashboard/ai-task',
     query: {
       taskType: 'audio_asr',
       esId: formData.esId || undefined

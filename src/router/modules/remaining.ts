@@ -469,6 +469,320 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/data-catalog',
+    component: Layout,
+    name: 'DataCatalogCompat',
+    redirect: '/data-catalog/taxonomy/dashboard',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'taxonomy',
+        component: () => import('@/views/data-catalog/taxonomy/index.vue'),
+        name: 'DataCatalogTaxonomyCompat',
+        meta: { title: '主题标签库', canTo: true, hidden: true }
+      },
+      {
+        path: 'taxonomy/dashboard',
+        component: () => import('@/views/data-catalog/taxonomy/dashboard/index.vue'),
+        name: 'DataCatalogTaxonomyDashboardCompat',
+        meta: { title: '分类分级看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'taxonomy/themes',
+        component: () => import('@/views/data-catalog/taxonomy/themes/index.vue'),
+        name: 'DataCatalogTaxonomyThemesCompat',
+        meta: { title: '一级主题定义', canTo: true, hidden: true }
+      },
+      {
+        path: 'taxonomy/levels',
+        component: () => import('@/views/data-catalog/taxonomy/levels/index.vue'),
+        name: 'DataCatalogTaxonomyLevelsCompat',
+        meta: { title: '二级主题定义', canTo: true, hidden: true }
+      },
+      {
+        path: 'taxonomy/tools',
+        component: () => import('@/views/data-catalog/taxonomy/tools/index.vue'),
+        name: 'DataCatalogTaxonomyToolsCompat',
+        meta: { title: '主题 Tools 与 MCP', canTo: true, hidden: true }
+      },
+      {
+        path: 'metadata',
+        component: () => import('@/views/data-catalog/metadata/index.vue'),
+        name: 'DataCatalogMetadataCompat',
+        meta: { title: '元数据数据建模', canTo: true, hidden: true }
+      },
+      {
+        path: 'metadata/templates',
+        component: () => import('@/views/data-catalog/metadata/templates/index.vue'),
+        name: 'DataCatalogMetadataTemplatesCompat',
+        meta: { title: '模板市场管理', canTo: true, hidden: true }
+      },
+      {
+        path: 'metadata/models',
+        component: () => import('@/views/data-catalog/metadata/models/index.vue'),
+        name: 'DataCatalogMetadataModelsCompat',
+        meta: { title: '数据模型列表', canTo: true, hidden: true }
+      },
+      {
+        path: 'metadata/models/detail',
+        component: () => import('@/views/data-catalog/metadata/models/detail/index.vue'),
+        name: 'DataCatalogMetadataModelDetailCompat',
+        meta: { title: '数据模型详情', canTo: true, hidden: true, activeMenu: '/data-catalog/metadata/models' }
+      },
+      {
+        path: 'metadata/builtin',
+        component: () => import('@/views/data-catalog/metadata/builtin/index.vue'),
+        name: 'DataCatalogMetadataBuiltinCompat',
+        meta: { title: '内置模型', canTo: true, hidden: true }
+      },
+      {
+        path: 'metadata/tools',
+        component: () => import('@/views/data-catalog/metadata/tools/index.vue'),
+        name: 'DataCatalogMetadataToolsCompat',
+        meta: { title: '模型 Tools 与 MCP', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph',
+        component: () => import('@/views/data-catalog/graph/index.vue'),
+        name: 'DataCatalogGraphCompat',
+        meta: { title: '数据图谱', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph/ner',
+        component: () => import('@/views/data-catalog/graph/ner/index.vue'),
+        name: 'DataCatalogGraphNerCompat',
+        meta: { title: 'NER 图谱', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph/mail',
+        component: () => import('@/views/data-catalog/graph/mail/index.vue'),
+        name: 'DataCatalogGraphMailCompat',
+        meta: { title: '邮件分析图谱', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph/person',
+        component: () => import('@/views/data-catalog/graph/person/index.vue'),
+        name: 'DataCatalogGraphPersonCompat',
+        meta: { title: '人物画像图谱', canTo: true, hidden: true }
+      }
+    ]
+  },
+  {
+    path: '/data-governance-dashboard',
+    component: Layout,
+    name: 'DataGovernanceDashboardRootCompat',
+    redirect: '/data-governance-dashboard/base',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/data-governance-dashboard/index.vue'),
+        name: 'DataGovernanceDashboardIndexCompat',
+        meta: { title: '数据治理看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'base',
+        component: () => import('@/views/data-governance-dashboard/base/index.vue'),
+        name: 'DataGovernanceDashboardBaseCompat',
+        meta: { title: '基础数据看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'ai-task',
+        component: () => import('@/views/data-governance-dashboard/ai-task/index.vue'),
+        name: 'DataGovernanceDashboardAiTaskCompat',
+        meta: { title: 'AI 任务看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'schedule',
+        component: () => import('@/views/data-governance-dashboard/schedule/index.vue'),
+        name: 'DataGovernanceDashboardScheduleCompat',
+        meta: { title: '定时治理看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'search',
+        component: () => import('@/views/data-governance-dashboard/search/index.vue'),
+        name: 'DataGovernanceDashboardSearchCompat',
+        meta: { title: '搜索日志看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'tool-call',
+        component: () => import('@/views/data-governance-dashboard/tool-call/index.vue'),
+        name: 'DataGovernanceDashboardToolCallCompat',
+        meta: { title: 'MCP 与 Tool 调用日志', canTo: true, hidden: true }
+      }
+    ]
+  },
+  {
+    path: '/ai-data-governance',
+    component: Layout,
+    name: 'AiDataGovernanceCompat',
+    redirect: '/ai-data-governance/rules',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'rules',
+        component: () => import('@/views/ai-data-governance/rules/index.vue'),
+        name: 'AiDataGovernanceRulesCompat',
+        meta: { title: '治理规则管理', canTo: true, hidden: true }
+      },
+      {
+        path: 'tools',
+        component: () => import('@/views/ai-data-governance/tools/index.vue'),
+        name: 'AiDataGovernanceToolsCompat',
+        meta: { title: '全系统 Tool 与 MCP', canTo: true, hidden: true }
+      },
+      {
+        path: 'basic-schedule',
+        component: () => import('@/views/ai-data-governance/basic-schedule/index.vue'),
+        name: 'AiDataGovernanceBasicScheduleCompat',
+        meta: { title: 'AI 基础定时管理', canTo: true, hidden: true }
+      },
+      {
+        path: 'agent-schedule',
+        component: () => import('@/views/ai-data-governance/agent-schedule/index.vue'),
+        name: 'AiDataGovernanceAgentScheduleCompat',
+        meta: { title: 'AI 治理任务定时管理', canTo: true, hidden: true }
+      },
+      {
+        path: 'fill-dashboard',
+        component: () => import('@/views/ai-data-governance/fill-dashboard/index.vue'),
+        name: 'AiDataGovernanceFillDashboardCompat',
+        meta: { title: '数据填充看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'audio-asr',
+        component: () => import('@/views/ai-data-governance/audio-asr/index.vue'),
+        name: 'AiDataGovernanceAudioAsrCompat',
+        meta: { title: '音视频智能转写', canTo: true, hidden: true }
+      }
+    ]
+  },
+  {
+    path: '/data-governance',
+    component: Layout,
+    name: 'DataGovernanceCompat',
+    redirect: '/data-governance-dashboard/base',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'dashboard',
+        component: () => import('@/views/data-governance-dashboard/index.vue'),
+        name: 'DataGovernanceDashboardCompat',
+        meta: { title: '数据治理看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'dashboard/taxonomy',
+        component: () => import('@/views/data-catalog/taxonomy/dashboard/index.vue'),
+        name: 'DataGovernanceDashboardTaxonomyCompat',
+        meta: { title: '分类分级看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'dashboard/metadata-fill',
+        component: () => import('@/views/ai-data-governance/fill-dashboard/index.vue'),
+        name: 'DataGovernanceDashboardMetadataFillCompat',
+        meta: { title: '数据填充看板', canTo: true, hidden: true }
+      },
+      {
+        path: 'governance/tool-log',
+        component: () => import('@/views/ai-data-governance/tools/index.vue'),
+        name: 'DataGovernanceToolLogCompat',
+        meta: { title: 'Tool 能力与调用日志', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph',
+        component: () => import('@/views/data-catalog/graph/index.vue'),
+        name: 'DataGovernanceGraphCompat',
+        meta: { title: '图谱分析', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph/ner',
+        component: () => import('@/views/data-catalog/graph/ner/index.vue'),
+        name: 'DataGovernanceGraphNerCompat',
+        meta: { title: 'NER 图谱', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph/mail',
+        component: () => import('@/views/data-catalog/graph/mail/index.vue'),
+        name: 'DataGovernanceGraphMailCompat',
+        meta: { title: '邮件图谱', canTo: true, hidden: true }
+      },
+      {
+        path: 'graph/person-profile',
+        component: () => import('@/views/data-catalog/graph/person/index.vue'),
+        name: 'DataGovernancePersonProfileCompat',
+        meta: { title: '人物画像', canTo: true, hidden: true }
+      }
+    ]
+  },
+  {
+    path: '/rag/dashboard',
+    component: Layout,
+    name: 'RagDashboardCompat',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'taxonomy',
+        component: () => import('@/views/data-catalog/taxonomy/dashboard/index.vue'),
+        name: 'RagDashboardTaxonomyCompat',
+        meta: { title: '分类分级看板', canTo: true, hidden: true, activeMenu: '/data-catalog/taxonomy/dashboard' }
+      },
+      {
+        path: 'metadata-fill',
+        component: () => import('@/views/ai-data-governance/fill-dashboard/index.vue'),
+        name: 'RagDashboardMetadataFillCompat',
+        meta: { title: '数据填充看板', canTo: true, hidden: true, activeMenu: '/ai-data-governance/fill-dashboard' }
+      }
+    ]
+  },
+  {
+    path: '/rag/governance',
+    component: Layout,
+    name: 'RagGovernanceCompat',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'tool-log',
+        component: () => import('@/views/ai-data-governance/tools/index.vue'),
+        name: 'RagGovernanceToolLogCompat',
+        meta: { title: 'Tool 能力与调用日志', canTo: true, hidden: true, activeMenu: '/ai-data-governance/tools' }
+      }
+    ]
+  },
+  {
+    path: '/rag/graph',
+    component: Layout,
+    name: 'RagGraphCompat',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'ner',
+        component: () => import('@/views/data-catalog/graph/ner/index.vue'),
+        name: 'RagGraphNerCompat',
+        meta: { title: 'NER 图谱', canTo: true, hidden: true, activeMenu: '/data-catalog/graph/ner' }
+      },
+      {
+        path: 'mail',
+        component: () => import('@/views/data-catalog/graph/mail/index.vue'),
+        name: 'RagGraphMailCompat',
+        meta: { title: '邮件图谱', canTo: true, hidden: true, activeMenu: '/data-catalog/graph/mail' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     component: () => import('@/views/Error/404.vue'),
     name: '',

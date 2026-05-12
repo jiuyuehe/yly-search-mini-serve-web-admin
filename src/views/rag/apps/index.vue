@@ -131,7 +131,7 @@ const handleRefresh = () => {
 }
 
 const goAiTaskLog = () => {
-  router.push('/rag/apps/ai-task-log')
+  router.push('/data-governance-dashboard/ai-task')
 }
 
 // 添加新应用

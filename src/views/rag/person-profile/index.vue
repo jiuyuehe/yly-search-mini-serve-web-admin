@@ -224,6 +224,7 @@ const graphRef = ref<HTMLElement>()
 let graphChart: echarts.ECharts | null = null
 const queryFormRef = ref()
 const formRef = ref()
+const route = useRoute()
 
 const queryParams = reactive({
   pageNo: 1,
@@ -439,6 +440,9 @@ const renderGraph = (graphData: any) => {
 }
 
 onMounted(async () => {
+  if (route.query.personName) {
+    queryParams.personName = String(route.query.personName)
+  }
   await Promise.all([getList(), getGraph(), getMergeCandidateList()])
 })
 </script>
