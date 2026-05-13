@@ -491,49 +491,49 @@ const remainingRouter: AppRouteRecordRaw[] = [
       }
     ]
   },
-  {
-    path: '/rag/apps/ai-task-log',
-    component: Layout,
-    name: 'AiTaskLog',
-    meta: {
-      title: 'AI任务管理',
-      icon: 'ep:document'
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/rag/apps/ai-task-log/index.vue'),
-        name: 'AiTaskLogIndex',
-        meta: {
-          title: 'AI任务管理',
-          icon: 'ep:document',
-          noCache: false,
-          activeMenu: '/rag/apps/ai-task-log'
-        }
-      }
-    ]
-  },
-  {
-    path: '/rag/tags',
-    component: Layout,
-    name: 'RagTagSystemPage',
-    meta: {
-      title: 'RAG标签管理',
-      icon: 'ep:collection-tag'
-    },
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/rag/tagsystem/index.vue'),
-        name: 'RagTagSystem',
-        meta: {
-          title: 'RAG标签管理',
-          icon: 'ep:collection-tag',
-          noCache: false
-        }
-      }
-    ]
-  },
+  // {
+  //   path: '/rag/apps/ai-task-log',
+  //   component: Layout,
+  //   name: 'AiTaskLog',
+  //   meta: {
+  //     title: 'AI任务管理',
+  //     icon: 'ep:document'
+  //   },
+  //   children: [
+  //     {
+  //       path: '',
+  //       component: () => import('@/views/rag/apps/ai-task-log/index.vue'),
+  //       name: 'AiTaskLogIndex',
+  //       meta: {
+  //         title: 'AI任务管理',
+  //         icon: 'ep:document',
+  //         noCache: false,
+  //         activeMenu: '/rag/apps/ai-task-log'
+  //       }
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '/rag/tags',
+  //   component: Layout,
+  //   name: 'RagTagSystemPage',
+  //   meta: {
+  //     title: 'RAG标签管理',
+  //     icon: 'ep:collection-tag'
+  //   },
+  //   children: [
+  //     {
+  //       path: '',
+  //       component: () => import('@/views/rag/tagsystem/index.vue'),
+  //       name: 'RagTagSystem',
+  //       meta: {
+  //         title: 'RAG标签管理',
+  //         icon: 'ep:collection-tag',
+  //         noCache: false
+  //       }
+  //     }
+  //   ]
+  // },
   {
     path: '/:pathMatch(.*)*',
     component: () => import('@/views/Error/404.vue'),

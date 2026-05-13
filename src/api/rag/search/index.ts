@@ -99,6 +99,11 @@ export interface NasFileViewResp {
   [key: string]: unknown
 }
 
+export interface NasPermissionResp {
+  permissions?: number
+  [key: string]: unknown
+}
+
 const append = (formData: FormData, key: string, value: unknown) => {
   if (value === undefined || value === null || value === '') return
   formData.append(key, value instanceof File ? value : String(value))
@@ -176,6 +181,13 @@ export const listNasFolderChildren = (nasId: string | number, parentNasPath: str
 export const getNasFileViewUrl = (nasId: string | number, nasFilePath: string) => {
   return request.get<NasFileViewResp>({
     url: '/apps/nas/file/view',
+    params: { nasId, nasFilePath }
+  })
+}
+
+export const getNasFilePermissions = (nasId: string | number, nasFilePath: string) => {
+  return request.post<NasPermissionResp>({
+    url: '/apps/nas/all-pers',
     params: { nasId, nasFilePath }
   })
 }

@@ -76,6 +76,7 @@ import {
   downloadFileBlob,
   downloadNasFileBlob,
   getKkPreviewUrl,
+  getNasFilePermissions,
   getNasFileViewUrl,
   getPreviewBlob,
   getPreviewMeta,
@@ -91,6 +92,11 @@ const objectUrl = ref('')
 const textContent = ref('')
 const folderChildren = ref<NasFileEntry[]>([])
 const folderMode = computed(() => Boolean(currentFile.value?.folder))
+const NAS_PERMISSION = {
+  VIEW: 8,
+  DOWN: 64,
+  VIEW_ONLINE: 512
+}
 
 const drawerSize = computed(() => (window.innerWidth < 900 ? '96%' : '72%'))
 
@@ -153,9 +159,35 @@ const saveBlob = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url)
 }
 
+const getCurrentNasId = () => currentFile.value?.nasId
+
+const hasAnyPermission = (permissions: number | undefined, bits: number[]) =>
+  bits.some((bit) => ((permissions || 0) & bit) === bit)
+
+const getEntryPermissions = async (item: NasFileEntry) => {
+  if (item.permissions !== undefined) return item.permissions
+  const nasId = getCurrentNasId()
+  if (!nasId || !item.filePath) return 0
+  const data = await getNasFilePermissions(nasId, item.filePath)
+  return data?.permissions || 0
+}
+
+const getCurrentFilePermissions = async () => {
+  const nasId = getCurrentNasId()
+  const path = currentFile.value?.subPath || currentFile.value?.filePath
+  if (!nasId || !path) return undefined
+  const data = await getNasFilePermissions(nasId, path)
+  return data?.permissions || 0
+}
+
 const handleDownload = async () => {
   const esId = currentFile.value?.esId
   if (!esId || folderMode.value) return
+  const permissions = await getCurrentFilePermissions()
+  if (permissions !== undefined && !hasAnyPermission(permissions, [NAS_PERMISSION.DOWN])) {
+    ElMessage.warning('无下载权限')
+    return
+  }
   const blob = await downloadFileBlob(esId)
   saveBlob(blob, meta.value?.fileName || currentFile.value?.fileName || 'download')
   ElMessage.success('已开始下载')
@@ -182,6 +214,11 @@ const handleFolderItemKkPreview = async (item: NasFileEntry) => {
   if (item.folder) return
 
   try {
+    const permissions = await getEntryPermissions(item)
+    if (!hasAnyPermission(permissions, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE])) {
+      ElMessage.warning('无预览或在线查看权限')
+      return
+    }
     if (item.esId) {
       openExternalPreview(await getKkPreviewUrl(item.esId))
       return
@@ -227,6 +264,11 @@ const handleFolderItemPreview = async (item: NasFileEntry) => {
   } else {
     // 如果是文件，尝试使用 NAS 在线预览接口
     try {
+      const permissions = await getEntryPermissions(item)
+      if (!hasAnyPermission(permissions, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE])) {
+        ElMessage.warning('无预览或在线查看权限')
+        return
+      }
       const nasId = currentFile.value?.nasId
       if (!nasId) {
         ElMessage.error('缺少 nasId，无法预览')
@@ -256,6 +298,11 @@ const handleFolderItemDownload = async (item: NasFileEntry) => {
   }
   
   try {
+    const permissions = await getEntryPermissions(item)
+    if (!hasAnyPermission(permissions, [NAS_PERMISSION.DOWN])) {
+      ElMessage.warning('无下载权限')
+      return
+    }
     const blob = await downloadNasFileBlob(nasId, item.filePath)
     saveBlob(blob, item.fileName || 'download')
     ElMessage.success('已开始下载')

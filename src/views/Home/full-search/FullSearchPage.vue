@@ -68,6 +68,7 @@ import {
   batchDownloadBlob,
   downloadFileBlob,
   getKkPreviewUrl,
+  getNasFilePermissions,
   searchDocuments,
   type CommonFile,
   type FilterResult,
@@ -78,13 +79,28 @@ import {
 const defaultFilters = (): SearchParam => ({
   keyword: '',
   searchType: 'keyword',
+  searchMode: undefined,
+  imageFile: null,
   precisionMode: 1,
+  scoreThreshold: undefined,
   docType: '',
   extname: '',
   folder: false,
   hasHistory: false,
   timeDis: '',
+  startDate: undefined,
+  endDate: undefined,
   fileSize: '',
+  minSize: undefined,
+  maxSize: undefined,
+  createrId: undefined,
+  userId: undefined,
+  groupId: undefined,
+  shareId: undefined,
+  fileAiTag: '',
+  fileSysTag: '',
+  tag: '',
+  includeEnrich: true,
   offset: 0,
   limit: 20,
   fileCategory: 'nas'
@@ -109,6 +125,12 @@ const docTypeMap = [
   { label: '压缩包', value: '6', keys: ['6', 'zip', 'archive'], icon: Box },
   { label: '其他', value: '5', keys: ['5', 'app', 'other'], icon: FolderOpened }
 ]
+
+const NAS_PERMISSION = {
+  VIEW: 8,
+  DOWN: 64,
+  VIEW_ONLINE: 512
+}
 
 const aggregationTabs = computed(() => {
   const docStats = aggregations.value.docType || []
@@ -178,8 +200,21 @@ const saveBlob = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url)
 }
 
+const getNasPath = (file: CommonFile) => file.subPath || file.filePath || ''
+
+const hasNasPermission = async (file: CommonFile, bits: number[]) => {
+  if (!file.nasId || !getNasPath(file)) return true
+  const data = await getNasFilePermissions(file.nasId, getNasPath(file))
+  const permissions = data?.permissions || 0
+  return bits.some((bit) => (permissions & bit) === bit)
+}
+
 const downloadOne = async (file: CommonFile) => {
   if (!file.esId) return
+  if (!(await hasNasPermission(file, [NAS_PERMISSION.DOWN]))) {
+    ElMessage.warning('无下载权限')
+    return
+  }
   const blob = await downloadFileBlob(file.esId)
   saveBlob(blob, file.fileName || 'download')
 }
@@ -196,6 +231,10 @@ const openKkPreview = async (file: CommonFile) => {
     ElMessage.warning('文件缺少 esId，无法打开 KK 预览')
     return
   }
+  if (!(await hasNasPermission(file, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE]))) {
+    ElMessage.warning('无预览或在线查看权限')
+    return
+  }
   const url = await getKkPreviewUrl(file.esId)
   if (!url) {
     ElMessage.warning('未获取到 KK 预览地址')
@@ -204,7 +243,11 @@ const openKkPreview = async (file: CommonFile) => {
   window.open(url, '_blank')
 }
 
-const openViewer = (file: CommonFile) => {
+const openViewer = async (file: CommonFile) => {
+  if (!file.folder && !(await hasNasPermission(file, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE]))) {
+    ElMessage.warning('无预览或在线查看权限')
+    return
+  }
   viewerRef.value?.open(file)
 }
 
