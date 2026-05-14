@@ -94,11 +94,20 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="人脸分析" width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.faceStatus === 'success' ? 'success' : 'info'">
+            {{ row.faceStatus === 'success' ? `已识别 ${row.faceCount || 0}` : '待分析' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="模型" prop="embeddingModel" min-width="180" show-overflow-tooltip />
       <el-table-column label="错误原因" prop="embeddingError" min-width="180" show-overflow-tooltip />
-      <el-table-column label="操作" fixed="right" width="110">
+      <el-table-column label="操作" fixed="right" width="220">
         <template #default="{ row }">
           <el-button link type="primary" @click="openRebuild([row.esId])">重建</el-button>
+          <el-button link type="success" @click="analyzeFace(row)">人脸分析</el-button>
+          <el-button link type="info" @click="openFaces(row)">查看人脸</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -122,10 +131,52 @@
       <el-button type="primary" :loading="rebuildLoading" @click="submitRebuild">开始重建</el-button>
     </template>
   </el-dialog>
+
+  <el-drawer v-model="faceDrawerVisible" title="图片人脸明细" size="620px">
+    <div v-loading="faceLoading" class="face-list">
+      <div v-for="item in faceList" :key="item.id" class="face-row">
+        <img v-if="faceImageSrc(item)" :src="faceImageSrc(item)" />
+        <div v-else class="face-empty">FACE</div>
+        <div class="face-info">
+          <div class="face-title">{{ item.personName || '未命名人脸' }}</div>
+          <div class="face-meta">{{ item.fileName }}</div>
+          <div class="face-meta">第 {{ (item.faceIndex || 0) + 1 }} 张人脸 · 置信度 {{ facePercent(item.confidence) }}</div>
+          <div class="face-meta">{{ item.aliasNames || '暂无别名' }}</div>
+          <div class="face-actions">
+            <el-tag size="small" effect="plain">{{ item.modelVersion || '-' }}</el-tag>
+            <el-button link type="primary" @click="openFaceEdit(item)">标记/编辑</el-button>
+          </div>
+        </div>
+      </div>
+      <el-empty v-if="!faceLoading && faceList.length === 0" description="暂无人脸分析结果" />
+    </div>
+  </el-drawer>
+
+  <el-dialog v-model="faceEditVisible" title="编辑图片人脸" width="520px">
+    <el-form :model="faceEditForm" label-width="90px">
+      <el-form-item label="姓名">
+        <el-input v-model="faceEditForm.personName" placeholder="请输入人员姓名" />
+      </el-form-item>
+      <el-form-item label="别名">
+        <el-input v-model="faceEditForm.aliasNames" placeholder="多个别名可用逗号分隔" />
+      </el-form-item>
+      <el-form-item label="置信度">
+        <el-slider v-model="faceEditForm.confidence" :min="0" :max="1" :step="0.01" />
+      </el-form-item>
+      <el-form-item label="备注">
+        <el-input v-model="faceEditForm.remark" type="textarea" :rows="3" placeholder="补充说明" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="faceEditVisible = false">取消</el-button>
+      <el-button type="primary" :loading="faceSubmitLoading" @click="submitFaceEdit">保存</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ImageIndexApi } from '@/api/rag/image-index'
+import { FaceApi } from '@/api/rag/face'
 import { ModelApi } from '@/api/ai/model/model'
 
 defineOptions({ name: 'RagImageIndex' })
@@ -134,6 +185,7 @@ const message = useMessage()
 const loading = ref(false)
 const rebuildLoading = ref(false)
 const rebuildVisible = ref(false)
+const faceDrawerVisible = ref(false)
 const stats = ref<any>({})
 const trend = ref<any[]>([])
 const distribution = ref<any>({})
@@ -142,6 +194,12 @@ const total = ref(0)
 const selection = ref<any[]>([])
 const embeddingModels = ref<any[]>([])
 const selectedEsIds = ref<string[]>([])
+const faceLoading = ref(false)
+const faceSubmitLoading = ref(false)
+const faceList = ref<any[]>([])
+const faceEditVisible = ref(false)
+const faceEditForm = reactive<any>({})
+const currentFaceEsId = ref('')
 
 const queryParams = reactive({
   pageNo: 1,
@@ -232,12 +290,57 @@ const submitRebuild = async () => {
   }
 }
 
+const analyzeFace = async (row: any) => {
+  await ImageIndexApi.analyzeFace({ esId: row.esId, overwrite: true })
+  message.success('人脸分析完成')
+  await getList()
+}
+
+const openFaces = async (row: any) => {
+  faceDrawerVisible.value = true
+  currentFaceEsId.value = row.esId
+  faceLoading.value = true
+  try {
+    faceList.value = await ImageIndexApi.getFaces({ esId: row.esId })
+  } finally {
+    faceLoading.value = false
+  }
+}
+
+const openFaceEdit = (row: any) => {
+  Object.assign(faceEditForm, {
+    id: row.id,
+    personName: row.personName,
+    aliasNames: row.aliasNames,
+    remark: row.remark,
+    confidence: row.confidence ?? 0
+  })
+  faceEditVisible.value = true
+}
+
+const submitFaceEdit = async () => {
+  faceSubmitLoading.value = true
+  try {
+    await FaceApi.updateInstance(faceEditForm)
+    message.success('人脸信息已更新')
+    faceEditVisible.value = false
+    if (currentFaceEsId.value) {
+      faceList.value = await ImageIndexApi.getFaces({ esId: currentFaceEsId.value })
+    }
+    await getList()
+  } finally {
+    faceSubmitLoading.value = false
+  }
+}
+
 const toDistribution = (obj?: Record<string, number>) => {
   return Object.entries(obj || {}).map(([name, count]) => ({ name, count })).slice(0, 12)
 }
 
 const trendPercent = (count?: number) => Math.max(4, Math.round(((count || 0) / maxTrend.value) * 100))
 const statusLabel = (status?: string) => ({ success: '成功', failed: '失败', pending: '待处理' }[status || 'pending'] || status)
+const facePercent = (value?: number) => value == null ? '-' : `${Math.round(value * 100)}%`
+const faceImageSrc = (item: any) => item?.thumbnailUrl || (item?.thumbnail ? `data:image/jpeg;base64,${item.thumbnail}` : '')
 const formatSize = (size?: number) => {
   if (!size) return '-'
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
@@ -278,4 +381,11 @@ onMounted(async () => {
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .thumb { width: 56px; height: 56px; border-radius: 12px; background: #f2f5f7; }
 .thumb--empty { display: grid; place-items: center; color: #99a4aa; font-size: 12px; }
+.face-list { display: flex; flex-direction: column; gap: 12px; }
+.face-row { display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 12px; border: 1px solid #e6ebf2; border-radius: 6px; }
+.face-row img, .face-empty { width: 92px; height: 92px; border-radius: 6px; object-fit: cover; background: #f3f6fb; display: flex; align-items: center; justify-content: center; color: #8a98ad; font-weight: 700; }
+.face-info { min-width: 0; }
+.face-title { font-weight: 700; color: #101828; }
+.face-meta { margin-top: 6px; color: #667085; }
+.face-actions { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 </style>

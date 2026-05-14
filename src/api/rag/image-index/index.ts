@@ -15,5 +15,11 @@ export const ImageIndexApi = {
   },
   rebuild: async (data: any) => {
     return await request.post({ url: '/rag/images/index/rebuild', data })
+  },
+  analyzeFace: async (params: any) => {
+    return await request.post({ url: '/rag/images/index/face/analyze', params })
+  },
+  getFaces: async (params: any) => {
+    return await request.get({ url: '/rag/images/index/face/list', params })
   }
 }

@@ -142,7 +142,7 @@
             <el-option v-for="item in aiTaskTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item :label="formData.aiTaskType === 'embedding' ? 'Embedding模型' : '模型'">
+        <el-form-item v-if="formData.aiTaskType !== 'face_analysis'" :label="formData.aiTaskType === 'embedding' ? 'Embedding模型' : '模型'">
           <el-select v-model="formData.modelId" class="!w-full" clearable filterable :placeholder="formData.aiTaskType === 'embedding' ? '请选择 type=5 向量模型' : '可选'">
             <el-option v-for="item in currentModelOptions" :key="item.id" :label="`${item.name}${item.model ? `（${item.model}）` : ''}`" :value="item.id" />
           </el-select>
@@ -167,7 +167,7 @@
             <el-input-number v-model="formData.embeddingBatchSize" :min="1" :max="500" />
           </el-form-item>
         </template>
-        <el-form-item v-if="formData.aiTaskType !== 'embedding'" label="角色">
+        <el-form-item v-if="formData.aiTaskType !== 'embedding' && formData.aiTaskType !== 'face_analysis'" label="角色">
           <el-select v-model="formData.roleId" class="!w-full" clearable filterable placeholder="可选">
             <el-option v-for="item in roleOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
@@ -179,6 +179,10 @@
           <el-select v-model="formData.formId" class="!w-full" clearable filterable placeholder="请选择表单">
             <el-option v-for="item in formOptions" :key="item.id" :label="item.name || item.formName || item.id" :value="item.id" />
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="formData.aiTaskType === 'face_analysis'" label="覆盖结果">
+          <el-switch v-model="formData.embeddingOverwrite" />
+          <span class="ml-12px text-12px color-#667085">开启后会重新提取并覆盖已有人脸分析结果</span>
         </el-form-item>
         <el-form-item label="Cron 表达式" prop="cronExpression">
           <el-input v-model="formData.cronExpression" placeholder="例如：0 0/30 * * * ? / 0 0 2 * * ?" />
@@ -256,7 +260,8 @@ const aiTaskTypeOptions = [
   { label: 'NER', value: 'ner' },
   { label: '翻译', value: 'translate' },
   { label: '表单抽取', value: 'form_extract' },
-  { label: '向量化 / Embedding', value: 'embedding' }
+  { label: '向量化 / Embedding', value: 'embedding' },
+  { label: '人脸分析', value: 'face_analysis' }
 ]
 
 const formatGroupOptions = [
@@ -328,6 +333,9 @@ const resetQuery = () => {
 
 const openDialog = (row?: any) => {
   Object.assign(formData, defaultFormData(), row || {})
+  if (!row && formData.aiTaskType === 'face_analysis') {
+    formData.formatGroups = ['image']
+  }
   fileExtInput.value = (row?.fileExts || []).join(',')
   dialogVisible.value = true
 }
@@ -387,6 +395,15 @@ const aiTaskTypeLabel = (value?: string) => {
 const formatGroupLabels = (values?: string[]) => {
   return (values || []).map((item) => formatGroupOptions.find((option) => option.value === item)?.label || item)
 }
+
+watch(
+  () => formData.aiTaskType,
+  (value) => {
+    if (value === 'face_analysis' && (!formData.formatGroups || formData.formatGroups.length === 0)) {
+      formData.formatGroups = ['image']
+    }
+  }
+)
 
 onMounted(async () => {
   await Promise.all([loadOptions(), getList()])
