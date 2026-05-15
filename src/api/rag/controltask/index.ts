@@ -1,5 +1,15 @@
 import request from '@/config/axios'
 
+export interface ScanRules {
+  fileTypes?: string[]
+  fileNamePattern?: string
+  contentPattern?: string
+  fileSuffixExcludePattern?: string
+  folderNameExcludePattern?: string
+  folderIndexEnabled?: boolean
+  sensitiveRules?: string[]
+}
+
 // 布控任务 VO
 export interface ControlTaskVO {
   id: number // 主键ID
@@ -20,6 +30,8 @@ export interface ControlTaskVO {
   faceCount: number // 布控人脸数量
   textCount: number // 布控文本数量
   objectCount: number // 布控物品数量
+  scanRulesJson?: string // 布控规则配置JSON
+  scanRules?: ScanRules // 布控规则配置
 }
 
 // 布控任务 API

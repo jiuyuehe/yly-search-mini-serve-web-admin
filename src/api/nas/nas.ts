@@ -38,6 +38,17 @@ export interface NasPageReqVO {
   type?: NasType
 }
 
+export interface NasFileEntryVO {
+  fileName: string
+  filePath: string
+  parentPath: string
+  folder: boolean
+  fileSize?: number
+  updateTime?: string
+  permissions?: number
+  canSee?: boolean
+}
+
 export interface NasPermissionVO {
   id: number
   nasId: number
@@ -70,6 +81,11 @@ export interface NasPermissionSaveReqVO {
   mark?: string
   markType?: number
   attrs?: string
+}
+
+export interface NasPermissionPageReqVO {
+  pageNo: number
+  pageSize: number
 }
 
 export const NasApi = {
@@ -105,8 +121,18 @@ export const NasApi = {
     return await request.post<boolean>({ url: `/apps/nas/all/${nasId}/umount` })
   },
 
-  getPermissionList: async (nasId: number) => {
-    return await request.get<NasPermissionVO[]>({ url: `/apps/ad/nas/all/${nasId}/file_per` })
+  getPermissionList: async (nasId: number, params: NasPermissionPageReqVO) => {
+    return await request.get<{ list: NasPermissionVO[]; total: number }>({
+      url: `/apps/ad/nas/all/${nasId}/file_per`,
+      params
+    })
+  },
+
+  getAdminFileList: async (nasId: number, parentNasPath = '/') => {
+    return await request.get<NasFileEntryVO[]>({
+      url: '/apps/ad/nas/file/list',
+      params: { nasId, parentNasPath }
+    })
   },
 
   createPermission: async (nasId: number, data: NasPermissionSaveReqVO) => {

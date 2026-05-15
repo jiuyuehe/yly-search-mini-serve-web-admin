@@ -218,6 +218,15 @@ export enum DICT_TYPE {
 
   // ========== AI - 人工智能模块  ==========
   AI_PLATFORM = 'ai_platform', // AI 平台
+
+  // ========== EDU - 教育基础数据模块 ==========
+  EDU_DEPT_BIZ_TYPE = 'edu_dept_biz_type',
+  EDU_GRADE_STAGE = 'edu_grade_stage',
+  EDU_TEACHER_EMPLOYMENT_STATUS = 'edu_teacher_employment_status',
+  EDU_STUDENT_STATUS = 'edu_student_status',
+  EDU_COURSE_STAGE = 'edu_course_stage',
+  EDU_BUILDING_TYPE = 'edu_building_type',
+  EDU_CLASSROOM_TYPE = 'edu_classroom_type',
   AI_MODEL_TYPE = 'ai_model_type', // AI 模型类型
   AI_IMAGE_STATUS = 'ai_image_status', // AI 图片状态
   AI_MUSIC_STATUS = 'ai_music_status', // AI 音乐状态
