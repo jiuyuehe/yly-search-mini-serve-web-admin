@@ -9,6 +9,9 @@
       <el-collapse v-model="activeNames">
         <el-collapse-item title="范围" name="basic">
           <el-form label-position="top" class="filter-form">
+            <el-form-item label="空间类型">
+              <el-segmented v-model="model.fileCategory" :options="fileCategoryOptions" block />
+            </el-form-item>
             <div class="switch-line">
               <span>文件夹</span>
               <el-switch v-model="model.folder" />
@@ -78,6 +81,14 @@ const docTypeOptions = [
   { label: '视频', value: '4' },
   { label: '压缩', value: '6' },
   { label: '其他', value: '5' }
+]
+
+const fileCategoryOptions = [
+  { label: '全部', value: '' },
+  { label: '个人', value: 'personal' },
+  { label: '共享', value: 'public' },
+  { label: '群组', value: 'group' },
+  { label: 'NAS', value: 'nas' }
 ]
 
 const sizeStops = [
@@ -276,7 +287,7 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
 
 :deep(.el-segmented) {
   width: 100%;
-  padding: 8px;
+  padding: 4px;
   border: 1px solid rgb(203 213 225 / 72%);
   border-radius: 13px;
   --el-segmented-item-selected-bg-color: #2563eb;
@@ -290,6 +301,7 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
 :deep(.el-segmented__item) {
   border-radius: 10px;
   transition: opacity 0.18s ease, transform 0.18s ease;
+  padding:0;
 }
 
 :deep(.el-segmented__item:hover) {

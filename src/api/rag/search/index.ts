@@ -31,7 +31,7 @@ export interface SearchParam {
   includeEnrich?: boolean
   offset?: number
   limit?: number
-  fileCategory?: 'nas'
+  fileCategory?: 'personal' | 'public' | 'group' | 'nas' | ''
 }
 
 export interface AiSearchReq {
@@ -115,13 +115,10 @@ const append = (formData: FormData, key: string, value: unknown) => {
   formData.append(key, value instanceof File ? value : String(value))
 }
 
-// SearchParam 仍按后端的 multipart/form-data 接收；这里集中处理布尔值、数值和固定 fileCategory。
+// SearchParam 仍按后端的 multipart/form-data 接收；这里集中处理布尔值、数值和可选 fileCategory。
 export const buildSearchFormData = (params: SearchParam) => {
   const formData = new FormData()
-  const payload: SearchParam = {
-    ...params,
-    fileCategory: 'nas'
-  }
+  const payload: SearchParam = { ...params }
   Object.entries(payload).forEach(([key, value]) => {
     if (key === 'imageFile') {
       if (value instanceof File) formData.append('file', value)

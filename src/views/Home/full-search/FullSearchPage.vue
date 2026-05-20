@@ -168,7 +168,7 @@ const defaultFilters = (): SearchParam => ({
   includeEnrich: true,
   offset: 0,
   limit: 20,
-  fileCategory: 'nas'
+  fileCategory: ''
 })
 
 const filters = reactive<SearchParam>(defaultFilters())
@@ -238,8 +238,7 @@ const buildQueryParams = () => ({
   ...filters,
   searchType: filters.searchType || 'keyword' as const,
   offset: filters.offset || 0,
-  limit: filters.limit || 20,
-  fileCategory: 'nas' as const
+  limit: filters.limit || 20
 })
 
 const handleSearch = async () => {
