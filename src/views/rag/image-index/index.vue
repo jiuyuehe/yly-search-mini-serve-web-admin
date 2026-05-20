@@ -95,7 +95,7 @@
       <el-table-column type="selection" width="45" />
       <el-table-column label="缩略图" width="92">
         <template #default="{ row }">
-          <el-image v-if="row.thumbnail" class="thumb" :src="`data:image/jpeg;base64,${row.thumbnail}`" fit="cover" />
+          <el-image v-if="imageThumbSrc(row)" class="thumb" :src="imageThumbSrc(row)" fit="cover" />
           <div v-else class="thumb thumb--empty">IMG</div>
         </template>
       </el-table-column>
@@ -497,7 +497,17 @@ const toDistribution = (obj?: Record<string, number>) => {
 const trendPercent = (count?: number) => Math.max(4, Math.round(((count || 0) / maxTrend.value) * 100))
 const statusLabel = (status?: string) => ({ success: '成功', failed: '失败', pending: '待处理' }[status || 'pending'] || status)
 const facePercent = (value?: number) => value == null ? '-' : `${Math.round(value * 100)}%`
-const faceImageSrc = (item: any) => item?.thumbnailUrl || (item?.thumbnail ? `data:image/jpeg;base64,${item.thumbnail}` : '')
+const normalizeImageSrc = (thumbnailUrl?: string, thumbnail?: string) => {
+  if (thumbnailUrl) {
+    return thumbnailUrl
+  }
+  if (!thumbnail) {
+    return ''
+  }
+  return thumbnail.startsWith('data:') ? thumbnail : `data:image/jpeg;base64,${thumbnail}`
+}
+const imageThumbSrc = (item: any) => normalizeImageSrc(item?.thumbnailUrl, item?.thumbnail)
+const faceImageSrc = (item: any) => normalizeImageSrc(item?.thumbnailUrl, item?.thumbnail)
 const formatSize = (size?: number) => {
   if (!size) return '-'
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
