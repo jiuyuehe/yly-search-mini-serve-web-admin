@@ -142,32 +142,32 @@
             <el-option v-for="item in aiTaskTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="formData.aiTaskType !== 'face_analysis'" :label="formData.aiTaskType === 'embedding' ? 'Embedding模型' : '模型'">
-          <el-select v-model="formData.modelId" class="!w-full" clearable filterable :placeholder="formData.aiTaskType === 'embedding' ? '请选择 type=5 向量模型' : '可选'">
+        <el-form-item v-if="formData.aiTaskType !== 'face_analysis'" :label="['embedding', 'image_ai_analysis'].includes(formData.aiTaskType) ? 'Embedding模型' : '模型'">
+          <el-select v-model="formData.modelId" class="!w-full" clearable filterable :placeholder="['embedding', 'image_ai_analysis'].includes(formData.aiTaskType) ? '请选择 type=5 向量模型' : '可选'">
             <el-option v-for="item in currentModelOptions" :key="item.id" :label="`${item.name}${item.model ? `（${item.model}）` : ''}`" :value="item.id" />
           </el-select>
         </el-form-item>
-        <template v-if="formData.aiTaskType === 'embedding'">
+        <template v-if="formData.aiTaskType === 'embedding' || formData.aiTaskType === 'image_ai_analysis'">
           <el-form-item label="Reranker模型">
             <el-select v-model="formData.rerankModelId" class="!w-full" clearable filterable placeholder="可选，推荐 Qwen/Qwen3-VL-Reranker-2B">
               <el-option v-for="item in rerankModelOptions" :key="item.id" :label="`${item.name}${item.model ? `（${item.model}）` : ''}`" :value="item.id" />
             </el-select>
           </el-form-item>
-          <el-form-item label="向量目标">
+          <el-form-item v-if="formData.aiTaskType === 'embedding'" label="向量目标">
             <el-radio-group v-model="formData.embeddingTarget">
               <el-radio-button label="image">图片</el-radio-button>
               <el-radio-button label="text">文本</el-radio-button>
               <el-radio-button label="all">全部</el-radio-button>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="覆盖已有向量">
+          <el-form-item :label="formData.aiTaskType === 'image_ai_analysis' ? '覆盖分析结果' : '覆盖已有向量'">
             <el-switch v-model="formData.embeddingOverwrite" />
           </el-form-item>
           <el-form-item label="批处理大小">
             <el-input-number v-model="formData.embeddingBatchSize" :min="1" :max="500" />
           </el-form-item>
         </template>
-        <el-form-item v-if="formData.aiTaskType !== 'embedding' && formData.aiTaskType !== 'face_analysis'" label="角色">
+        <el-form-item v-if="!['embedding', 'image_ai_analysis', 'face_analysis', 'audio_asr'].includes(formData.aiTaskType)" label="角色">
           <el-select v-model="formData.roleId" class="!w-full" clearable filterable placeholder="可选">
             <el-option v-for="item in roleOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
@@ -261,6 +261,8 @@ const aiTaskTypeOptions = [
   { label: '翻译', value: 'translate' },
   { label: '表单抽取', value: 'form_extract' },
   { label: '向量化 / Embedding', value: 'embedding' },
+  { label: '图片 AI 分析', value: 'image_ai_analysis' },
+  { label: '音视频转写', value: 'audio_asr' },
   { label: '人脸分析', value: 'face_analysis' }
 ]
 
@@ -318,7 +320,7 @@ const loadOptions = async () => {
 }
 
 const currentModelOptions = computed(() => {
-  return formData.aiTaskType === 'embedding' ? embeddingModelOptions.value : modelOptions.value
+  return ['embedding', 'image_ai_analysis'].includes(formData.aiTaskType) ? embeddingModelOptions.value : modelOptions.value
 })
 
 const handleQuery = () => {
@@ -333,7 +335,7 @@ const resetQuery = () => {
 
 const openDialog = (row?: any) => {
   Object.assign(formData, defaultFormData(), row || {})
-  if (!row && formData.aiTaskType === 'face_analysis') {
+  if (!row && ['face_analysis', 'image_ai_analysis'].includes(formData.aiTaskType)) {
     formData.formatGroups = ['image']
   }
   fileExtInput.value = (row?.fileExts || []).join(',')
@@ -399,8 +401,11 @@ const formatGroupLabels = (values?: string[]) => {
 watch(
   () => formData.aiTaskType,
   (value) => {
-    if (value === 'face_analysis' && (!formData.formatGroups || formData.formatGroups.length === 0)) {
+    if (['face_analysis', 'image_ai_analysis'].includes(value) && (!formData.formatGroups || formData.formatGroups.length === 0)) {
       formData.formatGroups = ['image']
+    }
+    if (value === 'audio_asr' && (!formData.formatGroups || formData.formatGroups.length === 0)) {
+      formData.formatGroups = ['audio', 'video']
     }
   }
 )

@@ -1,10 +1,23 @@
 <template>
-  <div class="full-search-page">
-    <SearchFilterPanel v-model="filters" @reset="resetFilters" />
+  <div class="full-search-page" :class="`mode-${searchMode}`">
+    <SearchFilterPanel v-if="searchMode === 'full'" v-model="filters" @reset="resetFilters" />
 
     <main class="search-main">
       <section class="search-head">
-        <div class="search-box">
+        <div class="mode-switch" role="tablist">
+          <button
+            v-for="item in modeOptions"
+            :key="item.value"
+            type="button"
+            class="mode-tab"
+            :class="{ active: searchMode === item.value }"
+            @click="setSearchMode(item.value)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+
+        <div v-if="searchMode === 'full'" class="search-box">
           <el-input
             v-model="filters.keyword"
             size="large"
@@ -20,9 +33,29 @@
             <el-icon><Search /></el-icon>
           </el-button>
         </div>
+
+        <MediaSearchPanel
+          v-else-if="searchMode === 'media'"
+          v-model:keyword="mediaQuery.keyword"
+          v-model:image-file="mediaQuery.imageFile"
+          v-model:preview-url="mediaQuery.previewUrl"
+          v-model:prefer-face="mediaQuery.preferFace"
+          v-model:threshold="mediaQuery.threshold"
+          v-model:top-k="mediaQuery.topK"
+          @search="handleMediaSearch"
+        />
+
+        <AiSearchPanel
+          v-else
+          v-model:question="aiQuestion"
+          :analysis="aiAnalysis"
+          :loading="aiLoading"
+          @search="handleAiSearch"
+          @apply="applyAiSearch"
+        />
       </section>
 
-      <section class="aggregation-row">
+      <section v-if="searchMode !== 'media'" class="aggregation-row">
         <button
           v-for="item in aggregationTabs"
           :key="item.value"
@@ -37,6 +70,7 @@
       </section>
 
       <SearchResultList
+        v-if="searchMode !== 'media'"
         v-model:selected-ids="selectedIds"
         :files="result.fileList"
         :total="result.total"
@@ -52,6 +86,18 @@
         @page-change="changePage"
         @size-change="changeSize"
       />
+
+      <MediaResultGrid
+        v-else
+        :items="mediaItems"
+        :loading="mediaLoading"
+        title="多媒体检索结果"
+        :hint="mediaHint"
+        :empty-text="mediaEmptyText"
+        :search-time="mediaSearchTime"
+        @preview="openViewer"
+        @download="downloadOne"
+      />
     </main>
 
     <SearchFileViewer ref="viewerRef" />
@@ -61,10 +107,14 @@
 <script lang="ts" setup>
 import { Box, Document, Files, FolderOpened, Headset, Picture, Search, VideoPlay } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import AiSearchPanel from './AiSearchPanel.vue'
+import MediaResultGrid from './MediaResultGrid.vue'
+import MediaSearchPanel from './MediaSearchPanel.vue'
 import SearchFileViewer from './SearchFileViewer.vue'
 import SearchFilterPanel from './SearchFilterPanel.vue'
 import SearchResultList from './SearchResultList.vue'
 import {
+  aiSearchDocuments,
   batchDownloadBlob,
   downloadFileBlob,
   getKkPreviewUrl,
@@ -75,6 +125,21 @@ import {
   type SearchParam,
   type SearchResult
 } from '@/api/rag/search'
+import { ImageIndexApi } from '@/api/rag/image-index'
+
+interface MediaGridItem {
+  key: string
+  hitType: 'face' | 'image' | 'text'
+  image?: string
+  faceImage?: string
+  personName?: string
+  fileName?: string
+  filePath?: string
+  source?: string
+  score?: number
+  confidence?: number
+  raw: any
+}
 
 const defaultFilters = (): SearchParam => ({
   keyword: '',
@@ -113,6 +178,34 @@ const selectedIds = ref<string[]>([])
 const loading = ref(false)
 const currentAgg = ref('')
 const viewerRef = ref<InstanceType<typeof SearchFileViewer>>()
+const route = useRoute()
+const router = useRouter()
+const normalizeMode = (mode: unknown): 'full' | 'media' | 'ai' => {
+  return mode === 'media' || mode === 'ai' || mode === 'full' ? mode : 'full'
+}
+const searchMode = ref<'full' | 'media' | 'ai'>(normalizeMode(route.query.mode))
+const mediaLoading = ref(false)
+const mediaItems = ref<MediaGridItem[]>([])
+const mediaHint = ref('支持文字搜图片、图片搜图片和人脸优先搜索')
+const mediaSearchTime = ref<number>()
+const aiLoading = ref(false)
+const aiQuestion = ref('')
+const aiAnalysis = ref<any>()
+
+const modeOptions = [
+  { label: '全文搜索', value: 'full' as const },
+  { label: '多媒体资料', value: 'media' as const },
+  { label: 'AI 搜索', value: 'ai' as const }
+]
+
+const mediaQuery = reactive({
+  keyword: '',
+  imageFile: null as File | null,
+  previewUrl: '',
+  preferFace: true,
+  threshold: 0.62,
+  topK: 20
+})
 
 const page = computed(() => Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1)
 
@@ -143,7 +236,7 @@ const aggregationTabs = computed(() => {
 
 const buildQueryParams = () => ({
   ...filters,
-  searchType: 'keyword' as const,
+  searchType: filters.searchType || 'keyword' as const,
   offset: filters.offset || 0,
   limit: filters.limit || 20,
   fileCategory: 'nas' as const
@@ -171,6 +264,80 @@ const resetFilters = () => {
   Object.assign(filters, defaultFilters())
   currentAgg.value = ''
   handleSearch()
+}
+
+const mediaEmptyText = computed(() => {
+  if (!mediaQuery.keyword && !mediaQuery.imageFile) return '输入文字或上传图片后开始检索'
+  return mediaHint.value.includes('未检测到') ? '未检测到人脸，已为你切换到相似图片搜索，可尝试降低阈值' : '暂无多媒体搜索结果，可尝试降低相似度阈值'
+})
+
+const handleMediaSearch = async () => {
+  if (!mediaQuery.keyword && !mediaQuery.imageFile) {
+    ElMessage.warning('请输入文字或上传图片')
+    return
+  }
+  mediaLoading.value = true
+  mediaItems.value = []
+  try {
+    const formData = new FormData()
+    if (mediaQuery.keyword) formData.append('keyword', mediaQuery.keyword)
+    if (mediaQuery.imageFile) formData.append('imageFile', mediaQuery.imageFile)
+    formData.append('preferFace', String(mediaQuery.preferFace))
+    formData.append('similarity', String(mediaQuery.threshold))
+    formData.append('limit', String(mediaQuery.topK))
+    formData.append('offset', '0')
+    const data = await ImageIndexApi.searchMedia(formData)
+    const faceRows = data?.faceResults || []
+    const imageRows = data?.imageResults?.fileList || []
+    mediaSearchTime.value = data?.imageResults?.searchTime
+    mediaHint.value = data?.fallbackReason || data?.message || '已完成多媒体检索'
+    mediaItems.value = [
+      ...faceRows.map(toFaceItem),
+      ...imageRows.map((item: any) => toImageItem(item, mediaQuery.imageFile ? 'image' : 'text'))
+    ]
+  } finally {
+    mediaLoading.value = false
+  }
+}
+
+const handleAiSearch = async () => {
+  if (!aiQuestion.value.trim()) {
+    ElMessage.warning('请输入问题')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const data = await aiSearchDocuments({ question: aiQuestion.value })
+    aiAnalysis.value = data
+    Object.assign(result, {
+      total: data?.topResults?.length || 0,
+      fileList: data?.topResults || [],
+      searchTime: data?.durationMs
+    })
+    filters.keyword = data?.rewrittenKeywords || aiQuestion.value
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+const applyAiSearch = () => {
+  filters.keyword = aiAnalysis.value?.rewrittenKeywords || aiQuestion.value
+  setSearchMode('full')
+  handleSearch()
+}
+
+const setSearchMode = (mode: 'full' | 'media' | 'ai') => {
+  if (searchMode.value === mode) return
+  searchMode.value = mode
+  if (mode === 'media') {
+    mediaQuery.keyword = filters.keyword || mediaQuery.keyword || ''
+    mediaItems.value = []
+    mediaHint.value = '支持文字搜图片、图片搜图片和人脸优先搜索'
+  }
+  if (mode === 'ai') {
+    aiQuestion.value = filters.keyword || aiQuestion.value || ''
+  }
+  router.replace({ query: { ...route.query, mode } })
 }
 
 const selectAggregation = (docType: string) => {
@@ -252,6 +419,53 @@ const openViewer = async (file: CommonFile) => {
 }
 
 onMounted(handleSearch)
+
+watch(
+  () => route.query.mode,
+  (mode) => {
+    if (mode === 'full' || mode === 'media' || mode === 'ai') {
+      searchMode.value = mode
+    }
+  }
+)
+
+watch(
+  () => mediaQuery.previewUrl,
+  (_next, prev) => {
+    if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
+  }
+)
+
+const imageSrc = (item: any) => {
+  const raw = item?.imageThumbnail || item?.thumbnail || item?.thumbnailBase64 || item?.coverThumbnail
+  if (item?.thumbnailUrl || item?.coverImageUrl || item?.faceThumbnailUrl) return item.thumbnailUrl || item.coverImageUrl || item.faceThumbnailUrl
+  return raw ? `data:image/jpeg;base64,${raw}` : ''
+}
+
+const toFaceItem = (item: any): MediaGridItem => ({
+  key: `face-${item.id || item.sourceEsId || item.fileName}`,
+  hitType: 'face',
+  image: imageSrc(item),
+  faceImage: imageSrc(item),
+  personName: item.personName,
+  fileName: item.fileName,
+  filePath: item.filePath,
+  source: item.sourceTaskId,
+  score: Number(item.similarity || item.score || 0),
+  confidence: item.confidence,
+  raw: { ...item, esId: item.sourceEsId || item.esId }
+})
+
+const toImageItem = (item: any, hitType: 'image' | 'text'): MediaGridItem => ({
+  key: `image-${item.esId || item.fileId || item.fileName}`,
+  hitType,
+  image: imageSrc(item),
+  fileName: item.fileName,
+  filePath: item.filePath,
+  source: item.matchSource || item.fileCategory,
+  score: Number(item.score || 0),
+  raw: item
+})
 </script>
 
 <style scoped lang="scss">
@@ -296,6 +510,42 @@ onMounted(handleSearch)
 .search-head {
   max-width: 1180px;
   margin: 0 auto 20px;
+}
+
+.mode-media .search-head,
+.mode-ai .search-head,
+.mode-media .media-result {
+  max-width: 1240px;
+}
+
+.mode-switch {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  margin-bottom: 14px;
+  background: rgb(255 255 255 / 62%);
+  border: 1px solid rgb(221 231 249 / 84%);
+  border-radius: 9px;
+  box-shadow: 0 12px 28px rgb(39 79 145 / 8%), inset 0 1px 0 rgb(255 255 255 / 84%);
+}
+
+.mode-tab {
+  min-width: 116px;
+  height: 38px;
+  padding: 0 18px;
+  font-weight: 700;
+  color: #24324b;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  transition: background 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
+}
+
+.mode-tab.active {
+  color: #fff;
+  background: linear-gradient(180deg, #2d7bff 0%, #1263ea 100%);
+  box-shadow: 0 8px 16px rgb(20 100 235 / 26%);
 }
 
 .search-box {

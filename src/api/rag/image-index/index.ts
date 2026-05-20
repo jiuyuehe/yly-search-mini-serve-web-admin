@@ -21,5 +21,16 @@ export const ImageIndexApi = {
   },
   getFaces: async (params: any) => {
     return await request.get({ url: '/rag/images/index/face/list', params })
+  },
+  getLogs: async (params: any) => {
+    return await request.get({ url: '/rag/ai/task-log/page', params })
+  },
+  searchMedia: async (data: FormData, params?: any) => {
+    return await request.post({
+      url: '/rag/images/search/media',
+      data,
+      params,
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
   }
 }

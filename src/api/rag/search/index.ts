@@ -34,6 +34,11 @@ export interface SearchParam {
   fileCategory?: 'nas'
 }
 
+export interface AiSearchReq {
+  question: string
+  modelId?: number
+}
+
 export interface CommonFile {
   esId?: string
   nasId?: string
@@ -46,6 +51,7 @@ export interface CommonFile {
   fileExt?: string
   fileCategory?: string
   fileContents?: string
+  audioTranscript?: string
   fileSummary?: string
   enrichSummary?: string
   fileAiTag?: string
@@ -131,6 +137,13 @@ export const searchDocuments = (params: SearchParam) => {
     url: '/rag/documents/search',
     headersType: 'multipart/form-data',
     data: buildSearchFormData(params)
+  })
+}
+
+export const aiSearchDocuments = (data: AiSearchReq) => {
+  return request.post<any>({
+    url: '/rag/documents/search/ai',
+    data
   })
 }
 

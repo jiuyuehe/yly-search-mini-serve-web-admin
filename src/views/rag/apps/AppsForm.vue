@@ -1,537 +1,362 @@
 <template>
-  <Dialog :title="title" v-model="dialogVisible">
-    <el-form
-      ref="formRef"
-      :model="formData"
-      label-width="120px"
-      v-loading="formLoading"
-      class="app-config-form"
-    >
-      <!-- 基本信息区域 -->
-      <div class="form-section">
-        <div class="section-header">基本信息</div>
-        
-        <el-form-item label="应用名称" required>
-          <el-input v-model="formData.appName" placeholder="请输入应用名称" />
-        </el-form-item>
+  <Dialog v-model="dialogVisible" :title="title" width="820px">
+    <el-form ref="formRef" :model="formData" label-width="120px" v-loading="formLoading">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="作用域">
+            <el-input :value="scopeLabel" disabled />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="模型类型">
+            <el-input :value="modelTypeLabel" disabled />
+          </el-form-item>
+        </el-col>
+      </el-row>
 
-        <el-form-item label="应用密钥" required>
-          <el-input v-model="formData.appKey" placeholder="请输入应用密钥">
-            <template #append>
-              <el-button @click="copyAppKey" :icon="CopyDocument" type="primary" text/>
-            </template>
-          </el-input>
-        </el-form-item>
-        
-        <el-form-item label="应用代码" required>
-          <el-input v-model="formData.appCode" placeholder="请输入唯一应用代码" :disabled="!isAddMode" />
-          <div class="form-hint">应用代码必须唯一，用于系统识别应用</div>
-        </el-form-item>
-        
-        <el-form-item label="应用图标">
-          <div class="icon-upload-container">
-            <el-upload
-              class="app-icon-uploader"
-              :action="'/prod-api/admin-api/yly/rag-apps/upload-icon/' + formData.appCode + '/'"
-              :show-file-list="false"
-              :on-success="handleIconSuccess"
-              :on-error="handleIconError"
-              :before-upload="beforeIconUpload"
-            >
-              <div class="upload-area">
-                <img v-if="iconPreview" :key="iconPreview" :src="iconPreview" class="app-icon-preview" />
-                <el-icon v-else class="upload-icon"><Plus /></el-icon>
-                <div v-if="!iconPreview" class="upload-tip">点击上传图标</div>
-              </div>
-            </el-upload>
-          </div>
-          <div class="form-hint">建议上传正方形PNG图片，大小不超过10MB。非正方形图片将会被缩放以完整显示。</div>
-        </el-form-item>
-        
-        <el-form-item label="应用描述">
-          <el-input v-model="formData.appDescription" type="textarea" :rows="2" placeholder="请输入应用描述" />
-        </el-form-item>
-      </div>
-      
-      <!-- API请求区域 -->
-      <div class="form-section">
-        <div class="section-header">API请求</div>
+      <el-form-item label="配置名称">
+        <el-input v-model="formData.configName" placeholder="留空时按作用域自动生成" />
+      </el-form-item>
 
-        <el-form-item label="请求路径" required>
-          <el-input v-model="apiConfigData.url" placeholder="请输入完整请求路径" />
-        </el-form-item>
-        
-        <el-form-item label="请求方式">
-          <el-select v-model="apiConfigData.method" placeholder="请选择请求方式">
-            <el-option label="GET" value="GET" />
-            <el-option label="POST" value="POST" />
-            <el-option label="PUT" value="PUT" />
-            <el-option label="DELETE" value="DELETE" />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item label="请求参数">
-          <el-input
-            v-model="requestParamsString"
-            type="textarea"
-            :rows="5"
-            placeholder="请输入请求参数，格式为JSON"
-            class="code-input"
+      <el-form-item label="模型">
+        <el-select
+          v-model="formData.modelId"
+          clearable
+          filterable
+          placeholder="请选择模型"
+          style="width: 100%"
+        >
+          <el-option
+            v-for="item in modelOptions"
+            :key="item.id"
+            :label="buildModelLabel(item)"
+            :value="item.id"
           />
-        </el-form-item>
-        
-        <el-form-item label="返回结果">
-          <el-input
-            v-model="responseFormatString"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入返回结果格式，格式为JSON"
-            class="code-input"
-          />
-        </el-form-item>
-      </div>
-      
-      <!-- iframe嵌入区域 -->
-      <div class="form-section">
-        <div class="section-header">iframe嵌入</div>
-        
-        <el-form-item label="iframe地址">
-          <el-input v-model="apiConfigData.iframe_url" placeholder="请输入iframe嵌入地址" />
-        </el-form-item>
-      </div>
+        </el-select>
+        <div class="form-hint">当前展示全部已启用模型，不再按模型类型限制选择。</div>
+      </el-form-item>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="调用方式">
+            <el-select v-model="formData.invokeMode" placeholder="请选择调用方式" style="width: 100%">
+              <el-option
+                v-for="item in invokeModeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="状态">
+            <el-switch
+              v-model="enabled"
+              inline-prompt
+              active-text="启用"
+              inactive-text="停用"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-form-item v-if="showEndpointConfig" label="访问地址">
+        <el-input
+          v-model="formData.endpointUrl"
+          placeholder="例如：http://127.0.0.1:5000/ocr；纯模型直连可留空"
+        />
+      </el-form-item>
+
+      <el-form-item v-if="showEndpointConfig" label="API Key">
+        <el-input
+          v-model="formData.apiKey"
+          type="textarea"
+          :rows="2"
+          placeholder="可选；需要鉴权时填写"
+        />
+      </el-form-item>
+
+      <el-form-item v-if="showJsonTemplateConfig" label="Headers JSON">
+        <el-input
+          v-model="formData.headersJson"
+          type="textarea"
+          :rows="3"
+          placeholder='例如：{"Authorization":"Bearer xxx"}'
+        />
+      </el-form-item>
+
+      <el-form-item v-if="showJsonTemplateConfig" label="请求模板 JSON">
+        <el-input
+          v-model="formData.requestTemplateJson"
+          type="textarea"
+          :rows="5"
+          placeholder='例如：{"model":"xxx","input":"${text}"}'
+        />
+      </el-form-item>
+
+      <el-form-item v-if="showJsonTemplateConfig" label="响应映射 JSON">
+        <el-input
+          v-model="formData.responseMappingJson"
+          type="textarea"
+          :rows="4"
+          placeholder='例如：{"text":"$.data.text"}'
+        />
+      </el-form-item>
+
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item label="超时(毫秒)">
+            <el-input-number
+              v-model="formData.timeoutMs"
+              :min="1000"
+              :max="600000"
+              :step="1000"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="备注">
+            <el-input v-model="formData.remark" placeholder="选填" />
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
-    
+
     <template #footer>
-      <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
+      <el-button @click="handleTest" :loading="testLoading">连通性测试</el-button>
+      <el-button type="primary" @click="submitForm" :loading="formLoading">保 存</el-button>
       <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
   </Dialog>
 </template>
 
 <script setup lang="ts">
-import { RagAppsApi, RagAppsVO } from '@/api/rag/apps'
+import {
+  DefaultModelConfigItemVO,
+  DefaultModelConfigSaveReqVO,
+  DefaultModelConfigTestReqVO,
+  ModelCandidateVO,
+  RagAppsApi
+} from '@/api/rag/apps'
 import { useMessage } from '@/hooks/web/useMessage'
-import { CopyDocument, Plus } from '@element-plus/icons-vue'
 import { computed, reactive, ref } from 'vue'
 
-defineOptions({ name: 'AppsForm' })
+defineOptions({ name: 'DefaultModelConfigForm' })
+
+interface OpenPayload {
+  title: string
+  record: DefaultModelConfigItemVO
+  modelOptions: ModelCandidateVO[]
+  saveApi: (data: DefaultModelConfigSaveReqVO) => Promise<boolean>
+}
 
 const emit = defineEmits(['success'])
-const { t } = useI18n()
 const message = useMessage()
 
 const dialogVisible = ref(false)
 const title = ref('')
 const formLoading = ref(false)
+const testLoading = ref(false)
 const formRef = ref()
-const isAddMode = ref(false)
-const iconPreview = ref('') // 图标预览URL
+const modelOptions = ref<ModelCandidateVO[]>([])
+const saveApiRef = ref<OpenPayload['saveApi']>()
 
-// 表单数据
-const formData = reactive<RagAppsVO>({
-  id: 0,
-  appKey: '',
-  appName: '',
-  appCode: '',
-  appDescription: '',
-  // appType: '',
-  apiConfig: '',
-  icon: '',
-  sortOrder: 0,
-  status: true
+const invokeModeOptions = [
+  { label: 'AI 模型直连', value: 'AI_MODEL' },
+  { label: 'HTTP JSON', value: 'HTTP_JSON' },
+  { label: 'OpenAI TTS', value: 'OPENAI_AUDIO_SPEECH' },
+  { label: 'OpenAI ASR', value: 'OPENAI_AUDIO_TRANSCRIPTION' }
+]
+
+const formData = reactive<DefaultModelConfigSaveReqVO>({
+  scopeType: 'MODEL_TYPE',
+  scopeCode: '',
+  modelType: 1,
+  modelId: undefined,
+  configName: '',
+  endpointUrl: '',
+  invokeMode: 'AI_MODEL',
+  apiKey: '',
+  headersJson: '{}',
+  requestTemplateJson: '{}',
+  responseMappingJson: '{}',
+  timeoutMs: 60000,
+  status: 0,
+  remark: ''
 })
 
-// API配置数据
-const apiConfigData = reactive({
-  url: '',
-  method: 'POST',
-  params: {},
-  is_iframe: true,
-  iframe_url: '',
-  response_format: {}
-})
+const showEndpointConfig = computed(() => formData.invokeMode !== 'AI_MODEL')
+const showJsonTemplateConfig = computed(() => formData.invokeMode === 'HTTP_JSON')
 
-// 计算属性：请求参数字符串形式
-const requestParamsString = computed({
-  get: () => {
-    try {
-      return JSON.stringify(apiConfigData.params, null, 2)
-    } catch (e) {
-      return '{}'
-    }
-  },
-  set: (val) => {
-    try {
-      apiConfigData.params = JSON.parse(val)
-    } catch (e) {
-      console.error('解析请求参数失败:', e)
-    }
+const scopeLabel = computed(() => {
+  if (formData.scopeType === 'TASK_TYPE') {
+    return `任务覆盖 / ${formData.scopeCode}`
   }
+  return `模型类型默认 / ${formData.scopeCode}`
 })
 
-// 计算属性：返回结果字符串形式
-const responseFormatString = computed({
-  get: () => {
-    try {
-      return JSON.stringify(apiConfigData.response_format, null, 2)
-    } catch (e) {
-      return '{}'
-    }
-  },
-  set: (val) => {
-    try {
-      apiConfigData.response_format = JSON.parse(val)
-    } catch (e) {
-      console.error('解析返回结果格式失败:', e)
-    }
+const modelTypeLabel = computed(() => `${formData.modelType ?? '-'} / ${formData.scopeCode}`)
+
+const enabled = computed({
+  get: () => formData.status === 0,
+  set: (value: boolean) => {
+    formData.status = value ? 0 : 1
   }
 })
 
-// 图标上传前的校验
-const beforeIconUpload = (file) => {
-  const isImage = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'].includes(file.type)
-  const isLt10M = file.size / 1024 / 1024 < 10
-
-  if (!isImage) {
-    message.error('图标只能是图片格式!')
-    return false
-  }
-  
-  if (!isLt10M) {
-    message.error('图标大小不能超过10MB!')
-    return false
-  }
-  
-  if (!formData.appKey) {
-    message.error('请先输入应用密钥!')
-    return false
-  }
-
-  if (!formData.appCode) {
-    message.error('请先输入应用代码!')
-    return false
-  }
-  
-  return true
-}
-
-// 图标上传成功处理
-const handleIconSuccess = (response, file) => {
-  if (response && response.iconUrl) {
-    // 添加时间戳防止缓存
-    const timestamp = new Date().getTime()
-    iconPreview.value = `${response.iconUrl}?t=${timestamp}`
-    formData.icon = response.iconUrl  // 保存原始URL到表单数据
-    ElMessage.success('图标上传成功')
-  } else {
-    ElMessage.error('图标上传失败: 响应格式错误')
-  }
-}
-
-// 图标上传失败处理
-const handleIconError = (error) => {
-  console.error('图标上传失败:', error)
-  
-  let errorMsg = '图标上传失败'
-  if (error.response) {
-    try {
-      const response = JSON.parse(error.response)
-      errorMsg = response.error || errorMsg
-    } catch (e) {}
-  }
-  
-  message.error(errorMsg)
-}
-
-// 打开表单弹窗
-const open = (app: RagAppsVO | null, isAdd: boolean = false) => {
-  dialogVisible.value = true
-  isAddMode.value = isAdd
-  iconPreview.value = ''
-  
-  resetForm()
-  
-  if (isAdd) {
-    // 新增模式
-    title.value = '添加应用'
-    formData.appKey = ''
-    formData.status = false
-    formData.sortOrder = 0
-  } else if (app) {
-    // 编辑模式
-    title.value = `配置 ${app.appName}`
-    
-    // 设置基本数据
-    Object.assign(formData, app)
-    if (formData.icon) {
-      // If an icon exists, set iconPreview with a timestamp for initial display
-      iconPreview.value = `${formData.icon}?t=${new Date().getTime()}`
-    }
-    
-    // 处理apiConfig字段
-    if (app.apiConfig) {
-      try {
-        const apiConfigObj = JSON.parse(app.apiConfig)
-        
-        // 重置apiConfigData
-        apiConfigData.url = apiConfigObj.url || ''
-        apiConfigData.method = apiConfigObj.method || 'POST'
-        apiConfigData.params = apiConfigObj.params || {}
-        apiConfigData.is_iframe = true
-        apiConfigData.iframe_url = apiConfigObj.iframe_url || ''
-        apiConfigData.response_format = apiConfigObj.response_format || {}
-      } catch (e) {
-        console.error('解析API配置失败:', e)
-      }
-    }
-  }
-}
-
-// 表单验证
-const validateForm = () => {
-  if (!formData.appName) {
-    message.error('应用名称不能为空')
-    return false
-  }
-
-  if (!formData.appKey) {
-    message.error('应用密钥不能为空')
-    return false
-  }
-  
-  if (isAddMode.value && !formData.appCode) {
-    message.error('应用代码不能为空')
-    return false
-  }
-  
-  if (!apiConfigData.url) {
-    message.error('请求路径不能为空')
-    return false
-  }
-  
-  return true
-}
-
-// 提交表单
-const submitForm = async () => {
-  // 表单验证
-  if (!validateForm()) {
-    return
-  }
-  
-  formLoading.value = true
-  try {
-    // 构建apiConfig对象
-    const apiConfigObj = {
-      url: apiConfigData.url,
-      method: apiConfigData.method,
-      params: apiConfigData.params,
-      is_iframe: apiConfigData.is_iframe,
-      iframe_url: apiConfigData.iframe_url,
-      response_format: apiConfigData.response_format
-    }
-    
-    // 准备提交数据
-    const submitData: RagAppsVO = {
-      ...formData,
-      apiConfig: JSON.stringify(apiConfigObj)
-    }
-    
-    // 根据模式选择API
-    if (isAddMode.value) {
-      // 创建新应用
-      await RagAppsApi.createRagApps(submitData)
-      message.success('创建成功')
-    } else {
-      // 更新应用
-      await RagAppsApi.updateRagApps(submitData)
-    }
-    
-    dialogVisible.value = false
-    emit('success')
-  } catch (error) {
-    console.error(isAddMode.value ? '创建失败:' : '保存失败:', error)
-    message.error(isAddMode.value ? '创建失败' : t('common.saveFailText'))
-  } finally {
-    formLoading.value = false
-  }
-}
-
-// 重置表单
 const resetForm = () => {
-  // 重置表单数据
   Object.assign(formData, {
-    id: 0,
-    appKey: '',
-    appName: '',
-    appCode: '',
-    appDescription: '',
-    // appType: '',
-    apiConfig: '',
-    icon: '',
-    sortOrder: 0,
-    status: true
+    id: undefined,
+    scopeType: 'MODEL_TYPE',
+    scopeCode: '',
+    modelType: 1,
+    modelId: undefined,
+    configName: '',
+    endpointUrl: '',
+    invokeMode: 'AI_MODEL',
+    apiKey: '',
+    headersJson: '{}',
+    requestTemplateJson: '{}',
+    responseMappingJson: '{}',
+    timeoutMs: 60000,
+    status: 0,
+    remark: ''
   })
-  
-  // 重置API配置数据
-  Object.assign(apiConfigData, {
-    url: '',
-    method: 'POST',
-    params: {},
-    is_iframe: true,
-    iframe_url: '',
-    response_format: {}
-  })
-  
-  // 重置图标预览
-  iconPreview.value = ''
-  
-  // 重置表单验证
   if (formRef.value) {
     formRef.value.resetFields()
   }
 }
 
-// 复制应用密钥
-const copyAppKey = () => {
-  if (!formData.appKey) {
-    message.warning('应用密钥为空，无法复制')
-    return
+const buildModelLabel = (item: ModelCandidateVO) => {
+  const parts = [item.name]
+  if (item.model) {
+    parts.push(item.model)
   }
-  
-  navigator.clipboard.writeText(formData.appKey)
-    .then(() => {
-      message.success('已复制应用密钥到剪贴板')
-    })
-    .catch(err => {
-      console.error('复制失败:', err)
-      message.error('复制失败')
-    })
+  if (item.platform) {
+    parts.push(item.platform)
+  }
+  return parts.join(' / ')
 }
 
-// 对外暴露方法
+const open = (payload: OpenPayload) => {
+  resetForm()
+  title.value = payload.title
+  dialogVisible.value = true
+  modelOptions.value = payload.modelOptions
+  saveApiRef.value = payload.saveApi
+  Object.assign(formData, {
+    ...payload.record,
+    endpointUrl: payload.record.endpointUrl || '',
+    invokeMode: payload.record.invokeMode || 'AI_MODEL',
+    apiKey: payload.record.apiKey || '',
+    headersJson: payload.record.headersJson || '{}',
+    requestTemplateJson: payload.record.requestTemplateJson || '{}',
+    responseMappingJson: payload.record.responseMappingJson || '{}',
+    timeoutMs: payload.record.timeoutMs || 60000,
+    status: payload.record.status ?? 0,
+    remark: payload.record.remark || '',
+    configName:
+      payload.record.configName ||
+      `${payload.record.scopeType === 'TASK_TYPE' ? '任务覆盖' : '类型默认'}-${payload.record.scopeCode}`
+  })
+}
+
+const validateJsonField = (value: string | undefined, label: string) => {
+  if (!value) {
+    return true
+  }
+  try {
+    JSON.parse(value)
+    return true
+  } catch (error) {
+    message.error(`${label} 不是合法 JSON`)
+    return false
+  }
+}
+
+const validateForm = () => {
+  if (!formData.scopeType || !formData.scopeCode) {
+    message.error('作用域信息缺失，无法保存')
+    return false
+  }
+  if (!formData.invokeMode) {
+    message.error('请选择调用方式')
+    return false
+  }
+  if (formData.invokeMode === 'AI_MODEL' && (!formData.modelId || formData.modelId <= 0)) {
+    message.error('AI_MODEL 模式必须选择模型')
+    return false
+  }
+  if (showEndpointConfig.value && !formData.endpointUrl) {
+    message.error('当前调用方式必须填写访问地址')
+    return false
+  }
+  if (showJsonTemplateConfig.value && !validateJsonField(formData.headersJson, 'Headers JSON')) {
+    return false
+  }
+  if (showJsonTemplateConfig.value && !validateJsonField(formData.requestTemplateJson, '请求模板 JSON')) {
+    return false
+  }
+  if (showJsonTemplateConfig.value && !validateJsonField(formData.responseMappingJson, '响应映射 JSON')) {
+    return false
+  }
+  return true
+}
+
+const handleTest = async () => {
+  if (!validateForm()) {
+    return
+  }
+  testLoading.value = true
+  try {
+    const payload: DefaultModelConfigTestReqVO = {
+      modelId: formData.modelId,
+      endpointUrl: formData.endpointUrl,
+      invokeMode: formData.invokeMode,
+      apiKey: formData.apiKey
+    }
+    const res = await RagAppsApi.testConfig(payload)
+    const tone = res.success ? 'success' : 'warning'
+    message[tone](`${res.message}（HTTP ${res.statusCode}）`)
+  } catch (error) {
+    console.error('测试默认模型配置失败:', error)
+    message.error('连通性测试失败')
+  } finally {
+    testLoading.value = false
+  }
+}
+
+const submitForm = async () => {
+  if (!validateForm()) {
+    return
+  }
+  if (!saveApiRef.value) {
+    message.error('保存方法未初始化')
+    return
+  }
+  formLoading.value = true
+  try {
+    await saveApiRef.value({ ...formData })
+    message.success('保存成功')
+    dialogVisible.value = false
+    emit('success')
+  } catch (error) {
+    console.error('保存默认模型配置失败:', error)
+    message.error('保存失败')
+  } finally {
+    formLoading.value = false
+  }
+}
+
 defineExpose({ open })
 </script>
 
 <style lang="scss" scoped>
-.app-config-form {
-  padding: 0 10px;
-}
-
-.form-section {
-  margin-bottom: 24px;
-  overflow: hidden;
-  border-radius: 4px;
-  
-  &:not(:last-child) {
-    padding-bottom: 16px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-}
-
-.section-header {
-  position: relative;
-  padding-left: 12px;
-  margin-bottom: 16px;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 24px;
-  color: #333;
-  
-  &::before {
-    position: absolute;
-    top: 4px;
-    left: 0;
-    width: 4px;
-    height: 16px;
-    background-color: #409eff;
-    border-radius: 2px;
-    content: '';
-  }
-}
-
-.icon-upload-container {
-  display: flex;
-  align-items: flex-start;
-}
-
-.icon-tip {
-  margin-left: 12px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #909399;
-}
-
-.app-icon-uploader {
-  :deep(.el-upload) {
-    cursor: pointer;
-  }
-}
-
-.upload-area {
-  display: flex;
-  width: 100px;
-  height: 100px;
-  overflow: hidden;
-  background: #fafafa;
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  transition: all 0.3s;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  
-  &:hover {
-    background: #f5f7fa;
-    border-color: #409eff;
-  }
-}
-
-.app-icon-preview {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.upload-icon {
-  font-size: 28px;
-  color: #8c939d;
-}
-
-.upload-tip {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #999;
-  text-align: center;
-}
-
-.code-input {
-  font-family: Consolas, Monaco, 'Andale Mono', monospace;
-  
-  :deep(.el-textarea__inner) {
-    padding: 8px 12px;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-}
-
 .form-hint {
-  padding-left: 2px;
   margin-top: 4px;
   font-size: 12px;
   color: #909399;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 20px;
-}
-
-:deep(.el-form-item__label) {
-  font-weight: normal;
-}
-
-:deep(.el-select) {
-  width: 100%;
 }
 </style>

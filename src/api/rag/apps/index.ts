@@ -1,48 +1,137 @@
 import request from '@/config/axios'
 
-// 应用配置 VO
-export interface RagAppsVO {
-  id: number // 主键
-  appKey: string // App唯一标识
-  appName: string // App名称
-  appCode: string // App唯一代码
-  appDescription: string // App描述
-  // appType: string // App类型/分类
-  apiConfig: string // API配置信息(JSON格式)
-  icon: string // App图标路径
-  sortOrder: number // 显示排序
-  status: boolean // 状态 0:启用 1:禁用
+export interface DefaultModelTypeVO {
+  code: string
+  name: string
+  modelType: number
 }
 
-// 应用配置 API
+export interface TaskModelMappingVO {
+  taskCode: string
+  taskName: string
+  modelTypeCode: string
+  modelType: number
+}
+
+export interface DefaultModelConfigItemVO {
+  id?: number
+  scopeType: string
+  scopeCode: string
+  modelType: number
+  modelTypeCode?: string
+  modelTypeName?: string
+  modelId?: number
+  modelName?: string
+  modelCode?: string
+  configName?: string
+  endpointUrl?: string
+  invokeMode: string
+  apiKey?: string
+  headersJson?: string
+  requestTemplateJson?: string
+  responseMappingJson?: string
+  timeoutMs?: number
+  status: number
+  remark?: string
+  initialized?: boolean
+}
+
+export interface ModelCandidateVO {
+  id: number
+  name: string
+  model: string
+  platform?: string
+  type: number
+}
+
+export interface DefaultModelConfigPageInitVO {
+  modelTypes: DefaultModelTypeVO[]
+  tasks: TaskModelMappingVO[]
+  typeDefaults: DefaultModelConfigItemVO[]
+  taskOverrides: DefaultModelConfigItemVO[]
+  modelCandidates: ModelCandidateVO[]
+}
+
+export interface DefaultModelConfigSaveReqVO {
+  id?: number
+  scopeType: string
+  scopeCode: string
+  modelType: number
+  modelId?: number
+  configName?: string
+  endpointUrl?: string
+  invokeMode: string
+  apiKey?: string
+  headersJson?: string
+  requestTemplateJson?: string
+  responseMappingJson?: string
+  timeoutMs?: number
+  status: number
+  remark?: string
+}
+
+export interface DefaultModelConfigTestReqVO {
+  modelId?: number
+  endpointUrl?: string
+  invokeMode: string
+  apiKey?: string
+}
+
+export interface DefaultModelConfigTestRespVO {
+  success: boolean
+  message: string
+  statusCode: number
+}
+
+export interface ResolvePreviewRespVO {
+  resolvedSource: string
+  scopeType: string
+  scopeCode: string
+  modelId?: number
+  modelName?: string
+  modelCode?: string
+  endpointUrl?: string
+  invokeMode?: string
+  remark?: string
+}
+
 export const RagAppsApi = {
-  // 查询应用配置分页
-  getRagAppsPage: async (params: any) => {
-    return await request.get({ url: `/rag/rag-apps/page`, params })
+  getPageInit: async () => {
+    return await request.get<DefaultModelConfigPageInitVO>({
+      url: '/rag/default-model-config/page-init'
+    })
   },
 
-  // 查询应用配置详情
-  getRagApps: async (id: number) => {
-    return await request.get({ url: `/rag/rag-apps/get?id=` + id })
+  saveTypeDefault: async (data: DefaultModelConfigSaveReqVO) => {
+    return await request.put<boolean>({
+      url: '/rag/default-model-config/save-type-default',
+      data
+    })
   },
 
-  // 新增应用配置
-  createRagApps: async (data: RagAppsVO) => {
-    return await request.post({ url: `/rag/rag-apps/create`, data })
+  saveTaskOverride: async (data: DefaultModelConfigSaveReqVO) => {
+    return await request.put<boolean>({
+      url: '/rag/default-model-config/save-task-override',
+      data
+    })
   },
 
-  // 修改应用配置
-  updateRagApps: async (data: RagAppsVO) => {
-    return await request.put({ url: `/rag/rag-apps/update`, data })
+  deleteTaskOverride: async (taskCode: string) => {
+    return await request.delete<boolean>({
+      url: `/rag/default-model-config/delete-task-override?taskCode=${taskCode}`
+    })
   },
 
-  // 删除应用配置
-  deleteRagApps: async (id: number) => {
-    return await request.delete({ url: `/rag/rag-apps/delete?id=` + id })
+  testConfig: async (data: DefaultModelConfigTestReqVO) => {
+    return await request.post<DefaultModelConfigTestRespVO>({
+      url: '/rag/default-model-config/test',
+      data
+    })
   },
 
-  // 导出应用配置 Excel
-  exportRagApps: async (params) => {
-    return await request.download({ url: `/rag/rag-apps/export-excel`, params })
-  },
+  resolvePreview: async (taskCode: string) => {
+    return await request.get<ResolvePreviewRespVO>({
+      url: `/rag/default-model-config/resolve-preview?taskCode=${taskCode}`
+    })
+  }
 }

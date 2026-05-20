@@ -3,10 +3,14 @@
     <div class="image-hero">
       <div>
         <div class="image-hero__eyebrow">Image Embedding Control Tower</div>
-        <div class="image-hero__title">图片索引管理</div>
-        <div class="image-hero__desc">统一查看图片扫描量、向量覆盖率、增长趋势、格式分布和重建入口。</div>
+        <div class="image-hero__title">图片 AI 索引管理</div>
+        <div class="image-hero__desc">统一管理图片向量检索、人脸提取、处理进度、分析日志和人工修正。</div>
       </div>
-      <el-button type="primary" plain @click="openRebuild()">按当前筛选重建向量</el-button>
+      <div class="hero-actions">
+        <el-button type="primary" @click="taskVisible = true">创建图片 AI 分析任务</el-button>
+        <el-button type="success" plain @click="openRebuild()">按当前筛选重建向量</el-button>
+        <el-button plain @click="goTaskLog">查看任务日志</el-button>
+      </div>
     </div>
   </ContentWrap>
 
@@ -19,6 +23,21 @@
       </ContentWrap>
     </el-col>
   </el-row>
+
+  <ContentWrap>
+    <div class="capability-strip">
+      <div class="capability-item">
+        <span>图片向量检索</span>
+        <el-tag :type="stats.embeddedCount > 0 ? 'success' : 'info'">{{ stats.embeddedCount > 0 ? '已开启' : '未开启' }}</el-tag>
+        <el-progress :percentage="Math.round((stats.coverageRate || 0) * 100)" />
+      </div>
+      <div class="capability-item">
+        <span>人脸检索</span>
+        <el-tag :type="stats.faceAnalyzedCount > 0 ? 'success' : 'info'">{{ stats.faceAnalyzedCount > 0 ? '已开启' : '未开启' }}</el-tag>
+        <el-progress :percentage="Math.round((stats.faceCoverageRate || 0) * 100)" status="success" />
+      </div>
+    </div>
+  </ContentWrap>
 
   <el-row :gutter="16" class="mb-16px">
     <el-col :xs="24" :md="14">
@@ -105,14 +124,81 @@
       <el-table-column label="错误原因" prop="embeddingError" min-width="180" show-overflow-tooltip />
       <el-table-column label="操作" fixed="right" width="220">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openRebuild([row.esId])">重建</el-button>
-          <el-button link type="success" @click="analyzeFace(row)">人脸分析</el-button>
+          <el-button link type="primary" @click="openRebuild([row.esId])">重建向量</el-button>
+          <el-button link type="success" @click="analyzeFace(row)">重新分析人脸</el-button>
           <el-button link type="info" @click="openFaces(row)">查看人脸</el-button>
+          <el-button link @click="openRowLogs(row)">查看日志</el-button>
         </template>
       </el-table-column>
     </el-table>
     <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" @pagination="getList" />
   </ContentWrap>
+
+  <ContentWrap>
+    <template #header>图片分析日志</template>
+    <el-form :inline="true" :model="logQuery" class="-mb-15px" label-width="72px">
+      <el-form-item label="文件名">
+        <el-input v-model="logQuery.fileName" class="!w-240px" clearable placeholder="只按文件名过滤" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="loadLogs">搜索</el-button>
+        <el-button @click="resetLogs">重置</el-button>
+      </el-form-item>
+    </el-form>
+    <el-table v-loading="logLoading" :data="logList" stripe class="mt-16px">
+      <el-table-column label="文件名" prop="fileName" min-width="220" show-overflow-tooltip />
+      <el-table-column label="任务类型" prop="taskType" width="150" />
+      <el-table-column label="状态" prop="status" width="110" />
+      <el-table-column label="耗时" width="110">
+        <template #default="{ row }">{{ row.durationMs ? `${row.durationMs}ms` : '-' }}</template>
+      </el-table-column>
+      <el-table-column label="错误原因" prop="errorMessage" min-width="220" show-overflow-tooltip />
+      <el-table-column label="创建时间" prop="createTime" width="180" />
+      <el-table-column label="操作" width="120">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="logDetail = row; logDetailVisible = true">查看详情</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <Pagination :total="logTotal" v-model:page="logQuery.pageNo" v-model:limit="logQuery.pageSize" @pagination="loadLogs" />
+  </ContentWrap>
+
+  <el-dialog v-model="taskVisible" title="创建图片 AI 分析任务" width="720px">
+    <el-steps :active="3" finish-status="success" align-center>
+      <el-step title="范围" />
+      <el-step title="模型" />
+      <el-step title="策略" />
+      <el-step title="确认" />
+    </el-steps>
+    <el-form :model="taskForm" label-width="120px" class="mt-18px">
+      <el-form-item label="任务名称">
+        <el-input v-model="taskForm.taskName" />
+      </el-form-item>
+      <el-form-item label="Embedding模型">
+        <el-select v-model="taskForm.modelId" class="!w-full" filterable placeholder="请选择 qwen3-vl embedding 模型">
+          <el-option v-for="item in embeddingModels" :key="item.id" :label="`${item.name}（${item.model}）`" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="覆盖已有结果">
+        <el-switch v-model="taskForm.embeddingOverwrite" />
+      </el-form-item>
+      <el-form-item label="批量大小">
+        <el-input-number v-model="taskForm.embeddingBatchSize" :min="1" :max="500" />
+      </el-form-item>
+      <el-form-item label="Cron表达式">
+        <el-input v-model="taskForm.cronExpression" />
+      </el-form-item>
+      <el-alert show-icon :closable="false" type="info" title="该任务会串行完成图片向量化与人脸提取，范围默认是全部图片。创建后可在基础定时管理中继续编辑。" />
+    </el-form>
+    <template #footer>
+      <el-button @click="taskVisible = false">取消</el-button>
+      <el-button type="primary" :loading="taskLoading" @click="createImageAiTask">创建任务</el-button>
+    </template>
+  </el-dialog>
+
+  <el-dialog v-model="logDetailVisible" title="日志详情" width="680px">
+    <pre class="log-detail">{{ JSON.stringify(logDetail, null, 2) }}</pre>
+  </el-dialog>
 
   <el-dialog v-model="rebuildVisible" title="重建图片向量" width="560px">
     <el-form :model="rebuildForm" label-width="110px">
@@ -178,6 +264,7 @@
 import { ImageIndexApi } from '@/api/rag/image-index'
 import { FaceApi } from '@/api/rag/face'
 import { ModelApi } from '@/api/ai/model/model'
+import { AiScheduleTaskApi } from '@/api/rag/ai-schedule'
 
 defineOptions({ name: 'RagImageIndex' })
 
@@ -200,6 +287,14 @@ const faceList = ref<any[]>([])
 const faceEditVisible = ref(false)
 const faceEditForm = reactive<any>({})
 const currentFaceEsId = ref('')
+const router = useRouter()
+const taskVisible = ref(false)
+const taskLoading = ref(false)
+const logLoading = ref(false)
+const logList = ref<any[]>([])
+const logTotal = ref(0)
+const logDetailVisible = ref(false)
+const logDetail = ref<any>({})
 
 const queryParams = reactive({
   pageNo: 1,
@@ -211,17 +306,36 @@ const queryParams = reactive({
 
 const rebuildForm = reactive({
   modelId: undefined as number | undefined,
-  overwrite: false,
+  overwrite: true,
   embeddingTarget: 'image'
 })
 
+const taskForm = reactive<any>({
+  taskName: '图片 AI 分析任务',
+  aiTaskType: 'image_ai_analysis',
+  modelId: undefined,
+  formatGroups: ['image'],
+  embeddingOverwrite: true,
+  embeddingBatchSize: 50,
+  cronExpression: '0 0/30 * * * ?'
+})
+
+const logQuery = reactive({
+  pageNo: 1,
+  pageSize: 10,
+  fileName: '',
+  taskType: 'image_ai_analysis'
+})
+
 const statCards = computed(() => [
-  { label: '图片总数', value: stats.value.totalImages || 0, hint: '来自主索引 formatGroup=image' },
-  { label: '已向量化', value: stats.value.embeddedCount || 0, hint: 'embeddingStatus=success' },
-  { label: '待处理', value: stats.value.pendingCount || 0, hint: '等待 embedding' },
-  { label: '失败数', value: stats.value.failureCount || 0, hint: '需要重建或排错' },
-  { label: '覆盖率', value: `${Math.round((stats.value.coverageRate || 0) * 100)}%`, hint: '向量覆盖图片比例' },
-  { label: '今日新增', value: stats.value.todayNewImages || 0, hint: `向量 ${stats.value.todayNewEmbeddings || 0}` }
+  { label: '图片总数', value: stats.value.totalImages || 0, hint: '基础索引图片数量' },
+  { label: '已向量化', value: stats.value.embeddedCount || 0, hint: 'V3 媒体向量成功' },
+  { label: '向量失败', value: stats.value.failureCount || 0, hint: '需要重建或排错' },
+  { label: '向量覆盖率', value: `${Math.round((stats.value.coverageRate || 0) * 100)}%`, hint: '已向量化 / 图片总数' },
+  { label: '已做人脸分析', value: stats.value.faceAnalyzedCount || 0, hint: '至少检索过一次人脸' },
+  { label: '检出人脸数', value: stats.value.detectedFaceCount || 0, hint: '人脸实例数量' },
+  { label: '人脸覆盖率', value: `${Math.round((stats.value.faceCoverageRate || 0) * 100)}%`, hint: '已分析 / 图片总数' },
+  { label: '今日处理量', value: stats.value.todayNewEmbeddings || 0, hint: `今日新增图片 ${stats.value.todayNewImages || 0}` }
 ])
 
 const extDistribution = computed(() => toDistribution(distribution.value.byExt))
@@ -250,6 +364,17 @@ const loadDashboard = async () => {
   trend.value = trendData || []
   distribution.value = distributionData || {}
   embeddingModels.value = models || []
+}
+
+const loadLogs = async () => {
+  logLoading.value = true
+  try {
+    const data = await ImageIndexApi.getLogs(logQuery)
+    logList.value = data.list || []
+    logTotal.value = data.total || 0
+  } finally {
+    logLoading.value = false
+  }
 }
 
 const handleQuery = () => {
@@ -294,6 +419,38 @@ const analyzeFace = async (row: any) => {
   await ImageIndexApi.analyzeFace({ esId: row.esId, overwrite: true })
   message.success('人脸分析完成')
   await getList()
+}
+
+const createImageAiTask = async () => {
+  if (!taskForm.modelId) {
+    message.warning('请选择 Embedding 模型')
+    return
+  }
+  taskLoading.value = true
+  try {
+    await AiScheduleTaskApi.create(taskForm)
+    message.success('图片 AI 分析任务已创建')
+    taskVisible.value = false
+    await loadLogs()
+  } finally {
+    taskLoading.value = false
+  }
+}
+
+const goTaskLog = () => {
+  router.push({ path: '/data-governance-dashboard/ai-task', query: { taskType: 'image_ai_analysis' } })
+}
+
+const openRowLogs = (row: any) => {
+  logQuery.fileName = row.fileName || ''
+  logQuery.pageNo = 1
+  loadLogs()
+}
+
+const resetLogs = () => {
+  logQuery.fileName = ''
+  logQuery.pageNo = 1
+  loadLogs()
 }
 
 const openFaces = async (row: any) => {
@@ -348,7 +505,7 @@ const formatSize = (size?: number) => {
 }
 
 onMounted(async () => {
-  await Promise.all([loadDashboard(), getList()])
+  await Promise.all([loadDashboard(), getList(), loadLogs()])
 })
 </script>
 
@@ -368,6 +525,10 @@ onMounted(async () => {
 .image-hero__eyebrow { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.7; }
 .image-hero__title { margin-top: 8px; font-size: 28px; font-weight: 800; }
 .image-hero__desc { margin-top: 8px; color: #5f6f72; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.capability-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.capability-item { padding: 14px; border: 1px solid #e6ebf2; border-radius: 8px; background: #f8fbff; }
+.capability-item > span { display: inline-block; margin-right: 10px; font-weight: 700; color: #172033; }
 .stat-card { min-height: 108px; }
 .stat-card__label { color: #69797b; font-size: 13px; }
 .stat-card__value { margin-top: 8px; font-size: 26px; font-weight: 800; color: #173f35; }
@@ -388,4 +549,9 @@ onMounted(async () => {
 .face-title { font-weight: 700; color: #101828; }
 .face-meta { margin-top: 6px; color: #667085; }
 .face-actions { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.log-detail { max-height: 520px; overflow: auto; padding: 12px; background: #0f172a; color: #dbeafe; border-radius: 6px; }
+@media (max-width: 900px) {
+  .image-hero { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .capability-strip { grid-template-columns: 1fr; }
+}
 </style>

@@ -39,7 +39,10 @@
             <button class="file-title" type="button" v-dompurify-html="highlightName(file.fileName || '')" @click="$emit('preview', file)"></button>
             <span v-if="file.score !== undefined" class="score">{{ formatScore(file.score) }}</span>
           </div>
-          <div v-if="file.fileContents" class="snippet" v-dompurify-html="file.fileContents"></div>
+          <div v-if="file.audioTranscript" class="snippet plain">
+            {{ file.audioTranscript }}
+          </div>
+          <div v-else-if="file.fileContents" class="snippet" v-dompurify-html="file.fileContents"></div>
           <div v-else-if="file.enrichSummary || file.fileSummary" class="snippet plain">
             {{ file.enrichSummary || file.fileSummary }}
           </div>
