@@ -203,13 +203,9 @@ const copyPath = async (path?: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 58%), rgb(255 255 255 / 32%));
-  border: 1px solid rgb(255 255 255 / 62%);
-  border-radius: 16px;
-  box-shadow: 0 16px 42px rgb(15 23 42 / 8%), inset 0 1px 0 rgb(255 255 255 / 70%);
-  backdrop-filter: blur(24px) saturate(155%);
+  padding: 10px 0 14px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .toolbar-actions {
@@ -218,57 +214,34 @@ const copyPath = async (path?: string) => {
   gap: 12px;
 }
 
-.result-count {
+.result-count,
+.search-time {
   font-size: 13px;
-  color: #475569;
+  color: var(--el-text-color-secondary);
 }
 
 .search-time {
-  font-size: 13px;
-  color: #64748b;
   padding-left: 8px;
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--el-border-color-lighter);
 }
 
 .result-items {
   display: grid;
-  gap: 14px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .result-item {
-  position: relative;
   display: grid;
   grid-template-columns: 24px 44px minmax(0, 1fr) 104px;
   gap: 14px;
   align-items: start;
-  padding: 18px 20px;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgb(255 255 255 / 66%), rgb(255 255 255 / 38%));
-  border: 1px solid rgb(255 255 255 / 66%);
-  border-radius: 18px;
-  box-shadow: 0 18px 50px rgb(15 23 42 / 9%), inset 0 1px 0 rgb(255 255 255 / 72%);
-  backdrop-filter: blur(24px) saturate(155%);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
-}
-
-.result-item::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  background: linear-gradient(115deg, rgb(255 255 255 / 46%), transparent 28%, rgb(255 255 255 / 18%) 64%, transparent);
-  opacity: 0.68;
-  transition: opacity 0.18s ease;
+  padding: 16px 4px;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .result-item:hover {
-  border-color: rgb(147 197 253 / 88%);
-  box-shadow: 0 26px 70px rgb(37 99 235 / 13%), inset 0 1px 0 rgb(255 255 255 / 82%);
-  transform: translateY(-2px);
-}
-
-.result-item:hover::before {
-  opacity: 0.88;
+  background: var(--el-fill-color-lighter);
 }
 
 .item-check {
@@ -278,35 +251,32 @@ const copyPath = async (path?: string) => {
 .file-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  color: #2f6fed;
-  background: linear-gradient(180deg, rgb(239 246 255 / 88%), rgb(219 234 254 / 58%));
-  border: 1px solid rgb(255 255 255 / 66%);
-  border-radius: 14px;
-  box-shadow: 0 10px 22px rgb(37 99 235 / 12%), inset 0 1px 0 rgb(255 255 255 / 74%);
-  font-size: 24px;
-  backdrop-filter: blur(14px);
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-radius: var(--el-border-radius-base);
 }
 
 .type-folder {
-  color: #d97706;
-  background: linear-gradient(180deg, rgb(255 251 235 / 94%), rgb(254 243 199 / 70%));
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
 }
 
 .type-image {
-  color: #0e9f6e;
-  background: linear-gradient(180deg, rgb(236 253 245 / 94%), rgb(209 250 229 / 70%));
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
 }
 
 .type-video {
-  color: #cc5a00;
-  background: linear-gradient(180deg, rgb(255 247 237 / 94%), rgb(254 215 170 / 62%));
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
 }
 
 .type-zip {
-  color: #7a5af8;
-  background: linear-gradient(180deg, rgb(245 243 255 / 94%), rgb(221 214 254 / 66%));
+  color: var(--el-color-info);
+  background: var(--el-color-info-light-9);
 }
 
 .file-body {
@@ -326,32 +296,29 @@ const copyPath = async (path?: string) => {
   min-width: 0;
   padding: 0;
   overflow: hidden;
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
   background: transparent;
   border: 0;
-  transition: color 0.18s ease, opacity 0.18s ease;
 }
 
 .file-title:hover {
-  color: #2563eb;
-  opacity: 0.9;
+  color: var(--el-color-primary);
 }
 
 .score {
   flex-shrink: 0;
-  padding: 3px 8px;
+  padding: 2px 8px;
   font-size: 12px;
-  color: #1d4ed8;
-  background: rgb(219 234 254 / 62%);
-  border: 1px solid rgb(255 255 255 / 66%);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border: 1px solid var(--el-color-primary-light-7);
   border-radius: 999px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
 }
 
 .snippet {
@@ -360,31 +327,32 @@ const copyPath = async (path?: string) => {
   overflow: hidden;
   font-size: 13px;
   line-height: 1.7;
-  color: #334155;
+  color: var(--el-text-color-regular);
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
 .plain {
-  color: #667085;
+  color: var(--el-text-color-secondary);
 }
 
 .meta-row {
   margin-top: 10px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .path-row {
   min-width: 0;
   margin-top: 8px;
-  color: #2563eb;
+  color: var(--el-color-primary);
 }
 
 .path-text {
   min-width: 0;
   overflow: hidden;
   font-size: 13px;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -397,25 +365,14 @@ const copyPath = async (path?: string) => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .item-actions :deep(.el-button),
 .path-row :deep(.el-button) {
   gap: 4px;
-  padding: 6px 8px;
-  background: rgb(255 255 255 / 34%);
-  border: 1px solid rgb(255 255 255 / 50%);
-  border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 62%);
-  transition: background 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
-}
-
-.item-actions :deep(.el-button:hover),
-.path-row :deep(.el-button:hover) {
-  opacity: 0.9;
-  background: rgb(255 255 255 / 58%);
-  transform: translateY(-1px);
+  padding: 2px 4px;
+  font-size: 12px;
 }
 
 .pagination {
@@ -423,21 +380,11 @@ const copyPath = async (path?: string) => {
   margin-top: 18px;
 }
 
-.pagination :deep(.el-pager li),
-.pagination :deep(.btn-prev),
-.pagination :deep(.btn-next) {
-  background: rgb(255 255 255 / 48%) !important;
-  border: 1px solid rgb(255 255 255 / 58%);
-  border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 60%);
-  backdrop-filter: blur(14px);
-}
-
 :deep(em) {
   padding: 0 2px;
   font-style: normal;
-  color: #172033;
-  background: #fff06a;
-  border-radius: 3px;
+  color: var(--el-color-danger);
+  background: var(--el-color-danger-light-9);
+  border-radius: 2px;
 }
 </style>

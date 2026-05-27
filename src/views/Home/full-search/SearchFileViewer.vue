@@ -165,9 +165,9 @@ const hasAnyPermission = (permissions: number | undefined, bits: number[]) =>
   bits.some((bit) => ((permissions || 0) & bit) === bit)
 
 const getEntryPermissions = async (item: NasFileEntry) => {
-  if (item.permissions !== undefined) return item.permissions
   const nasId = getCurrentNasId()
   if (!nasId || !item.filePath) return 0
+  // 目录列表接口为了性能可能只返回基础可见权限，点击预览时以文件路径重新取一次真实权限。
   const data = await getNasFilePermissions(nasId, item.filePath)
   return data?.permissions || 0
 }
@@ -274,9 +274,9 @@ const handleFolderItemPreview = async (item: NasFileEntry) => {
         ElMessage.error('缺少 nasId，无法预览')
         return
       }
-      
+
       const response = await getNasFileViewUrl(nasId, item.filePath)
-      
+
       openExternalPreview(response?.url)
     } catch (e: any) {
       ElMessage.error(e?.message || '预览失败')
@@ -290,13 +290,13 @@ const handleFolderItemDownload = async (item: NasFileEntry) => {
     ElMessage.warning('暂不支持文件夹下载')
     return
   }
-  
+
   const nasId = currentFile.value?.nasId
   if (!nasId) {
     ElMessage.error('缺少 nasId，无法下载')
     return
   }
-  
+
   try {
     const permissions = await getEntryPermissions(item)
     if (!hasAnyPermission(permissions, [NAS_PERMISSION.DOWN])) {
@@ -333,8 +333,8 @@ defineExpose({ open })
     margin: 0;
     overflow: hidden;
     font-size: 18px;
-    font-weight: 700;
-    color: #0f172a;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -344,7 +344,7 @@ defineExpose({ open })
     margin: 6px 0 0;
     overflow: hidden;
     font-size: 12px;
-    color: #64748b;
+    color: var(--el-text-color-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -363,23 +363,21 @@ defineExpose({ open })
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   margin-bottom: 12px;
-  color: #1e293b;
-  background: linear-gradient(180deg, rgb(255 255 255 / 68%), rgb(255 255 255 / 38%));
-  border: 1px solid rgb(255 255 255 / 62%);
-  border-radius: 16px;
-  box-shadow: 0 16px 38px rgb(15 23 42 / 8%), inset 0 1px 0 rgb(255 255 255 / 72%);
-  backdrop-filter: blur(22px) saturate(150%);
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: var(--el-border-radius-base);
 
   strong {
-    color: #2f6fed;
+    color: var(--el-color-primary);
   }
 }
 
 .folder-list {
   display: grid;
-  gap: 10px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .folder-item {
@@ -387,36 +385,27 @@ defineExpose({ open })
   grid-template-columns: 40px minmax(0, 1fr) 180px 140px;
   gap: 12px;
   align-items: center;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 58%), rgb(255 255 255 / 30%));
-  border: 1px solid rgb(255 255 255 / 58%);
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgb(15 23 42 / 7%), inset 0 1px 0 rgb(255 255 255 / 68%);
-  backdrop-filter: blur(18px) saturate(150%);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+  padding: 12px 4px;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .folder-item:hover {
-  opacity: 0.94;
-  border-color: rgb(147 197 253 / 76%);
-  box-shadow: 0 18px 42px rgb(37 99 235 / 10%), inset 0 1px 0 rgb(255 255 255 / 76%);
-  transform: translateY(-1px);
+  background: var(--el-fill-color-lighter);
 }
 
 .folder-item-icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  color: #2f6fed;
-  background: linear-gradient(180deg, rgb(239 246 255 / 88%), rgb(219 234 254 / 58%));
-  border: 1px solid rgb(255 255 255 / 64%);
-  border-radius: 13px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 72%);
+  width: 36px;
+  height: 36px;
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-radius: var(--el-border-radius-base);
 
   &.dir {
-    color: #cc7a00;
-    background: linear-gradient(180deg, rgb(255 251 235 / 94%), rgb(254 243 199 / 70%));
+    color: var(--el-color-warning);
+    background: var(--el-color-warning-light-9);
   }
 }
 
@@ -433,14 +422,14 @@ defineExpose({ open })
 
 .folder-item-name {
   font-size: 14px;
-  font-weight: 650;
-  color: #172033;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
 .folder-item-path {
   margin-top: 4px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .folder-item-meta {
@@ -449,47 +438,34 @@ defineExpose({ open })
   gap: 4px;
   align-items: flex-end;
   font-size: 12px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .folder-item-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 4px;
 }
 
 .folder-item-actions :deep(.el-button) {
   gap: 4px;
-  padding: 4px 8px;
+  padding: 2px 4px;
   font-size: 12px;
-  background: rgb(255 255 255 / 34%);
-  border: 1px solid rgb(255 255 255 / 50%);
-  border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 62%);
-  transition: background 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
-}
-
-.folder-item-actions :deep(.el-button:hover) {
-  opacity: 0.9;
-  background: rgb(255 255 255 / 58%);
-  transform: translateY(-1px);
 }
 
 .text-preview {
   min-height: 100%;
-  padding: 18px;
+  padding: 16px;
   margin: 0;
   font-family: Consolas, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.7;
-  color: #202b3d;
+  color: var(--el-text-color-primary);
   white-space: pre-wrap;
-  background: linear-gradient(180deg, rgb(255 255 255 / 70%), rgb(248 250 252 / 44%));
-  border: 1px solid rgb(255 255 255 / 62%);
-  border-radius: 16px;
-  box-shadow: 0 18px 44px rgb(15 23 42 / 8%), inset 0 1px 0 rgb(255 255 255 / 74%);
-  backdrop-filter: blur(18px);
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: var(--el-border-radius-base);
 }
 
 .image-preview {
@@ -505,39 +481,23 @@ defineExpose({ open })
   width: 100%;
   height: calc(100vh - 150px);
   border: 0;
-  border-radius: 16px;
-  background: #111827;
-  box-shadow: 0 22px 60px rgb(15 23 42 / 18%);
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-fill-color-darker);
 }
 
 :global(.search-file-viewer.el-drawer) {
   overflow: hidden;
-  background:
-    linear-gradient(135deg, rgb(255 255 255 / 76%), rgb(239 246 255 / 58%)),
-    linear-gradient(180deg, rgb(255 255 255 / 64%), rgb(226 232 240 / 34%));
-  border-left: 1px solid rgb(255 255 255 / 72%);
-  box-shadow: -24px 0 78px rgb(15 23 42 / 18%), inset 1px 0 0 rgb(255 255 255 / 62%);
-  backdrop-filter: blur(28px) saturate(160%);
+  background: var(--el-bg-color);
+  border-left: 1px solid var(--el-border-color-light);
 }
 
 :global(.search-file-viewer .el-drawer__header) {
-  padding-bottom: 18px;
+  padding-bottom: 16px;
   margin-bottom: 0;
-  border-bottom: 1px solid rgb(255 255 255 / 48%);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 :global(.search-file-viewer .el-drawer__body) {
-  background: transparent;
-}
-
-:global(.search-file-viewer .el-button) {
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 62%);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-:global(.search-file-viewer .el-button:hover) {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background: var(--el-bg-color);
 }
 </style>

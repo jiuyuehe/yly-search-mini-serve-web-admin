@@ -59,7 +59,16 @@
 </template>
 
 <script lang="ts" setup>
-import { Box, Document, Files, FolderOpened, Headset, Picture, Search, VideoPlay } from '@element-plus/icons-vue'
+import {
+  Box,
+  Document,
+  Files,
+  FolderOpened,
+  Headset,
+  Picture,
+  Search,
+  VideoPlay
+} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import SearchFileViewer from './SearchFileViewer.vue'
 import SearchFilterPanel from './SearchFilterPanel.vue'
@@ -134,7 +143,10 @@ const NAS_PERMISSION = {
 
 const aggregationTabs = computed(() => {
   const docStats = aggregations.value.docType || []
-  const getCount = (keys: string[]) => docStats.filter((item) => keys.includes(String(item.key))).reduce((sum, item) => sum + Number(item.count || 0), 0)
+  const getCount = (keys: string[]) =>
+    docStats
+      .filter((item) => keys.includes(String(item.key)))
+      .reduce((sum, item) => sum + Number(item.count || 0), 0)
   return docTypeMap.map((item) => ({
     ...item,
     count: item.value === '' ? result.total : getCount(item.keys)
@@ -244,7 +256,10 @@ const openKkPreview = async (file: CommonFile) => {
 }
 
 const openViewer = async (file: CommonFile) => {
-  if (!file.folder && !(await hasNasPermission(file, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE]))) {
+  if (
+    !file.folder &&
+    !(await hasNasPermission(file, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE]))
+  ) {
     ElMessage.warning('无预览或在线查看权限')
     return
   }
@@ -256,146 +271,101 @@ onMounted(handleSearch)
 
 <style scoped lang="scss">
 .full-search-page {
-  --glass-bg: rgb(255 255 255 / 50%);
-  --glass-bg-strong: rgb(255 255 255 / 68%);
-  --glass-border: rgb(255 255 255 / 72%);
-  --glass-shadow: 0 24px 70px rgb(15 23 42 / 14%);
-  --glass-inner: inset 0 1px 0 rgb(255 255 255 / 78%), inset 0 -1px 0 rgb(148 163 184 / 12%);
-  --glass-blue: #2f6fed;
   display: flex;
-  position: relative;
   min-height: calc(100vh - 84px);
   margin: -20px;
   overflow: hidden;
-  background:
-    linear-gradient(135deg, rgb(247 250 255 / 96%) 0%, rgb(231 239 253 / 86%) 38%, rgb(245 247 252 / 94%) 100%),
-    linear-gradient(160deg, rgb(255 255 255 / 75%), rgb(199 214 243 / 28%) 48%, rgb(255 255 255 / 55%));
-}
-
-.full-search-page::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  background:
-    linear-gradient(115deg, rgb(255 255 255 / 56%) 0%, transparent 34%, rgb(255 255 255 / 32%) 68%, transparent 100%),
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 16%) 0 1px, transparent 1px 120px);
-  mask-image: linear-gradient(180deg, rgb(0 0 0 / 80%), rgb(0 0 0 / 10%));
+  background: var(--el-bg-color-page);
 }
 
 .search-main {
-  position: relative;
-  z-index: 1;
   flex: 1;
   min-width: 0;
   height: calc(100vh - 84px);
-  padding: 30px 38px;
+  padding: 24px 32px;
   overflow: auto;
 }
 
 .search-head {
   max-width: 1180px;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
 }
 
 .search-box {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 50px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 12px;
   align-items: center;
 }
 
 .search-box :deep(.el-input__wrapper) {
-  height: 58px;
-  padding: 0 20px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 76%), rgb(255 255 255 / 46%));
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow), var(--glass-inner);
-  backdrop-filter: blur(26px) saturate(160%);
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-}
-
-.search-box :deep(.el-input__wrapper:hover),
-.search-box :deep(.el-input__wrapper.is-focus) {
-  background: linear-gradient(180deg, rgb(255 255 255 / 86%), rgb(255 255 255 / 56%));
-  border-color: rgb(147 197 253 / 90%);
-  box-shadow: 0 26px 78px rgb(37 99 235 / 16%), var(--glass-inner);
-  transform: translateY(-1px);
+  height: 48px;
+  padding: 0 16px;
+  border-radius: var(--el-border-radius-base);
 }
 
 .search-box :deep(.el-input__inner) {
-  color: #0f172a;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .search-box :deep(.el-input__prefix) {
-  color: #2563eb;
+  color: var(--el-text-color-secondary);
 }
 
 .search-box :deep(.el-button) {
-  width: 50px;
-  height: 50px;
-  color: #fff;
-  background: linear-gradient(145deg, rgb(96 165 250), rgb(37 99 235) 62%, rgb(29 78 216));
-  border: 1px solid rgb(255 255 255 / 62%);
-  border-radius: 15px;
-  box-shadow: 0 18px 34px rgb(37 99 235 / 28%), inset 0 1px 0 rgb(255 255 255 / 45%);
-  transition: opacity 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-}
-
-.search-box :deep(.el-button:hover) {
-  opacity: 0.92;
-  box-shadow: 0 24px 44px rgb(37 99 235 / 36%), inset 0 1px 0 rgb(255 255 255 / 55%);
-  transform: translateY(-1px);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--el-border-radius-base);
 }
 
 .aggregation-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   max-width: 1180px;
-  padding: 10px;
-  margin: 0 auto 20px;
-  background: rgb(255 255 255 / 32%);
-  border: 1px solid rgb(255 255 255 / 58%);
-  border-radius: 18px;
-  box-shadow: 0 16px 42px rgb(15 23 42 / 8%), inset 0 1px 0 rgb(255 255 255 / 68%);
-  backdrop-filter: blur(22px) saturate(150%);
+  padding: 12px 0;
+  margin: 0 auto 16px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .agg-tab {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  height: 38px;
-  padding: 0 14px;
-  font-weight: 650;
-  color: #475569;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-regular);
   cursor: pointer;
-  background: linear-gradient(180deg, rgb(255 255 255 / 56%), rgb(255 255 255 / 28%));
-  border: 1px solid rgb(255 255 255 / 56%);
-  border-radius: 13px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 58%);
-  backdrop-filter: blur(18px) saturate(150%);
-  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .agg-tab:hover {
-  opacity: 0.9;
-  background: linear-gradient(180deg, rgb(255 255 255 / 74%), rgb(255 255 255 / 42%));
-  transform: translateY(-1px);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-5);
 }
 
 .agg-tab span {
-  color: #8b95a7;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .agg-tab.active {
-  color: #1d4ed8;
-  background: linear-gradient(180deg, rgb(255 255 255 / 86%), rgb(219 234 254 / 62%));
-  border-color: rgb(147 197 253 / 88%);
-  box-shadow: 0 14px 30px rgb(37 99 235 / 14%), inset 0 1px 0 rgb(255 255 255 / 82%);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
+}
+
+.agg-tab.active span {
+  color: var(--el-color-primary);
 }
 
 .search-main > :deep(.result-list) {
