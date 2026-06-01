@@ -1,0 +1,52 @@
+# RAG-AI Chat 模块迁移方案（elementplus，单一登录体系）
+
+## Summary
+把 `/Library/project/rag-aichat` 的页面能力迁入主仓库 `/Library/project/yly-search-mini-serve-web-admin`，作为独立模块落在 `src/views/rag-aichat`，路由、权限和登录态都以主仓库为准。
+本次按方案 2 执行：不保留 `tdesign-vue-next`，而是全部改造成 `elementplus` 风格，保持原有页面布局、交互流程和功能结构一致。
+`src/views/ai/chat` 不纳入本次范围，不做任何改动。
+迁移后不再保留独立校园绑定流程，统一使用 `yly-search-mini-serve-web-admin` 的登录认证体系，形成“一套用户、一套系统”。
+
+## Key Changes
+- 新增独立模块目录 `src/views/rag-aichat`，按现有功能拆分为：
+  - 聊天页
+  - 知识库列表页
+  - 知识库详情页
+  - 详情子页：QA / 文档管理 / 模型设置 / 成员管理
+  - 公共组件、hooks、资源文件按需归位到模块内
+- 新增对应 API 封装，优先复用主仓库 `request` 和现有请求规范，保留 `/ragflow/*` 的接口语义、流式对话、知识库、文档、分片和提示词能力。
+- 路由接入主仓库的路由体系，建议使用稳定的模块前缀，例如 `/rag-aichat/...`，并保留知识库详情页的嵌套路由和 tab 联动，避免 keep-alive 和标签页缓存问题。
+- UI 迁移只做框架替换，不改业务流程：
+  - `t-layout`、`t-drawer`、`t-tabs`、`t-breadcrumb`、`t-button`、`t-input`、`t-loading` 等替换为 `elementplus` 对应能力
+  - 消息提示、确认框、抽屉、表单、上传、分页统一切换到主仓库现有风格
+  - 保留原来的会话切换、知识库选择、文档上传、分页、搜索、流式停止、移动端侧栏抽屉等交互
+- 认证体系统一：
+  - 删除 `/Library/project/rag-aichat/src/components/CampusBindDialog.vue`
+  - 删除 `ragflowBind` 相关绑定弹窗、绑定提交、绑定重试链路
+  - `/ragflow/*` 请求只依赖主系统登录态与统一 token 处理
+  - 不再出现“校园后台账号绑定”或独立账号绑定兜底逻辑
+- 迁移时同步处理样式体系：
+  - 采用主仓库现有 `elementplus + UnoCSS` 风格
+  - 保留原页面布局比例、信息层级和交互位置
+  - 仅调整视觉语言，不改变功能路径
+
+## Test Plan
+- 先跑类型检查，确认新模块结构、路由引用和 API 适配都能通过：
+  - `pnpm ts:check`
+- 再跑 eslint，重点检查新增页面、API 封装、路由引入、组合式逻辑：
+  - `pnpm lint:eslint`
+- 如果迁移过程中改动了样式结构或模板布局，再补：
+  - `pnpm lint:style`
+- 最后做一次手工联调检查：
+  - `/rag-aichat` 根路径是否能正确重定向
+  - 聊天页是否能正常切换会话、发送、停止流式响应
+  - 知识库列表是否能打开详情
+  - 详情页四个 tab 是否能正确切换并保留路由状态
+  - 文档管理、成员管理、模型设置等操作是否与原项目行为一致
+  - 不应再出现校园绑定弹窗或相关重试流程
+
+## Assumptions
+- 只迁移 `rag-aichat` 现有页面范围，不扩展到 `src/views/ai/chat` 或其他现有 AI 模块。
+- 不保留 `tdesign-vue-next` 依赖，全部收敛到主仓库现有 `elementplus` 技术栈。
+- 后端仍然是同一套服务，因此接口路径与返回语义尽量保持原样，只做前端适配迁移。
+- 登录认证完全沿用主仓库现有体系，不再维护独立用户绑定流程。
+- 路由最终以主仓库的路由/菜单体系为准，页面组件路径需确保可被现有路由映射稳定解析。
