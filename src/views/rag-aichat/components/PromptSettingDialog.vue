@@ -187,7 +187,7 @@ async function fetchManageList(
   manageLoading.value = true
   try {
     const res = await listPrompt({ page, page_size: pageSize, prompt })
-    manageList.value = res.data?.list || res.data?.items || []
+    manageList.value = res.list || []
     managePagination.value.total = res.data?.total || res.data?.count || 0
     managePagination.value.current = page
     managePagination.value.pageSize = pageSize

@@ -220,10 +220,27 @@ const isSessionStreaming = (sessionId: string) =>
 
 const splitAssistantMessage = (rawContent: any) => {
   const text = String(rawContent ?? '')
-  const match = text.match(/<think>([\s\S]*?)<\/think>/)
+  const thinkStartIndex = text.indexOf('<think>')
+  if (thinkStartIndex === -1) {
+    return {
+      reasoning: '',
+      content: text
+    }
+  }
+
+  const beforeThink = text.slice(0, thinkStartIndex)
+  const afterThinkStart = text.slice(thinkStartIndex + '<think>'.length)
+  const thinkEndIndex = afterThinkStart.indexOf('</think>')
+  if (thinkEndIndex === -1) {
+    return {
+      reasoning: afterThinkStart,
+      content: beforeThink
+    }
+  }
+
   return {
-    reasoning: match ? match[1] : '',
-    content: text.replace(/<think>[\s\S]*?<\/think>/g, '')
+    reasoning: afterThinkStart.slice(0, thinkEndIndex),
+    content: `${beforeThink}${afterThinkStart.slice(thinkEndIndex + '</think>'.length)}`
   }
 }
 

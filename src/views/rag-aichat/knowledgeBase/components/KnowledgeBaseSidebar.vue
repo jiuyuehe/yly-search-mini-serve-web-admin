@@ -1,11 +1,11 @@
 <template>
   <aside class="kb-sidebar" :class="{ collapsed: collapsed }">
     <div class="kb-sidebar-header">
-      <div>
+      <div class="kb-sidebar-header-copy">
         <div class="kb-sidebar-title">知识库</div>
         <div class="kb-sidebar-subtitle">快速切换当前可用知识库</div>
       </div>
-      <el-button text circle @click="emit('toggle-collapse')">
+      <el-button text circle class="kb-collapse-btn" @click="emit('toggle-collapse')">
         <el-icon>
           <ArrowRight v-if="collapsed" />
           <ArrowLeft v-else />
@@ -13,7 +13,7 @@
       </el-button>
     </div>
 
-    <template v-if="!collapsed">
+    <div class="kb-sidebar-body" :class="{ 'is-collapsed': collapsed }">
       <el-input
         v-model="localSearchName"
         clearable
@@ -65,7 +65,7 @@
           </button>
         </div>
       </el-scrollbar>
-    </template>
+    </div>
   </aside>
 
   <Teleport to="body">
@@ -196,6 +196,7 @@ onBeforeUnmount(() => {
   border-right: 1px solid var(--app-border-color);
   box-sizing: border-box;
   flex-direction: column;
+  transition: width 0.28s ease;
 }
 
 .kb-sidebar.collapsed {
@@ -209,6 +210,23 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.kb-sidebar-header-copy {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.kb-sidebar.collapsed .kb-sidebar-header-copy {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kb-collapse-btn {
+  flex-shrink: 0;
 }
 
 .kb-sidebar-title {
@@ -220,6 +238,26 @@ onBeforeUnmount(() => {
   margin-top: 2px;
   font-size: 12px;
   color: var(--app-text-secondary);
+}
+
+/* ---- collapsible body ---- */
+
+.kb-sidebar-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 0.22s ease,
+    transform 0.28s ease;
+}
+
+.kb-sidebar-body.is-collapsed {
+  opacity: 0;
+  transform: translateX(-12px);
+  pointer-events: none;
 }
 
 .kb-sidebar-actions {

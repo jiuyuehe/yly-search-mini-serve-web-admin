@@ -4,7 +4,11 @@
     <el-button size="small" @click="emit('download')">批量下载</el-button>
     <el-button size="small" @click="emit('parse')">批量解析</el-button>
     <el-button size="small" @click="emit('stop-parse')">批量停止解析</el-button>
-    <el-button size="small" type="danger" plain @click="emit('delete')">批量删除</el-button>
+    <el-popconfirm title="确定要批量删除选中的文件吗？" @confirm="handleDelete">
+      <template #reference>
+        <el-button size="small" type="danger" plain>批量删除</el-button>
+      </template>
+    </el-popconfirm>
     <el-button size="small" @click="emit('clear')">取消选择</el-button>
   </div>
 </template>
@@ -19,8 +23,14 @@ const emit = defineEmits<{
   (e: 'parse'): void
   (e: 'stop-parse'): void
   (e: 'delete'): void
+  (e: 'batch-delete'): void
   (e: 'clear'): void
 }>()
+
+const handleDelete = () => {
+  emit('batch-delete')
+  emit('delete')
+}
 </script>
 
 <style scoped>

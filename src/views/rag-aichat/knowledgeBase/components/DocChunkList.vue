@@ -11,11 +11,12 @@
       <div class="doc-chunk-header">
         <div class="doc-chunk-header-copy">
           <div class="doc-chunk-title">{{ documentName || '文档切片管理' }}</div>
-          <div class="doc-chunk-subtitle">
-            共 {{ pagination.total }} 个解析块
-          </div>
+          <div class="doc-chunk-subtitle"> 共 {{ pagination.total }} 个解析块 </div>
         </div>
         <div class="doc-chunk-header-actions">
+          <el-button @click="fetchChunkList">
+            <el-icon><Refresh /></el-icon>
+          </el-button>
           <el-button type="primary" plain @click="handleEdit(null)">
             <el-icon class="mr-5px"><Plus /></el-icon>
             新增块
@@ -65,9 +66,7 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">
-              编辑
-            </el-button>
+            <el-button link type="primary" @click="handleEdit(row)"> 编辑 </el-button>
             <el-popconfirm title="确定删除该解析块吗？" @confirm="handleDelete(row)">
               <template #reference>
                 <el-button link type="danger">删除</el-button>
@@ -96,12 +95,7 @@
       width="640px"
       destroy-on-close
     >
-      <el-form
-        ref="chunkFormRef"
-        :model="chunkForm"
-        :rules="chunkFormRules"
-        label-width="90px"
-      >
+      <el-form ref="chunkFormRef" :model="chunkForm" :rules="chunkFormRules" label-width="90px">
         <el-form-item label="解析块" prop="content">
           <el-input
             v-model="chunkForm.content"
@@ -138,9 +132,7 @@
       </el-form>
       <template #footer>
         <el-button @click="chunkFormVisible = false">取消</el-button>
-        <el-button type="primary" :loading="formLoading" @click="handleSubmit">
-          确定
-        </el-button>
+        <el-button type="primary" :loading="formLoading" @click="handleSubmit"> 确定 </el-button>
       </template>
     </el-dialog>
   </el-drawer>
@@ -149,7 +141,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 
 import { addChunk, deleteChunks, listChunks, updateChunk } from '@/api/rag-aichat/chunk'
 
@@ -238,15 +230,6 @@ const resetForm = () => {
   chunkFormRef.value?.clearValidate?.()
 }
 
-const normalizeChunks = (res: any) => {
-  if (Array.isArray(res)) return res
-  if (Array.isArray(res?.data?.list)) return res.data.list
-  if (Array.isArray(res?.data?.chunks)) return res.data.chunks
-  if (Array.isArray(res?.list)) return res.list
-  if (Array.isArray(res?.data)) return res.data
-  return []
-}
-
 const fetchChunkList = async () => {
   if (!props.datasetId || !props.documentId) return
   loading.value = true
@@ -258,11 +241,11 @@ const fetchChunkList = async () => {
       pagination.pageNo,
       pagination.pageSize
     )
-    const list = normalizeChunks(res)
+    const list = res.chunks
     chunkList.value = list.map((item: any) => ({
       ...item,
-      important_keywords: normalizeArrayField(item.important_keywords),
-      questions: normalizeArrayField(item.questions)
+      important_keywords: item.important_keywords,
+      questions: item.questions
     }))
     pagination.total = res?.data?.total || res?.total || 0
   } catch (error) {

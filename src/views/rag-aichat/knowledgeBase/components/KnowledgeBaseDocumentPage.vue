@@ -51,13 +51,21 @@
               <el-icon><VideoPause /></el-icon>
             </el-button>
           </el-tooltip>
-          <el-popconfirm title="确定要批量删除选中的文档吗？" @confirm="handleBatchDeleteDocs">
+          <el-popconfirm
+            title="确定要批量删除选中的文档吗？"
+            :disabled="!selectedDocIds.length"
+            @confirm="handleBatchDeleteDocs"
+          >
             <template #reference>
-              <el-tooltip v-if="selectedDocIds.length" content="批量删除" placement="top">
-                <el-button size="small" type="danger" plain class="compact-action-btn">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </el-tooltip>
+              <el-button
+                v-if="selectedDocIds.length"
+                size="small"
+                type="danger"
+                plain
+                class="compact-action-btn"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
             </template>
           </el-popconfirm>
         </div>
@@ -206,7 +214,7 @@
           </el-table-column>
           <el-table-column label="时间" width="220" resizable>
             <template #default="{ row }">
-              {{ formatDate(row) }}
+              {{ formatDate(row.create_time) }}
             </template>
           </el-table-column>
         </el-table>
@@ -1055,7 +1063,7 @@ onBeforeUnmount(() => {
 .doc-page {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   height: 100%;
   min-height: 0;
 }
@@ -1076,7 +1084,7 @@ onBeforeUnmount(() => {
 }
 
 .doc-page-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 

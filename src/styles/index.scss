@@ -2,7 +2,7 @@
 @use './FormCreate/index.scss';
 @use './theme.scss';
 @use 'element-plus/theme-chalk/dark/css-vars.css';
-
+@use './element-plus/index.scss' as element-overrides;
 .reset-margin [class*='el-icon'] + span {
   margin-left: 2px !important;
 }

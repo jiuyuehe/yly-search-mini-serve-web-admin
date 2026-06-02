@@ -57,7 +57,6 @@
       </div>
     </div>
 
-    <div class="doc-table-wrap">
       <el-table
         v-loading="docLoading"
         :data="docList"
@@ -67,8 +66,8 @@
         height="100%"
         @selection-change="handleDocSelectionChange"
       >
-        <el-table-column type="selection" width="55" />
-        <el-table-column label="预览" width="72">
+        <el-table-column type="selection" width="48" />
+        <el-table-column label="预览" width="60">
           <template #default="{ row }">
             <div class="doc-preview-cell">
               <el-image
@@ -87,8 +86,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="名称" prop="name" min-width="220" show-overflow-tooltip />
-        <el-table-column label="进度" min-width="180">
+        <el-table-column label="名称" prop="name" min-width="180" show-overflow-tooltip />
+        <el-table-column label="进度" min-width="140">
           <template #default="{ row }">
             <el-tag :type="getDocumentParseStatusTheme(row)" effect="light">
               {{ getDocumentParseStatusLabel(row) }}
@@ -98,9 +97,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="字符数" prop="contentLength" width="100" />
-        <el-table-column label="Token" prop="tokens" width="100" />
-        <el-table-column label="操作" fixed="right" width="220">
+        <el-table-column label="字符数" prop="contentLength" min-width="80" />
+        <el-table-column label="Token" prop="tokens" min-width="80" />
+        <el-table-column label="操作" min-width="200">
           <template #default="{ row }">
             <el-button link type="primary" @click="parseDoc(row)">
               {{ isDocumentParsing(row) ? '重新解析' : '开始解析' }}
@@ -115,7 +114,6 @@
           </template>
         </el-table-column>
       </el-table>
-    </div>
 
     <div class="doc-pagination">
       <Pagination
@@ -397,9 +395,15 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.doc-table-wrap {
-  min-height: 0;
-  flex: 1;
+
+
+.doc-table-wrap :deep(.el-table) {
+  width: 100% !important;
+}
+
+.doc-table-wrap :deep(.el-table__header-wrapper),
+.doc-table-wrap :deep(.el-table__body-wrapper) {
+  overflow: visible;
 }
 
 .doc-table-wrap :deep(.el-table) {
