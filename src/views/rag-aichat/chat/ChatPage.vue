@@ -1,6 +1,6 @@
 <template>
   <div class="chat-page-shell">
-    <el-container class="chat-container">
+    <div class="chat-container">
       <ChatSessionList
         v-if="!hideSessionList && !isMobile"
         :session-list="sessionList"
@@ -19,6 +19,7 @@
       />
 
       <ChatPanel
+        class="chat-panel-fill"
         :session-id="activeSessionId"
         :chat-id="chatAssistantId"
         :title="panelTitle"
@@ -59,7 +60,7 @@
           @collapse="() => (showSessionDrawer = false)"
         />
       </el-drawer>
-    </el-container>
+    </div>
   </div>
 </template>
 
@@ -1028,10 +1029,12 @@ defineExpose({
 
 <style scoped>
 .chat-page-shell {
+  display: flex;
   width: 100%;
   height: 100%;
   min-height: 0;
   background: var(--app-bg-page);
+  flex-direction: column;
 }
 
 .chat-container {
@@ -1041,10 +1044,13 @@ defineExpose({
   min-height: 0;
   overflow: hidden;
   background: #fff;
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-lg);
-  box-shadow: none;
   flex-direction: row;
+}
+
+.chat-panel-fill {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 :deep(.el-drawer__body) {
