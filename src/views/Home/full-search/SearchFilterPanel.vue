@@ -151,8 +151,8 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
 <style scoped lang="scss">
 .search-filter-panel {
   width: 300px;
-  min-width: 300px;
   height: calc(100vh - 84px);
+  min-width: 300px;
   overflow: hidden;
   background: var(--el-bg-color);
   border-right: 1px solid var(--el-border-color-light);

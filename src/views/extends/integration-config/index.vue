@@ -619,15 +619,15 @@ onMounted(() => {
   .json-form-item__tips {
     margin-top: 8px;
     font-size: 13px;
-    color: #4c4c4c;
     line-height: 1.5;
+    color: #4c4c4c;
   }
 }
 
 .field-hint {
-  border-left: 2px solid var(--el-border-color);
   padding-left: 12px;
   margin-bottom: 10px;
+  border-left: 2px solid var(--el-border-color);
 
   &__header {
     display: flex;
@@ -646,19 +646,19 @@ onMounted(() => {
   }
 
   &__required {
-    color: var(--el-color-danger);
     font-weight: 600;
+    color: var(--el-color-danger);
   }
 
   &__list {
-    margin: 6px 0 0;
     padding-left: 18px;
+    margin: 6px 0 0;
     font-size: 12px;
     color: var(--el-text-color-regular);
 
     li {
-      list-style: disc;
       line-height: 1.5;
+      list-style: disc;
     }
   }
 }

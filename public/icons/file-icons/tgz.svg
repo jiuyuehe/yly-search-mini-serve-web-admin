@@ -1,0 +1,8 @@
+<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <path d="M160 96m32 0h640q32 0 32 32v768q0 32-32 32H192q-32 0-32-32V128q0-32 32-32z" fill="#F5F6F7" stroke="#D4DAE1" stroke-width="12" stroke-linejoin="round"/>
+  <g fill="#878B8E"><rect x="451" y="139" width="62" height="25" rx="8"/><rect x="511" y="176" width="62" height="25" rx="8"/><rect x="451" y="213" width="62" height="25" rx="8"/><rect x="511" y="256" width="62" height="25" rx="8"/><rect x="451" y="294" width="62" height="25" rx="8"/><rect x="511" y="335" width="62" height="25" rx="8"/></g>
+  <path d="M511 386c-34 0-49 26-49 60l-11 100a60 60 0 0 0 102 43c12-12 18-27 18-43l-10-100c0-34-16-60-50-60z" fill="#878B8E" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M500 495h24q8 0 8 8v69q0 8-8 8h-24q-8 0-8-8v-69q0-8 8-8z" fill="#F5F6F7"/>
+  <path d="M312 744m8 0h384q8 0 8 8v24q0 8-8 8H320q-8 0-8-8v-24q0-8 8-8z" fill="#878B8E" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <text x="512" y="875" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="700" fill="#878B8E">TGZ</text>
+</svg>

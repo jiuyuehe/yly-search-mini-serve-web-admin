@@ -590,8 +590,8 @@ onMounted(() => {
   .json-form-item__tips {
     margin-top: 8px;
     font-size: 13px;
-    color: #4c4c4c;
     line-height: 1.5;
+    color: #4c4c4c;
   }
 }
 
@@ -615,8 +615,8 @@ onMounted(() => {
   }
 
   &__required {
-    color: #f56c6c;
     font-weight: 600;
+    color: #f56c6c;
   }
 
   &__desc {
@@ -628,16 +628,16 @@ onMounted(() => {
   }
 
   &__children {
-    margin-left: 12px;
-    border-left: 2px solid #f1f1f1;
     padding-left: 12px;
     margin-top: 4px;
+    margin-left: 12px;
+    border-left: 2px solid #f1f1f1;
   }
 
   &__child-line {
+    padding: 2px 0;
     font-size: 12px;
     color: #555;
-    padding: 2px 0;
   }
 }
 </style>

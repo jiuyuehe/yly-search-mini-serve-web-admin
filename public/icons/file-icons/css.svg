@@ -1,0 +1,8 @@
+<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <path d="M160 96m32 0h640q32 0 32 32v768q0 32-32 32H192q-32 0-32-32V128q0-32 32-32z" fill="#F5F6F7" stroke="#D4DAE1" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M354 410L240 512l114 102" fill="none" stroke="#3B82F6" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M670 410l114 102-114 102" fill="none" stroke="#3B82F6" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M560 342L456 682" fill="none" stroke="#3B82F6" stroke-width="52" stroke-linecap="round"/>
+  <path d="M312 744m8 0h384q8 0 8 8v24q0 8-8 8H320q-8 0-8-8v-24q0-8 8-8z" fill="#878B8E" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <text x="512" y="875" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="700" fill="#3B82F6">CSS</text>
+</svg>

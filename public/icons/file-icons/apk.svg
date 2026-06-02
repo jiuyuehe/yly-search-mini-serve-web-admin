@@ -1,0 +1,9 @@
+<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <path d="M160 96m32 0h640q32 0 32 32v768q0 32-32 32H192q-32 0-32-32V128q0-32 32-32z" fill="#F5F6F7" stroke="#D4DAE1" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M356 330h312q24 0 24 24v136q0 24-24 24H356q-24 0-24-24V354q0-24 24-24z" fill="#6FBF4A" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M392 292l-42-58q-6-8 2-14t14 2l44 60zM632 282l44-60q6-8 14-2t2 14l-42 58z" fill="#6FBF4A" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="430" cy="420" r="18" fill="#F5F6F7"/><circle cx="594" cy="420" r="18" fill="#F5F6F7"/>
+  <path d="M362 544h300q24 0 24 24v128q0 24-24 24H362q-24 0-24-24V568q0-24 24-24z" fill="#6FBF4A" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M312 744m8 0h384q8 0 8 8v24q0 8-8 8H320q-8 0-8-8v-24q0-8 8-8z" fill="#878B8E" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <text x="512" y="875" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="700" fill="#6FBF4A">APK</text>
+</svg>

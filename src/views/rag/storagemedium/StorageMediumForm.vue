@@ -469,8 +469,8 @@ const resetForm = () => {
 }
 
 .nas-selector {
-  width: 100%;
   display: flex;
+  width: 100%;
   gap: 12px;
 }
 
@@ -483,10 +483,10 @@ const resetForm = () => {
 
 .nas-detail-card {
   width: 100%;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
   padding: 12px 16px;
   background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
 }
 
 .nas-detail-row {

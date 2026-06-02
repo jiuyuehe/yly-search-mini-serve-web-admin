@@ -459,8 +459,8 @@ const watchStatistics = () => {
 
 .subtitle {
   margin-top: 6px;
-  color: #6b7280;
   font-size: 13px;
+  color: #6b7280;
 }
 
 .header-actions {
@@ -476,9 +476,9 @@ const watchStatistics = () => {
 
 .stat-card {
   padding: 16px;
-  border-radius: 16px;
   background: linear-gradient(135deg, #f7f8fa 0%, #eef2f7 100%);
   border: 1px solid #e5e7eb;
+  border-radius: 16px;
 }
 
 .stat-card.success {
@@ -486,7 +486,7 @@ const watchStatistics = () => {
 }
 
 .stat-card.running {
-  background: linear-gradient(135deg, #eef6ff 0%, #ddeeff 100%);
+  background: linear-gradient(135deg, #eef6ff 0%, #def 100%);
 }
 
 .stat-card.warning {
@@ -510,16 +510,16 @@ const watchStatistics = () => {
 }
 
 .trend-box {
-  margin-top: 18px;
   padding-top: 18px;
+  margin-top: 18px;
   border-top: 1px dashed #d1d5db;
 }
 
 .trend-title {
   display: inline-block;
   margin-bottom: 10px;
-  color: #374151;
   font-weight: 600;
+  color: #374151;
 }
 
 .trend-chart {

@@ -480,9 +480,9 @@ defineExpose({ open })
 .video-preview {
   width: 100%;
   height: calc(100vh - 150px);
+  background: var(--el-fill-color-darker);
   border: 0;
   border-radius: var(--el-border-radius-base);
-  background: var(--el-fill-color-darker);
 }
 
 :global(.search-file-viewer.el-drawer) {

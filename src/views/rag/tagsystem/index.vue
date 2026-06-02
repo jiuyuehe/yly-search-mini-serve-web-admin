@@ -598,14 +598,14 @@ onMounted(() => {
 
 .overview-card {
   padding: 18px 20px;
-  border-radius: 16px;
   background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
   border: 1px solid #dbeafe;
+  border-radius: 16px;
 }
 
 .overview-label {
-  color: #64748b;
   font-size: 13px;
+  color: #64748b;
 }
 
 .overview-value {
@@ -650,8 +650,8 @@ onMounted(() => {
 
 .panel-subtitle {
   margin-top: 4px;
-  color: #64748b;
   font-size: 13px;
+  color: #64748b;
 }
 
 .tree-toolbar {
@@ -669,20 +669,20 @@ onMounted(() => {
 
 .tree-summary {
   display: flex;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #64748b;
   gap: 12px;
   flex-wrap: wrap;
-  color: #64748b;
-  font-size: 12px;
-  margin-bottom: 12px;
 }
 
 .tree-wrap {
-  flex: 1;
-  overflow: auto;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   padding: 10px 8px;
+  overflow: auto;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  flex: 1;
 }
 
 .tree-node {
@@ -707,20 +707,20 @@ onMounted(() => {
 }
 
 .tree-node-title {
+  overflow: hidden;
   font-weight: 600;
   color: #0f172a;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tree-node-meta {
   display: flex;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 4px;
-  color: #64748b;
-  font-size: 12px;
 }
 
 .tree-node-desc {
@@ -738,7 +738,7 @@ onMounted(() => {
 }
 
 .tree-node-theme {
-  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  border-bottom: 1px solid rgb(226 232 240 / 70%);
 }
 
 .tree-node-theme .tree-node-title {
@@ -750,8 +750,8 @@ onMounted(() => {
 }
 
 .tree-node-aiTag .tree-node-title {
-  color: #334155;
   font-weight: 500;
+  color: #334155;
 }
 
 :deep(.el-tree) {
@@ -765,7 +765,7 @@ onMounted(() => {
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgb(59 130 246 / 8%);
   border-radius: 10px;
 }
 
@@ -781,7 +781,7 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .main-grid {
     grid-template-columns: 1fr;
   }

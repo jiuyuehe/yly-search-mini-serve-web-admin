@@ -1,0 +1,9 @@
+<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <path d="M160 96m32 0h640q32 0 32 32v768q0 32-32 32H192q-32 0-32-32V128q0-32 32-32z" fill="#F5F6F7" stroke="#D4DAE1" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M252 256h520q28 0 28 28v372q0 28-28 28H252q-28 0-28-28V284q0-28 28-28z" fill="#7EB6E8" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M268 300q0-20 20-20h448q20 0 20 20v196H268V300z" fill="#8FC9F3" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="648" cy="374" r="50" fill="#FFD45A"/>
+  <path d="M268 638l188-230 158 188 78-92 92 108v32q0 16-16 16H284q-16 0-16-16v-6z" fill="#4FA36A" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M312 744m8 0h384q8 0 8 8v24q0 8-8 8H320q-8 0-8-8v-24q0-8 8-8z" fill="#878B8E" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+  <text x="512" y="875" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="700" fill="#4FA36A">GIF</text>
+</svg>

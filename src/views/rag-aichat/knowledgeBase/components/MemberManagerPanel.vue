@@ -13,22 +13,24 @@
         <el-button @click="fetchMembers">刷新成员</el-button>
       </div>
 
-      <el-table :data="memberList" v-loading="memberLoading" stripe>
-        <el-table-column prop="userName" label="账号" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="realName" label="姓名" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="deptName" label="部门" min-width="160" show-overflow-tooltip />
-        <el-table-column label="操作" width="120">
-          <template #default="{ row }">
-            <el-popconfirm title="确定移除该成员吗？" @confirm="removeMember(row)">
-              <template #reference>
-                <el-button link type="danger" :disabled="Number(row.userId) === currentUserId">
-                  移除
-                </el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="member-table-wrap">
+        <el-table :data="memberList" v-loading="memberLoading" stripe height="100%">
+          <el-table-column prop="userName" label="账号" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="realName" label="姓名" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="deptName" label="部门" min-width="160" show-overflow-tooltip />
+          <el-table-column label="操作" width="120">
+            <template #default="{ row }">
+              <el-popconfirm title="确定移除该成员吗？" @confirm="removeMember(row)">
+                <template #reference>
+                  <el-button link type="danger" :disabled="Number(row.userId) === currentUserId">
+                    移除
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </div>
 
     <div class="member-card">
@@ -47,19 +49,21 @@
         </el-button>
       </div>
 
-      <el-tree
-        ref="treeRef"
-        :key="treeKey"
-        class="member-tree"
-        node-key="value"
-        show-checkbox
-        lazy
-        :load="loadTreeNode"
-        :props="treeProps"
-        :expand-on-click-node="false"
-        :check-strictly="true"
-        @check="handleCheckChange"
-      />
+      <div class="member-tree-wrap">
+        <el-tree
+          ref="treeRef"
+          :key="treeKey"
+          class="member-tree"
+          node-key="value"
+          show-checkbox
+          lazy
+          :load="loadTreeNode"
+          :props="treeProps"
+          :expand-on-click-node="false"
+          :check-strictly="true"
+          @check="handleCheckChange"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -248,12 +252,13 @@ watch(
 
 .member-card {
   display: flex;
-  flex-direction: column;
   min-height: 0;
   padding: 16px 18px;
+  overflow: hidden;
+  background: #fff;
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
-  background: #fff;
+  flex-direction: column;
 }
 
 .section-title {
@@ -274,17 +279,28 @@ watch(
   width: 220px;
 }
 
-.member-tree {
-  flex: 1;
+.member-table-wrap,
+.member-tree-wrap {
+  display: flex;
   min-height: 0;
-  overflow: auto;
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-md);
-  padding: 12px;
-  background: var(--app-bg-subtle);
+  flex: 1;
 }
 
-@media (max-width: 1200px) {
+.member-table-wrap :deep(.el-table) {
+  height: 100%;
+}
+
+.member-tree {
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+  background: var(--app-bg-subtle);
+  border: 1px solid var(--app-border-color);
+  border-radius: var(--app-radius-md);
+  flex: 1;
+}
+
+@media (width <= 1200px) {
   .member-manager-panel {
     grid-template-columns: 1fr;
   }

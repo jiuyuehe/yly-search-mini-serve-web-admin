@@ -374,13 +374,13 @@ onUnmounted(() => {
 
 <style scoped>
 .chat-content {
-  min-width: 320px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   position: relative;
+  display: flex;
+  height: 100%;
+  min-width: 320px;
   background: #fff;
+  flex: 1;
+  flex-direction: column;
 }
 
 .chat-header {
@@ -393,21 +393,21 @@ onUnmounted(() => {
 }
 
 .chat-header h3 {
-  flex: 1;
   margin: 0;
+  overflow: hidden;
   font-size: 16px;
   font-weight: 600;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .chat-box {
-  flex: 1;
   position: relative;
-  overflow-y: auto;
   padding: 12px 14px 18px;
+  overflow-y: auto;
   background: #fff;
+  flex: 1;
 }
 
 .message-list {
@@ -428,15 +428,15 @@ onUnmounted(() => {
 .message-card {
   max-width: min(820px, calc(100% - 60px));
   padding: 12px 14px;
+  background: #fff;
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
-  background: #fff;
   box-shadow: var(--app-shadow-xs);
 }
 
 .message-row.user .message-card {
-  background: rgba(0, 82, 217, 0.06);
-  border-color: rgba(0, 82, 217, 0.12);
+  background: rgb(0 82 217 / 6%);
+  border-color: rgb(0 82 217 / 12%);
 }
 
 .message-meta {
@@ -460,8 +460,8 @@ onUnmounted(() => {
 
 .chat-footer {
   padding: 12px 14px 14px;
-  border-top: 1px solid var(--app-border-color);
   background: #fff;
+  border-top: 1px solid var(--app-border-color);
 }
 
 .control-row {
@@ -480,10 +480,10 @@ onUnmounted(() => {
 }
 
 .input-card {
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-lg);
   padding: 10px;
   background: var(--app-bg-subtle);
+  border: 1px solid var(--app-border-color);
+  border-radius: var(--app-radius-lg);
 }
 
 .input-actions {

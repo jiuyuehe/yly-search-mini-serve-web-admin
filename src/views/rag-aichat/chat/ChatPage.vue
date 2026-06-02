@@ -949,10 +949,10 @@ onBeforeUnmount(() => {
 
 .rag-chat-main-header {
   display: flex;
+  background: var(--app-bg-subtle);
+  border-bottom: 1px solid var(--app-border-color);
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--app-border-color);
-  background: var(--app-bg-subtle);
 }
 
 .rag-chat-message-area {
@@ -962,17 +962,17 @@ onBeforeUnmount(() => {
 
 .rag-chat-message-shell {
   position: relative;
+  display: flex;
   height: 100%;
   min-height: 0;
-  display: flex;
   flex-direction: column;
 }
 
 .rag-chat-message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
   display: flex;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
   flex-direction: column;
   gap: 16px;
 }
@@ -989,15 +989,15 @@ onBeforeUnmount(() => {
 .rag-chat-message-card {
   max-width: min(820px, calc(100% - 60px));
   padding: 12px 14px;
+  background: #fff;
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
-  background: #fff;
   box-shadow: var(--app-shadow-xs);
 }
 
 .rag-chat-message-row.user .rag-chat-message-card {
-  background: rgba(0, 82, 217, 0.06);
-  border-color: rgba(0, 82, 217, 0.12);
+  background: rgb(0 82 217 / 6%);
+  border-color: rgb(0 82 217 / 12%);
 }
 
 .rag-chat-message-meta {

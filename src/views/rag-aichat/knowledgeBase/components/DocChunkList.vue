@@ -423,12 +423,12 @@ watch(
 
 .doc-chunk-header {
   display: flex;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--app-border-color);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--app-border-color);
 }
 
 .doc-chunk-header-copy {
@@ -442,8 +442,8 @@ watch(
 
 .doc-chunk-subtitle {
   margin-top: 4px;
-  color: var(--app-text-secondary);
   font-size: 12px;
+  color: var(--app-text-secondary);
 }
 
 .doc-chunk-header-actions {

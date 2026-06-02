@@ -279,11 +279,11 @@ onMounted(handleSearch)
 }
 
 .search-main {
-  flex: 1;
-  min-width: 0;
   height: calc(100vh - 84px);
+  min-width: 0;
   padding: 24px 32px;
   overflow: auto;
+  flex: 1;
 }
 
 .search-head {
@@ -373,7 +373,7 @@ onMounted(handleSearch)
   margin: 0 auto;
 }
 
-@media (max-width: 980px) {
+@media (width <= 980px) {
   .full-search-page {
     flex-direction: column;
   }
@@ -385,8 +385,8 @@ onMounted(handleSearch)
 
   :deep(.search-filter-panel) {
     width: 100%;
-    min-width: 0;
     height: auto;
+    min-width: 0;
   }
 }
 </style>

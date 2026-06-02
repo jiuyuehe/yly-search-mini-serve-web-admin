@@ -431,17 +431,17 @@ onBeforeUnmount(() => {
 }
 
 .org-sync-config-item {
-  border: 1px solid var(--el-border-color);
-  border-radius: 6px;
   padding: 12px;
   margin-bottom: 12px;
   cursor: pointer;
+  border: 1px solid var(--el-border-color);
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 
 .org-sync-config-item.is-active {
-  border-color: var(--el-color-primary);
   background-color: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary);
 }
 
 .org-sync-config-item:hover {

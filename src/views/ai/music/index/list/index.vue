@@ -100,6 +100,7 @@ defineExpose({
 :deep(.el-tabs) {
   display: flex;
   flex-direction: column;
+
   .el-tabs__content {
     padding: 0 7px;
     overflow: auto;

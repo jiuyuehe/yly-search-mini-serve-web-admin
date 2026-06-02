@@ -219,31 +219,31 @@ const handleSessionAction = (command: string, session: any) => {
 
 <style scoped>
 .session-sidebar {
+  display: flex;
   width: 272px;
   height: 100%;
   padding: 10px;
-  border-right: 1px solid var(--app-border-color);
-  background: var(--app-bg-subtle);
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
+  background: var(--app-bg-subtle);
+  border-right: 1px solid var(--app-border-color);
+  flex-direction: column;
 }
 
 .session-sidebar-body {
-  flex: 1;
-  min-height: 0;
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   gap: 10px;
 }
 
 .session-header {
   display: flex;
+  padding: 8px;
+  background: #fff;
+  border-radius: var(--app-radius-md);
   flex-direction: column;
   gap: 10px;
-  padding: 8px;
-  border-radius: var(--app-radius-md);
-  background: #fff;
 }
 
 .session-header-top {
@@ -265,11 +265,11 @@ const handleSessionAction = (command: string, session: any) => {
 }
 
 .session-list-wrap {
-  flex: 1;
   min-height: 0;
   padding: 8px;
-  border-radius: var(--app-radius-md);
   background: #fff;
+  border-radius: var(--app-radius-md);
+  flex: 1;
 }
 
 .session-list {
@@ -278,22 +278,22 @@ const handleSessionAction = (command: string, session: any) => {
 
 .session-item {
   display: flex;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border-radius: var(--app-radius-md);
+  transition: background-color 0.2s ease;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px;
-  margin-bottom: 4px;
-  border-radius: var(--app-radius-md);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
 .session-item:hover {
-  background: rgba(15, 23, 42, 0.05);
+  background: rgb(15 23 42 / 5%);
 }
 
 .session-item.active {
-  background: rgba(0, 82, 217, 0.08);
+  background: rgb(0 82 217 / 8%);
 }
 
 .session-item-main {
@@ -304,14 +304,14 @@ const handleSessionAction = (command: string, session: any) => {
 }
 
 .session-icon-wrap {
+  display: flex;
   width: 28px;
   height: 28px;
-  display: flex;
+  color: var(--td-brand-color);
+  background: rgb(0 82 217 / 10%);
+  border-radius: 8px;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background: rgba(0, 82, 217, 0.1);
-  color: var(--td-brand-color);
 }
 
 .session-copy {

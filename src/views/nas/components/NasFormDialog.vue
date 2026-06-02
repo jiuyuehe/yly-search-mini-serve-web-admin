@@ -301,22 +301,22 @@ defineExpose({ open })
 
 .path-preview {
   width: 100%;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 8px;
   padding: 10px 12px;
   background: var(--el-fill-color-lighter);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
 }
 
 .path-preview__value {
-  color: var(--el-text-color-primary);
   font-weight: 500;
+  color: var(--el-text-color-primary);
   word-break: break-all;
 }
 
 .path-preview__tip {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .mount-path-suffix {

@@ -348,7 +348,7 @@ onMounted(() => {
 .whitelist-value-tip {
   margin-top: 6px;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
   line-height: 1.4;
+  color: var(--el-text-color-secondary);
 }
 </style>

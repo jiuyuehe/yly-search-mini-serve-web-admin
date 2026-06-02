@@ -241,8 +241,8 @@ defineExpose({ open })
 }
 
 .file-browser__crumb {
-  cursor: pointer;
   color: var(--el-color-primary);
+  cursor: pointer;
 }
 
 .file-browser__name {
@@ -252,13 +252,13 @@ defineExpose({ open })
 
 .file-browser__selected {
   display: flex;
+  padding: 10px 12px;
+  margin-top: 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
 }
 
 .file-browser__selected-label {
@@ -266,9 +266,9 @@ defineExpose({ open })
 }
 
 .file-browser__selected-value {
-  flex: 1;
   min-width: 0;
-  word-break: break-all;
   color: var(--el-text-color-primary);
+  word-break: break-all;
+  flex: 1;
 }
 </style>

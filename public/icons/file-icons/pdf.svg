@@ -1,0 +1,5 @@
+<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <path d="M160 96m32 0h640q32 0 32 32v768q0 32-32 32H192q-32 0-32-32V128q0-32 32-32z" fill="#F5F6F7" stroke="#D4DAE1" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M7 50h733v250H7z" fill="#DC1D00" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/><text x="370" y="230" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="176" font-weight="700" fill="#FFFFFF">PDF</text>
+  <path d="M865 690c0-4-4-44-76-42s-89 6-89 6-54-55-73-97c0 0 24-70 22-113-1-44-12-69-45-69-34 0-39 30-34 74 4 39 24 85 24 85s-15 48-36 96-34 73-34 73-70 23-100 51-42 50-26 72c14 18 61 23 104-34s62-91 62-91 65-18 85-23 45-9 45-9 59 60 117 58 54-34 54-37z" fill="#DC1D00" stroke="#000000" stroke-opacity="0.10" stroke-width="8" stroke-linejoin="round"/>
+</svg>

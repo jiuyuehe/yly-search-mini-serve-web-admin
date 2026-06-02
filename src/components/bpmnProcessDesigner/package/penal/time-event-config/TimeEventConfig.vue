@@ -18,7 +18,7 @@
       </el-button-group>
       <el-icon v-if="valid" color="green" style="margin-left: 8px"><CircleCheckFilled /></el-icon>
     </div>
-    <div style="margin-top: 10px; display: flex; align-items: center">
+    <div style=" display: flex;margin-top: 10px; align-items: center">
       <span>条件：</span>
       <el-input
         v-model="condition"

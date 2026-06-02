@@ -595,8 +595,8 @@ defineExpose({ open })
 .permission-path-picker__meta,
 .permission-target-preview {
   margin-top: 8px;
-  color: var(--el-text-color-secondary);
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .permission-path-picker__meta {

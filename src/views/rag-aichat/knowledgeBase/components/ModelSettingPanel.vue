@@ -13,21 +13,23 @@
       <div class="model-setting-grid">
         <div class="model-setting-card avatar-card">
           <div class="section-title">知识库图片</div>
-          <el-upload
-            class="avatar-uploader"
-            action="#"
-            :show-file-list="false"
-            :before-upload="handleAvatarUpload"
-            accept="image/*"
-          >
-            <div v-if="form.avatar" class="avatar-preview">
-              <el-image :src="form.avatar" fit="cover" />
-            </div>
-            <div v-else class="avatar-placeholder">
-              <el-icon><Plus /></el-icon>
-              <span>上传图片</span>
-            </div>
-          </el-upload>
+          <div class="avatar-content">
+            <el-upload
+              class="avatar-uploader"
+              action="#"
+              :show-file-list="false"
+              :before-upload="handleAvatarUpload"
+              accept="image/*"
+            >
+              <div v-if="form.avatar" class="avatar-preview">
+                <el-image :src="form.avatar" fit="cover" />
+              </div>
+              <div v-else class="avatar-placeholder">
+                <el-icon><Plus /></el-icon>
+                <span>上传图片</span>
+              </div>
+            </el-upload>
+          </div>
           <div class="avatar-actions">
             <el-button v-if="form.avatar" text type="danger" @click="handleAvatarRemove">
               移除图片
@@ -146,7 +148,10 @@
         </el-row>
       </div>
 
-      <div v-if="['naive', 'qa', 'manual', 'paper', 'book', 'laws', 'presentation'].includes(form.chunk_method)" class="model-setting-card">
+      <div
+        v-if="['naive', 'qa', 'manual', 'paper', 'book', 'laws', 'presentation'].includes(form.chunk_method)"
+        class="model-setting-card"
+      >
         <div class="section-title">高级策略</div>
         <el-row :gutter="24">
           <el-col :span="12">
@@ -410,57 +415,71 @@ const handleSubmit = async () => {
 
 <style scoped>
 .model-setting-panel {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: auto;
 }
 
 .model-setting-form {
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .model-setting-grid {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
+  align-items: stretch;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 14px;
 }
 
 .model-setting-card {
-  padding: 16px 18px;
+  padding: 18px;
+  background: #fff;
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
-  background: #fff;
 }
 
 .section-title {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .avatar-card {
   display: flex;
   flex-direction: column;
+  min-height: 100%;
   align-items: stretch;
+}
+
+.avatar-content {
+  display: flex;
+  justify-content: center;
 }
 
 .avatar-uploader {
   width: 100%;
+  max-width: 280px;
 }
 
 .avatar-placeholder,
 .avatar-preview {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border: 1px dashed var(--app-border-color);
-  border-radius: var(--app-radius-lg);
-  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  overflow: hidden;
   color: var(--app-text-secondary);
   background: var(--app-bg-subtle);
+  border: 1px dashed var(--app-border-color);
+  border-radius: var(--app-radius-lg);
+  aspect-ratio: 1 / 1;
+  align-items: center;
+  justify-content: center;
 }
 
 .avatar-placeholder {
@@ -474,8 +493,8 @@ const handleSubmit = async () => {
 }
 
 .avatar-actions {
-  margin-top: 8px;
   display: flex;
+  margin-top: 10px;
   justify-content: center;
 }
 
@@ -485,9 +504,43 @@ const handleSubmit = async () => {
   padding-top: 8px;
 }
 
-@media (max-width: 1200px) {
+.model-setting-card :deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+.model-setting-card :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.prompt-card :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+@media (width <= 1200px) {
   .model-setting-grid {
     grid-template-columns: 1fr;
+  }
+
+  .avatar-uploader {
+    max-width: 320px;
+  }
+}
+
+@media (width <= 768px) {
+  .model-setting-form {
+    gap: 12px;
+  }
+
+  .model-setting-card {
+    padding: 14px;
+  }
+
+  .model-setting-card :deep(.el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  .model-setting-card :deep(.el-form-item__label) {
+    line-height: 1.4;
   }
 }
 </style>
