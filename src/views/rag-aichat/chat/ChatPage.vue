@@ -275,10 +275,9 @@ const buildUiMessagesFromSession = (messages: any[] = []) =>
         reference: message?.reference
       })
     )
-    .reverse()
 
 const hasPairedUserQuestion = (messages: UiChatMessage[], index: number) =>
-  messages[index + 1]?.role === 'user'
+  messages[index - 1]?.role === 'user'
 
 const mergeHistoryIntoMessages = (
   messages: UiChatMessage[],
@@ -295,7 +294,6 @@ const mergeHistoryIntoMessages = (
   const assistantHistories = histories
     .filter((item) => String(item.role || 'assistant') === 'assistant')
     .slice()
-    .reverse()
   let assistantIndex = 0
   const usedHistories = new Set<ChatHistoryMessage>()
 
@@ -906,7 +904,7 @@ const handleSend = async (payload: SendPayload) => {
     reference: []
   })
 
-  setSessionMessages(sessionId, [assistantMessage, userMessage, ...getSessionMessages(sessionId)])
+  setSessionMessages(sessionId, [...getSessionMessages(sessionId), userMessage, assistantMessage])
 
   const updateStreamingAssistantMessage = (patch: Partial<UiChatMessage>) => {
     Object.assign(assistantMessage, patch)

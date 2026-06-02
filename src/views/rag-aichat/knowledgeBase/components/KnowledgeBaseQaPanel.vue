@@ -5,7 +5,7 @@
       :fixed-dataset-id="datasetId"
       :fixed-knowledge-base-label="datasetName"
       :show-knowledge-base-selector="false"
-      :hide-session-list="true"
+      :hide-session-list="false"
       :allow-session-sidebar-toggle="false"
       :use-route-dataset-id="false"
     />

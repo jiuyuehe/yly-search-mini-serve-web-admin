@@ -608,7 +608,7 @@ const renderMessageContent = (item: DisplayMessage) => {
 
 const backBottom = () => {
   if (!chatRef.value) return
-  chatRef.value.scrollTop = 0
+  chatRef.value.scrollTop = chatRef.value.scrollHeight
 }
 
 const stripHtml = (html: string) => String(html || '').replace(/<[^>]+>/g, '')
@@ -617,13 +617,13 @@ const getMessageKey = (item: DisplayMessage, index: number) =>
   [String(props.sessionId || ''), item.localId || item.id || '', item.role, index].join(':')
 
 const isStreamingAssistantMessage = (item: DisplayMessage, index: number) =>
-  props.streaming && item.role === 'assistant' && index === 0
+  props.streaming && item.role === 'assistant' && index === chatList.value.length - 1
 
 const isStreamingPlaceholder = (item: DisplayMessage, index: number) =>
   isStreamingAssistantMessage(item, index) && !item.reasoning && !item.content
 
 const shouldShowAssistantActions = (item: DisplayMessage, index: number) =>
-  item.role === 'assistant' && !(props.streaming && index === 0)
+  item.role === 'assistant' && !(props.streaming && index === chatList.value.length - 1)
 
 const handleResize = () => {
   windowWidth.value = window.innerWidth
@@ -631,7 +631,8 @@ const handleResize = () => {
 
 const handleChatScroll = () => {
   const target = chatRef.value
-  isShowToBottom.value = !!target && target.scrollTop < -120
+  isShowToBottom.value =
+    !!target && target.scrollHeight - target.scrollTop - target.clientHeight > 120
 }
 
 const doSend = (value: string, replay = false) => {
@@ -667,7 +668,7 @@ const copyContent = async (content: string) => {
 
 const handleOperation = (type: string, index: number) => {
   if (type !== 'replay') return
-  const userMessage = props.messages[index + 1]
+  const userMessage = props.messages[index - 1]
   if (!userMessage || userMessage.role !== 'user') return
   doSend(userMessage.content, true)
 }
@@ -896,7 +897,7 @@ onUnmounted(() => {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  flex-direction: column-reverse;
+  flex-direction: column;
 }
 
 .chat-list {
@@ -906,7 +907,7 @@ onUnmounted(() => {
   min-height: 100%;
   padding: 8px 0 20px;
   margin: 0 auto;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: 70px;
 }
 
@@ -1041,18 +1042,18 @@ onUnmounted(() => {
 }
 
 .chat-textarea :deep(.el-textarea__inner) {
-  border: 1px solid var(--app-border-color);
+  border: 1px solid var(--app-color-brand) !important;
   border-radius: 12px;
-  box-shadow: none;
+  box-shadow: 0 0 0 2px rgb(0 82 217 / 12%);
 }
 
 .chat-textarea :deep(.el-textarea__inner:hover) {
-  border-color: var(--app-color-brand-hover, var(--app-color-brand));
+  border-color: var(--app-color-brand) !important;
 }
 
 .chat-textarea :deep(.el-textarea__inner:focus),
 .chat-textarea :deep(.el-textarea.is-focus .el-textarea__inner) {
-  border-color: var(--app-color-brand);
+  border-color: var(--app-color-brand) !important;
   box-shadow: 0 0 0 2px rgb(0 82 217 / 12%);
 }
 

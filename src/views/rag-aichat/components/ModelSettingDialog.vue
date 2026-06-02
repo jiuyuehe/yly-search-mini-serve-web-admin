@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <Dialog
     v-model="dialogVisible"
     title="模型设置"
     width="520px"
@@ -23,7 +23,7 @@
       <el-button @click="onClose">取消</el-button>
       <el-button type="primary" :loading="confirmLoading" @click="handleSave">确定</el-button>
     </template>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
