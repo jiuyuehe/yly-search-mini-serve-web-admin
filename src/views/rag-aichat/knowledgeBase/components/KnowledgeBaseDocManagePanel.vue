@@ -233,7 +233,7 @@ const fetchDocs = async () => {
       dataset_id: props.datasetId,
       page: docPagination.pageNo,
       page_size: docPagination.pageSize,
-      name: docSearchName.value.trim() || undefined
+      keywords: docSearchName.value.trim() || undefined
     })
     const docs = normalizeList(res)
     docList.value = docs

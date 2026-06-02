@@ -465,7 +465,7 @@ const getList = async () => {
       dataset_id: props.datasetId,
       page: queryParams.pageNo,
       page_size: queryParams.pageSize,
-      name: docSearchName.value.trim() || undefined
+      keywords: docSearchName.value.trim() || undefined
     })
     const docs = normalizeList(res)
     docList.value = docs
