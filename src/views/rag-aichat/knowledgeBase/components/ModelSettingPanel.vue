@@ -10,183 +10,230 @@
       label-width="180px"
       class="model-setting-form"
     >
-      <div class="model-setting-grid">
-        <div class="model-setting-card avatar-card">
-          <div class="section-title">知识库图片</div>
-          <div class="avatar-content">
-            <el-upload
-              class="avatar-uploader"
-              action="#"
-              :show-file-list="false"
-              :before-upload="handleAvatarUpload"
-              accept="image/*"
-            >
-              <div v-if="form.avatar" class="avatar-preview">
-                <el-image :src="form.avatar" fit="cover" />
-              </div>
-              <div v-else class="avatar-placeholder">
-                <el-icon><Plus /></el-icon>
-                <span>上传图片</span>
-              </div>
-            </el-upload>
+      <div class="setting-layout">
+        <aside class="setting-left">
+          <div class="model-setting-card avatar-card">
+            <div class="section-title">知识库图片</div>
+
+            <div class="avatar-content">
+              <el-upload
+                class="avatar-uploader"
+                action="#"
+                :show-file-list="false"
+                :before-upload="handleAvatarUpload"
+                accept="image/*"
+              >
+                <div v-if="form.avatar" class="avatar-preview">
+                  <el-image :src="form.avatar" fit="cover" />
+                </div>
+
+                <div v-else class="avatar-placeholder">
+                  <el-icon><Plus /></el-icon>
+                  <span>上传图片</span>
+                </div>
+              </el-upload>
+            </div>
+
+            <div class="avatar-actions">
+              <el-button v-if="form.avatar" text type="danger" @click="handleAvatarRemove">
+                移除图片
+              </el-button>
+            </div>
           </div>
-          <div class="avatar-actions">
-            <el-button v-if="form.avatar" text type="danger" @click="handleAvatarRemove">
-              移除图片
-            </el-button>
-          </div>
-        </div>
+        </aside>
 
-        <div class="model-setting-card prompt-card">
-          <div class="section-title">提示词</div>
-          <el-form-item prop="parser_config.raptor.prompt" label="RAPTOR 提示词">
-            <el-input
-              v-model="form.parser_config.raptor.prompt"
-              type="textarea"
-              :autosize="{ minRows: 7, maxRows: 12 }"
-              maxlength="1024"
-              show-word-limit
-              placeholder="请输入提示词"
-            />
-          </el-form-item>
-        </div>
-      </div>
+        <main class="setting-right">
+          <div class="setting-scroll">
+            <div class="model-setting-card">
+              <div class="section-title">基础配置</div>
 
-      <div class="model-setting-card">
-        <div class="section-title">基础配置</div>
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="知识库名称" prop="name">
-              <el-input v-model="form.name" maxlength="128" show-word-limit placeholder="请输入知识库名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="嵌入模型" prop="embedding_model">
-              <el-select v-model="form.embedding_model" class="w-full">
-                <el-option label="bge-m3@Ollama" value="bge-m3@Ollama" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="知识库名称" prop="name">
+                    <el-input
+                      v-model="form.name"
+                      maxlength="128"
+                      show-word-limit
+                      placeholder="请输入知识库名称"
+                    />
+                  </el-form-item>
+                </el-col>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="权限" prop="permission">
-              <el-radio-group v-model="form.permission">
-                <el-radio value="me">仅自己</el-radio>
-                <el-radio value="team">团队成员</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="PDF 解析器" prop="parser_config.layout_recognize">
-              <el-input v-model="form.parser_config.layout_recognize" placeholder="如 DeepDOC" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+                <el-col :span="12">
+                  <el-form-item label="嵌入模型" prop="embedding_model">
+                    <el-select v-model="form.embedding_model" class="w-full">
+                      <el-option label="bge-m3@Ollama" value="bge-m3@Ollama" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="切片方法" prop="chunk_method">
-              <el-select v-model="form.chunk_method" class="w-full">
-                <el-option
-                  v-for="item in chunkMethodOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="权限" prop="permission">
+                    <el-radio-group v-model="form.permission">
+                      <el-radio value="me">仅自己</el-radio>
+                      <el-radio value="team">团队成员</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="12">
+                  <el-form-item label="PDF 解析器" prop="parser_config.layout_recognize">
+                    <el-input
+                      v-model="form.parser_config.layout_recognize"
+                      placeholder="如 DeepDOC"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="切片方法" prop="chunk_method">
+                    <el-select v-model="form.chunk_method" class="w-full">
+                      <el-option
+                        v-for="item in chunkMethodOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="12">
+                  <el-form-item label="建议文本块大小" prop="parser_config.chunk_token_num">
+                    <el-input-number
+                      v-model="form.parser_config.chunk_token_num"
+                      :min="1"
+                      :max="2048"
+                      class="w-full"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="文本分段标识符" prop="parser_config.delimiter">
+                    <el-input v-model="form.parser_config.delimiter" placeholder="如 \n" />
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="12">
+                  <el-form-item label="页面排名" prop="pagerank">
+                    <el-input-number v-model="form.pagerank" :min="0" :max="100" class="w-full" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <div class="model-setting-card">
+              <div class="section-title">提示词</div>
+
+              <el-form-item prop="parser_config.raptor.prompt" label="RAPTOR 提示词">
+                <el-input
+                  v-model="form.parser_config.raptor.prompt"
+                  type="textarea"
+                  :autosize="{ minRows: 6, maxRows: 10 }"
+                  maxlength="1024"
+                  show-word-limit
+                  placeholder="请输入提示词"
                 />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="建议文本块大小" prop="parser_config.chunk_token_num">
-              <el-input-number v-model="form.parser_config.chunk_token_num" :min="1" :max="2048" class="w-full" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+              </el-form-item>
+            </div>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="文本分段标识符" prop="parser_config.delimiter">
-              <el-input v-model="form.parser_config.delimiter" placeholder="如 \n" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="页面排名" prop="pagerank">
-              <el-input-number v-model="form.pagerank" :min="0" :max="100" class="w-full" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </div>
+            <div v-if="form.chunk_method === 'naive'" class="model-setting-card">
+              <div class="section-title">Naive 切片配置</div>
 
-      <div v-if="form.chunk_method === 'naive'" class="model-setting-card">
-        <div class="section-title">Naive 切片配置</div>
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="自动关键词提取" prop="parser_config.auto_keywords">
-              <el-input-number v-model="form.parser_config.auto_keywords" :min="0" :max="32" class="w-full" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="自动问题提取" prop="parser_config.auto_questions">
-              <el-input-number v-model="form.parser_config.auto_questions" :min="0" :max="10" class="w-full" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="自动关键词提取" prop="parser_config.auto_keywords">
+                    <el-input-number
+                      v-model="form.parser_config.auto_keywords"
+                      :min="0"
+                      :max="32"
+                      class="w-full"
+                    />
+                  </el-form-item>
+                </el-col>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="表格转 HTML" prop="parser_config.html4excel">
-              <el-switch v-model="form.parser_config.html4excel" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="标签集" prop="parser_config.tag_kb_ids">
-              <el-input v-model="form.parser_config.tag_kb_ids" placeholder="逗号分隔多个 ID" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </div>
+                <el-col :span="12">
+                  <el-form-item label="自动问题提取" prop="parser_config.auto_questions">
+                    <el-input-number
+                      v-model="form.parser_config.auto_questions"
+                      :min="0"
+                      :max="10"
+                      class="w-full"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-      <div
-        v-if="['naive', 'qa', 'manual', 'paper', 'book', 'laws', 'presentation'].includes(form.chunk_method)"
-        class="model-setting-card"
-      >
-        <div class="section-title">高级策略</div>
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="RAPTOR 设置" prop="parser_config.raptor.use_raptor">
-              <el-switch
-                v-model="form.parser_config.raptor.use_raptor"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="提取知识图谱" prop="parser_config.graphrag.use_graphrag">
-              <el-switch
-                v-model="form.parser_config.graphrag.use_graphrag"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </div>
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="表格转 HTML" prop="parser_config.html4excel">
+                    <el-switch v-model="form.parser_config.html4excel" />
+                  </el-form-item>
+                </el-col>
 
-      <div class="model-setting-card">
-        <div class="section-title">描述</div>
-        <el-form-item label="知识库描述" prop="description">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :autosize="{ minRows: 4, maxRows: 10 }"
-            maxlength="1024"
-            show-word-limit
-            placeholder="请输入知识库描述"
-          />
-        </el-form-item>
-      </div>
+                <el-col :span="12">
+                  <el-form-item label="标签集" prop="parser_config.tag_kb_ids">
+                    <el-input
+                      v-model="form.parser_config.tag_kb_ids"
+                      placeholder="逗号分隔多个 ID"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
 
-      <div class="form-actions">
-        <el-button type="primary" :loading="saving" @click="handleSubmit">保存</el-button>
+            <div
+              v-if="
+                ['naive', 'qa', 'manual', 'paper', 'book', 'laws', 'presentation'].includes(
+                  form.chunk_method
+                )
+              "
+              class="model-setting-card"
+            >
+              <div class="section-title">高级策略</div>
+
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="RAPTOR 设置" prop="parser_config.raptor.use_raptor">
+                    <el-switch v-model="form.parser_config.raptor.use_raptor" />
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="12">
+                  <el-form-item label="提取知识图谱" prop="parser_config.graphrag.use_graphrag">
+                    <el-switch v-model="form.parser_config.graphrag.use_graphrag" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+
+            <div class="model-setting-card">
+              <div class="section-title">描述</div>
+
+              <el-form-item label="知识库描述" prop="description">
+                <el-input
+                  v-model="form.description"
+                  type="textarea"
+                  :autosize="{ minRows: 4, maxRows: 8 }"
+                  maxlength="1024"
+                  show-word-limit
+                  placeholder="请输入知识库描述"
+                />
+              </el-form-item>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <el-button type="primary" :loading="saving" @click="handleSubmit"> 保存 </el-button>
+          </div>
+        </main>
       </div>
     </el-form>
   </div>
@@ -194,7 +241,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import { ElMessage, type FormInstance, type FormRules, UploadProps } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules, type UploadProps } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
 import { getKnowledgeBaseDetail, updateKnowledgeBase } from '@/api/rag-aichat/knowledgeBase'
@@ -229,6 +276,11 @@ const chunkMethodOptions = [
 ]
 
 const buildDefaultParserConfig = (chunkMethod: string) => {
+  const commonConfig = {
+    raptor: { use_raptor: false, prompt: '' },
+    graphrag: { use_graphrag: false }
+  }
+
   if (chunkMethod === 'naive') {
     return {
       auto_keywords: 10,
@@ -239,13 +291,15 @@ const buildDefaultParserConfig = (chunkMethod: string) => {
       layout_recognize: 'DeepDOC',
       tag_kb_ids: '',
       task_page_size: 12,
-      raptor: { use_raptor: false, prompt: '' },
-      graphrag: { use_graphrag: false }
+      ...commonConfig
     }
   }
+
   return {
-    raptor: { use_raptor: false, prompt: '' },
-    graphrag: { use_graphrag: false }
+    chunk_token_num: 128,
+    delimiter: '\n',
+    layout_recognize: 'DeepDOC',
+    ...commonConfig
   }
 }
 
@@ -265,15 +319,9 @@ const rules: FormRules = {
     { required: true, message: '知识库名称不能为空', trigger: 'blur' },
     { max: 128, message: '最多 128 字符', trigger: 'blur' }
   ],
-  embedding_model: [
-    { required: true, message: '嵌入模型不能为空', trigger: 'change' }
-  ],
-  permission: [
-    { required: true, message: '权限不能为空', trigger: 'change' }
-  ],
-  chunk_method: [
-    { required: true, message: '切片方法不能为空', trigger: 'change' }
-  ],
+  embedding_model: [{ required: true, message: '嵌入模型不能为空', trigger: 'change' }],
+  permission: [{ required: true, message: '权限不能为空', trigger: 'change' }],
+  chunk_method: [{ required: true, message: '切片方法不能为空', trigger: 'change' }],
   'parser_config.delimiter': [
     { required: true, message: '文本分段标识符不能为空', trigger: 'blur' }
   ],
@@ -285,9 +333,8 @@ const rules: FormRules = {
 
 const ensureNestedConfig = (path: 'raptor' | 'graphrag') => {
   if (!form.parser_config[path]) {
-    form.parser_config[path] = path === 'raptor'
-      ? { use_raptor: false, prompt: '' }
-      : { use_graphrag: false }
+    form.parser_config[path] =
+      path === 'raptor' ? { use_raptor: false, prompt: '' } : { use_graphrag: false }
   }
 }
 
@@ -315,19 +362,18 @@ const normalizeDetail = (detail: any) => {
   form.chunk_method = chunkMethod
   form.parser_config = parserConfig
 
-  if (form.avatar) {
-  }
-
   ensureNestedConfig('raptor')
   ensureNestedConfig('graphrag')
 }
 
 const loadDetail = async () => {
   if (!props.datasetId) return
+
   loading.value = true
+
   try {
     const res = await getKnowledgeBaseDetail(String(props.datasetId))
-    const detail = res?.data || res?.data?.data || res
+    const detail = res?.data?.data || res?.data || res
     normalizeDetail(detail)
   } catch (error) {
     console.error(error)
@@ -350,14 +396,17 @@ watch(
   (value) => {
     const currentPrompt = form.parser_config?.raptor?.prompt || ''
     const currentAvatar = form.avatar
+    const currentGraphRag = form.parser_config?.graphrag?.use_graphrag || false
+    const currentUseRaptor = form.parser_config?.raptor?.use_raptor || false
+
     form.parser_config = buildDefaultParserConfig(value)
-    if (currentPrompt) {
-      ensureNestedConfig('raptor')
-      form.parser_config.raptor.prompt = currentPrompt
-    }
-    if (value !== 'naive') {
-      ensureNestedConfig('graphrag')
-    }
+
+    ensureNestedConfig('raptor')
+    ensureNestedConfig('graphrag')
+
+    form.parser_config.raptor.prompt = currentPrompt
+    form.parser_config.raptor.use_raptor = currentUseRaptor
+    form.parser_config.graphrag.use_graphrag = currentGraphRag
     form.avatar = currentAvatar
   }
 )
@@ -365,10 +414,17 @@ watch(
 const handleAvatarUpload: UploadProps['beforeUpload'] = (file) => {
   return new Promise((resolve) => {
     const reader = new FileReader()
+
     reader.onload = (event) => {
       form.avatar = String(event.target?.result || '')
       resolve(false)
     }
+
+    reader.onerror = () => {
+      ElMessage.error('图片读取失败')
+      resolve(false)
+    }
+
     reader.readAsDataURL(file)
   })
 }
@@ -379,6 +435,7 @@ const handleAvatarRemove = () => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
+
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
@@ -400,6 +457,7 @@ const handleSubmit = async () => {
   }
 
   saving.value = true
+
   try {
     await updateKnowledgeBase(String(props.datasetId), submitData)
     ElMessage.success('保存成功')
@@ -417,24 +475,56 @@ const handleSubmit = async () => {
 .model-setting-panel {
   display: flex;
   flex-direction: column;
+  width: 100%;
   height: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .model-setting-form {
   display: flex;
+  width: 100%;
+  height: 100%;
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 14px;
 }
 
-.model-setting-grid {
+.setting-layout {
   display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
   align-items: stretch;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-  gap: 14px;
+}
+
+.setting-left,
+.setting-right {
+  min-height: 0;
+}
+
+.setting-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-right {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.setting-scroll {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
+  padding-right: 2px;
 }
 
 .model-setting-card {
@@ -445,7 +535,8 @@ const handleSubmit = async () => {
 }
 
 .section-title {
-  margin-bottom: 14px;
+  flex-shrink: 0;
+  margin-bottom: 16px;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
@@ -453,25 +544,29 @@ const handleSubmit = async () => {
 
 .avatar-card {
   display: flex;
+  height: 100%;
+  min-height: 0;
   flex-direction: column;
-  min-height: 100%;
   align-items: stretch;
 }
 
 .avatar-content {
   display: flex;
+  flex: 1;
+  min-height: 0;
   justify-content: center;
+  align-items: center;
 }
 
 .avatar-uploader {
   width: 100%;
-  max-width: 280px;
 }
 
 .avatar-placeholder,
 .avatar-preview {
   display: flex;
   width: 100%;
+  max-height: 420px;
   overflow: hidden;
   color: var(--app-text-secondary);
   background: var(--app-bg-subtle);
@@ -494,14 +589,16 @@ const handleSubmit = async () => {
 
 .avatar-actions {
   display: flex;
+  flex-shrink: 0;
   margin-top: 10px;
   justify-content: center;
 }
 
 .form-actions {
   display: flex;
-  justify-content: center;
-  padding-top: 8px;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  padding: 14px 0 0;
 }
 
 .model-setting-card :deep(.el-form-item) {
@@ -512,25 +609,53 @@ const handleSubmit = async () => {
   margin-bottom: 0;
 }
 
-.prompt-card :deep(.el-form-item) {
-  margin-bottom: 0;
+.model-setting-card :deep(.el-input-number),
+.model-setting-card :deep(.el-select) {
+  width: 100%;
+}
+
+.w-full {
+  width: 100%;
 }
 
 @media (width <= 1200px) {
-  .model-setting-grid {
+  .setting-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+}
+
+@media (width <= 992px) {
+  .model-setting-panel {
+    overflow: auto;
+  }
+
+  .model-setting-form,
+  .setting-layout {
+    height: auto;
+  }
+
+  .setting-layout {
     grid-template-columns: 1fr;
+  }
+
+  .avatar-card {
+    height: auto;
+  }
+
+  .avatar-content {
+    flex: none;
   }
 
   .avatar-uploader {
     max-width: 320px;
   }
+
+  .setting-scroll {
+    overflow: visible;
+  }
 }
 
 @media (width <= 768px) {
-  .model-setting-form {
-    gap: 12px;
-  }
-
   .model-setting-card {
     padding: 14px;
   }
@@ -541,6 +666,10 @@ const handleSubmit = async () => {
 
   .model-setting-card :deep(.el-form-item__label) {
     line-height: 1.4;
+  }
+
+  .form-actions {
+    justify-content: center;
   }
 }
 </style>

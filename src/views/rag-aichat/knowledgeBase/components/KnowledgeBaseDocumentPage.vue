@@ -16,66 +16,73 @@
           class="doc-search"
           @keyup.enter="fetchDocs"
         />
-        <el-tooltip content="查询" placement="top">
-          <el-button size="small" class="compact-action-btn" @click="fetchDocs">
-            <el-icon><Search /></el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip content="刷新" placement="top">
-          <el-button size="small" class="compact-action-btn" @click="fetchDocs">
-            <el-icon><Refresh /></el-icon>
-          </el-button>
-        </el-tooltip>
+        <div class="doc-toolbar-icon-group">
+          <el-tooltip content="查询" placement="top">
+            <el-button size="small" class="compact-action-btn" @click="fetchDocs">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="刷新" placement="top">
+            <el-button size="small" class="compact-action-btn" @click="fetchDocs">
+              <el-icon><Refresh /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
         <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect" />
-        <el-tooltip content="上传文档" placement="top">
-          <el-button
-            size="small"
-            type="primary"
-            plain
-            class="compact-action-btn"
-            @click="fileInputRef?.click()"
-          >
-            <el-icon><Upload /></el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip v-if="selectedDocIds.length" content="批量解析" placement="top">
-          <el-button size="small" class="compact-action-btn" @click="handleBatchParse">
-            <el-icon><CaretRight /></el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-tooltip v-if="selectedDocIds.length" content="批量停止解析" placement="top">
-          <el-button size="small" class="compact-action-btn" @click="handleBatchStopParse">
-            <el-icon><VideoPause /></el-icon>
-          </el-button>
-        </el-tooltip>
-        <el-popconfirm title="确定要批量删除选中的文档吗？" @confirm="handleBatchDeleteDocs">
-          <template #reference>
-            <el-tooltip v-if="selectedDocIds.length" content="批量删除" placement="top">
-              <el-button size="small" type="danger" plain class="compact-action-btn">
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </el-tooltip>
-          </template>
-        </el-popconfirm>
-        <el-segmented
-          v-model="docViewMode"
-          size="small"
-          :options="docViewOptions"
-          class="doc-view-switch"
-        />
-      </div>
-    </div>
-
-    <div v-if="uploadFileList.length" class="upload-files">
-      <div v-for="file in uploadFileList" :key="`${file.name}_${file.uid}`" class="upload-file-item">
-        <el-icon><Document /></el-icon>
-        <span class="truncate">{{ file.name }}</span>
-        <el-progress
-          v-if="['uploading', 'parsing'].includes(file.status)"
-          :percentage="file.status === 'uploading' ? file.percent : file.parsePercent || 0"
-          :stroke-width="6"
-        />
-        <span v-else>{{ getUploadStatusLabel(file.status) }}</span>
+        <div class="doc-toolbar-icon-group">
+          <el-tooltip content="上传文档" placement="top">
+            <el-button
+              size="small"
+              type="primary"
+              plain
+              class="compact-action-btn"
+              @click="fileInputRef?.click()"
+            >
+              <el-icon><Upload /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip v-if="selectedDocIds.length" content="批量解析" placement="top">
+            <el-button size="small" class="compact-action-btn" @click="handleBatchParse">
+              <el-icon><CaretRight /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip v-if="selectedDocIds.length" content="批量停止解析" placement="top">
+            <el-button size="small" class="compact-action-btn" @click="handleBatchStopParse">
+              <el-icon><VideoPause /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-popconfirm title="确定要批量删除选中的文档吗？" @confirm="handleBatchDeleteDocs">
+            <template #reference>
+              <el-tooltip v-if="selectedDocIds.length" content="批量删除" placement="top">
+                <el-button size="small" type="danger" plain class="compact-action-btn">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+          </el-popconfirm>
+        </div>
+        <div class="doc-view-switch-group">
+          <el-tooltip content="网格" placement="top">
+            <el-button
+              size="small"
+              class="doc-view-switch-btn"
+              :class="{ active: docViewMode === 'grid' }"
+              @click="docViewMode = 'grid'"
+            >
+              <el-icon><Grid /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="列表" placement="top">
+            <el-button
+              size="small"
+              class="doc-view-switch-btn"
+              :class="{ active: docViewMode === 'list' }"
+              @click="docViewMode = 'list'"
+            >
+              <el-icon><List /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
       </div>
     </div>
 
@@ -88,7 +95,10 @@
       ref="gridWrapRef"
       v-loading="docLoading"
       class="doc-grid-wrap"
-      :class="{ 'doc-grid-wrap--dragover': dragUploadActive }"
+      :class="{
+        'doc-grid-wrap--dragover': dragUploadActive,
+        'doc-grid-wrap--selecting': dragState.active
+      }"
       @pointerdown="handleDocWrapPointerDown"
       @dragenter.prevent="handleDragEnter"
       @dragover.prevent="handleDragOver"
@@ -103,17 +113,50 @@
           :key="row.id"
           :ref="setCardRef(String(row.id))"
           class="doc-card"
-          :class="{ selected: selectedDocIdSet.has(String(row.id)) }"
+          :class="{
+            selected:
+              !(isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))) &&
+              selectedDocIdSet.has(String(row.id)),
+            preview: isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))
+          }"
+          @click="handleCardClick(String(row.id))"
         >
-          <el-checkbox
-            :model-value="selectedDocIdSet.has(String(row.id))"
-            class="doc-card-checkbox"
-            @change="(checked) => handleDocCheckedChange(String(row.id), checked)"
-            @click.stop
-          />
+          <transition name="doc-card-checkbox-transition">
+            <div
+              v-if="
+                selectedDocIdSet.has(String(row.id)) ||
+                (isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id)))
+              "
+              class="doc-card-checkbox-shell"
+              :class="{
+                'doc-card-checkbox-shell--preview':
+                  isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))
+              }"
+            >
+              <el-checkbox
+                :model-value="
+                  isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))
+                    ? true
+                    : selectedDocIdSet.has(String(row.id))
+                "
+                class="doc-card-checkbox"
+                :class="{
+                  'doc-card-checkbox--preview':
+                    isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))
+                }"
+                @change="(checked) => handleDocCheckedChange(String(row.id), checked)"
+                @click.stop
+              />
+            </div>
+          </transition>
 
           <div class="doc-icon-box">
-            <img class="doc-icon-image" :src="getDocIcon(row)" :alt="getDocTypeLabel(row)" />
+            <img
+              class="doc-icon-image"
+              draggable="false"
+              :src="getDocIcon(row)"
+              :alt="getDocTypeLabel(row)"
+            />
           </div>
 
           <div class="doc-card-body">
@@ -124,53 +167,46 @@
         </div>
       </div>
 
-      <el-table
-        ref="listTableRef"
-        v-else-if="docList.length && docViewMode === 'list'"
-        :data="docList"
-        row-key="id"
-        class="doc-list-table"
-        @selection-change="handleListSelectionChange"
-      >
-        <el-table-column type="selection" width="52" />
-        <el-table-column label="名称" min-width="420">
-          <template #default="{ row }">
-            <div class="doc-list-name-cell">
-              <img class="doc-list-file-icon" :src="getDocIcon(row)" :alt="getDocTypeLabel(row)" />
-              <span class="doc-list-file-name">{{ row.name || row.title || '未命名文件' }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="类型" width="140">
-          <template #default="{ row }">
-            {{ getDocTypeLabel(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="大小" width="140">
-          <template #default="{ row }">
-            {{ formatDocSize(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="时间" width="220">
-          <template #default="{ row }">
-            {{ formatDocTime(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="parseDoc(row)">
-              {{ isDocumentParsing(row) ? '重新解析' : '开始解析' }}
-            </el-button>
-            <el-button link type="primary" @click="openChunkDrawer(row)">切片</el-button>
-            <el-button link @click="downloadDoc(row)">下载</el-button>
-            <el-popconfirm title="确定删除该文档吗？" @confirm="deleteDoc(row)">
-              <template #reference>
-                <el-button link type="danger">删除</el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div v-else-if="docList.length && docViewMode === 'list'" class="doc-list-table-wrap">
+        <el-table
+          ref="listTableRef"
+          :data="docList"
+          row-key="id"
+          class="doc-list-table"
+          height="100%"
+          :row-class-name="getListRowClassName"
+          @selection-change="handleListSelectionChange"
+        >
+          <el-table-column type="selection" width="52" />
+          <el-table-column label="名称" min-width="420" resizable>
+            <template #default="{ row }">
+              <div class="doc-list-name-cell">
+                <img
+                  class="doc-list-file-icon"
+                  :src="getDocIcon(row)"
+                  :alt="getDocTypeLabel(row)"
+                />
+                <span class="doc-list-file-name">{{ row.name || row.title || '未命名文件' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="类型" width="140" resizable>
+            <template #default="{ row }">
+              {{ getDocTypeLabel(row) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="大小" width="140" resizable>
+            <template #default="{ row }">
+              {{ formatDocSize(row) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="时间" width="220" resizable>
+            <template #default="{ row }">
+              {{ formatDate(row) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <el-empty v-else description="暂无文档" />
     </div>
@@ -193,16 +229,25 @@
       :document-id="activeChunkDocument.id"
       :document-name="activeChunkDocument.name"
     />
+
+    <KnowledgeBaseUploadTaskPopup
+      :visible="uploadPanelVisible"
+      :tasks="uploadFileList"
+      @close="uploadPanelVisible = false"
+      @clear-all="handleClearUploadTasks"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { formatDate } from '@/utils/formatTime'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   CaretRight,
   Delete,
-  Document,
+  Grid,
+  List,
   Refresh,
   Search,
   Upload,
@@ -219,8 +264,8 @@ import {
   uploadDocument
 } from '@/api/rag-aichat/document'
 import { getFileIconByExt } from '@/utils/fileIconMap'
-import { isDocumentParsing } from '../../utils/documentParse'
 import DocChunkList from './DocChunkList.vue'
+import KnowledgeBaseUploadTaskPopup from './KnowledgeBaseUploadTaskPopup.vue'
 
 defineOptions({ name: 'RagAiKnowledgeBaseDocumentPage' })
 
@@ -234,23 +279,23 @@ const props = defineProps({
 
 const docSearchName = ref('')
 const docViewMode = ref<'grid' | 'list'>('grid')
-const docViewOptions = [
-  { label: '网格', value: 'grid' },
-  { label: '列表', value: 'list' }
-]
 const docLoading = ref(false)
 const docList = ref<any[]>([])
 const docPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
 const selectedDocIds = ref<string[]>([])
+const gridSelectionPreviewIds = ref<string[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const uploadFileList = ref<any[]>([])
+const uploadPanelVisible = ref(false)
 const chunkDrawerVisible = ref(false)
 const activeChunkDocument = ref({ id: '', name: '' })
 const gridWrapRef = ref<HTMLElement | null>(null)
 const listTableRef = ref<any>(null)
+const syncingListSelection = ref(false)
 const dragUploadActive = ref(false)
 const dragEnterCounter = ref(0)
 const cardElementMap = new Map<string, HTMLElement>()
+const pointerDownOnBlankSpace = ref(false)
 const dragState = reactive({
   active: false,
   moved: false,
@@ -271,14 +316,20 @@ const datasetTitle = computed(() => {
 })
 
 const selectedDocIdSet = computed(() => new Set(selectedDocIds.value))
+const gridSelectionPreviewIdSet = computed(() => new Set(gridSelectionPreviewIds.value))
+const isGridSelectionDragging = computed(
+  () => docViewMode.value === 'grid' && selectionRectVisible.value
+)
 
 const selectionRectVisible = computed(() => dragState.active && dragState.moved)
 
 const selectionRectStyle = computed(() => {
   if (!gridWrapRef.value || !selectionRectVisible.value) return {}
   const wrapRect = gridWrapRef.value.getBoundingClientRect()
-  const left = Math.min(dragState.startX, dragState.currentX) - wrapRect.left + gridWrapRef.value.scrollLeft
-  const top = Math.min(dragState.startY, dragState.currentY) - wrapRect.top + gridWrapRef.value.scrollTop
+  const left =
+    Math.min(dragState.startX, dragState.currentX) - wrapRect.left + gridWrapRef.value.scrollLeft
+  const top =
+    Math.min(dragState.startY, dragState.currentY) - wrapRect.top + gridWrapRef.value.scrollTop
   const width = Math.abs(dragState.currentX - dragState.startX)
   const height = Math.abs(dragState.currentY - dragState.startY)
   return {
@@ -302,6 +353,7 @@ const fetchDocs = async () => {
   if (!props.datasetId) {
     docList.value = []
     docPagination.total = 0
+    gridSelectionPreviewIds.value = []
     return
   }
   docLoading.value = true
@@ -318,6 +370,7 @@ const fetchDocs = async () => {
     selectedDocIds.value = selectedDocIds.value.filter((id) =>
       docs.some((item: any) => String(item.id) === id)
     )
+    gridSelectionPreviewIds.value = []
   } catch (error) {
     console.error(error)
     ElMessage.error('获取文档失败')
@@ -351,6 +404,7 @@ const updateSelectionByRect = () => {
         return !(rect.right < minX || rect.left > maxX || rect.bottom < minY || rect.top > maxY)
       })
       .map((row) => String(row.id))
+    gridSelectionPreviewIds.value = selectedIds
   } else {
     const rows = Array.from(
       gridWrapRef.value.querySelectorAll('.doc-list-table .el-table__body-wrapper tbody tr')
@@ -365,7 +419,9 @@ const updateSelectionByRect = () => {
       .map(({ rowData }) => String(rowData.id))
   }
 
-  selectedDocIds.value = selectedIds
+  if (docViewMode.value === 'list') {
+    selectedDocIds.value = selectedIds
+  }
 }
 
 function cleanupPointerListeners() {
@@ -389,6 +445,17 @@ function handlePointerMove(event: PointerEvent) {
 }
 
 function handlePointerUp() {
+  if (pointerDownOnBlankSpace.value && !dragState.moved) {
+    selectedDocIds.value = []
+    gridSelectionPreviewIds.value = []
+  }
+  if (docViewMode.value === 'grid' && dragState.moved) {
+    selectedDocIds.value = [...gridSelectionPreviewIds.value]
+  }
+  if (docViewMode.value === 'grid') {
+    gridSelectionPreviewIds.value = []
+  }
+  pointerDownOnBlankSpace.value = false
   cleanupPointerListeners()
 }
 
@@ -397,13 +464,16 @@ const handleGridPointerDown = (event: PointerEvent) => {
   if (!gridWrapRef.value || !target) return
   if (
     target.closest('.doc-card-actions') ||
+    target.closest('.doc-card-checkbox-shell') ||
     target.closest('.doc-card-checkbox') ||
     target.closest('.el-checkbox') ||
     target.closest('.el-button') ||
     target.closest('.el-popconfirm')
   ) {
+    pointerDownOnBlankSpace.value = false
     return
   }
+  pointerDownOnBlankSpace.value = !target.closest('.doc-card')
 
   dragState.active = true
   dragState.moved = false
@@ -429,8 +499,10 @@ const handleDocWrapPointerDown = (event: PointerEvent) => {
     target.closest('.el-button') ||
     target.closest('.el-popconfirm')
   ) {
+    pointerDownOnBlankSpace.value = false
     return
   }
+  pointerDownOnBlankSpace.value = !target.closest('.el-table__body tbody tr')
 
   dragState.active = true
   dragState.moved = false
@@ -453,20 +525,34 @@ const handleDocCheckedChange = (docId: string, checked: boolean | string | numbe
   selectedDocIds.value = selectedDocIds.value.filter((id) => id !== docId)
 }
 
+const handleCardClick = (docId: string) => {
+  if (docViewMode.value !== 'grid' || dragState.moved) return
+  selectedDocIds.value = [docId]
+}
+
 const handleListSelectionChange = (rows: any[]) => {
+  if (syncingListSelection.value) return
   selectedDocIds.value = rows.map((row) => String(row.id))
 }
 
+const getListRowClassName = ({ row }: { row: any }) =>
+  selectedDocIdSet.value.has(String(row.id)) ? 'is-selected-row' : ''
+
 const syncListTableSelection = async () => {
   if (docViewMode.value !== 'list' || !listTableRef.value) return
-  await nextTick()
-  listTableRef.value.clearSelection?.()
-  docList.value.forEach((row) => {
-    const checked = selectedDocIdSet.value.has(String(row.id))
-    if (checked) {
-      listTableRef.value.toggleRowSelection?.(row, true)
-    }
-  })
+  syncingListSelection.value = true
+  try {
+    await nextTick()
+    listTableRef.value.clearSelection?.()
+    docList.value.forEach((row) => {
+      const checked = selectedDocIdSet.value.has(String(row.id))
+      if (checked) {
+        listTableRef.value.toggleRowSelection?.(row, true)
+      }
+    })
+  } finally {
+    syncingListSelection.value = false
+  }
 }
 
 const getDocName = (row: any) => String(row?.name || row?.title || row?.document_name || '')
@@ -474,7 +560,9 @@ const getDocName = (row: any) => String(row?.name || row?.title || row?.document
 const getDocExt = (row: any) => {
   const name = getDocName(row)
   const extFromName = name.includes('.') ? name.split('.').pop() : ''
-  return String(row?.suffix || extFromName || row?.type || 'file').replace('.', '').toUpperCase()
+  return String(row?.suffix || extFromName || row?.type || 'file')
+    .replace('.', '')
+    .toUpperCase()
 }
 
 const getDocTypeLabel = (row: any) => {
@@ -499,13 +587,6 @@ const formatDocSize = (row: any) => {
   return `${size}B`
 }
 
-const formatDocTime = (row: any) => {
-  const raw = row?.create_time || row?.createTime || row?.update_time || row?.updateTime
-  if (!raw) return '--'
-  const text = String(raw)
-  return text.replace('T', ' ').slice(0, 19)
-}
-
 const updateUploadFileStatus = (uid: string, patch: Record<string, any>) => {
   const index = uploadFileList.value.findIndex((item) => item.uid === uid)
   if (index >= 0) {
@@ -519,6 +600,7 @@ const updateUploadFileStatus = (uid: string, patch: Record<string, any>) => {
 const uploadFiles = async (files: File[]) => {
   if (!files.length || !props.datasetId) return
 
+  uploadPanelVisible.value = true
   const fileItems = files.map((file) => ({
     name: file.name,
     size: file.size,
@@ -580,6 +662,11 @@ const handleDropUpload = async (event: DragEvent) => {
   dragEnterCounter.value = 0
   const files = Array.from(event.dataTransfer?.files || [])
   await uploadFiles(files)
+}
+
+const handleClearUploadTasks = () => {
+  uploadFileList.value = []
+  uploadPanelVisible.value = false
 }
 
 const parseDoc = async (row: any) => {
@@ -674,18 +761,6 @@ const openChunkDrawer = (row: any) => {
   chunkDrawerVisible.value = true
 }
 
-const getUploadStatusLabel = (status: string) => {
-  const map: Record<string, string> = {
-    uploading: '上传中',
-    parsing: '解析中',
-    success: '上传成功',
-    fail: '上传失败',
-    'parse-fail': '解析失败',
-    waiting: '等待上传'
-  }
-  return map[status] || status
-}
-
 const handlePageChange = (page: number) => {
   docPagination.pageNo = page
   fetchDocs()
@@ -703,16 +778,29 @@ watch(
     docPagination.pageNo = 1
     docSearchName.value = ''
     selectedDocIds.value = []
+    gridSelectionPreviewIds.value = []
     uploadFileList.value = []
+    uploadPanelVisible.value = false
     cardElementMap.clear()
     await fetchDocs()
   },
   { immediate: true }
 )
 
-watch([docViewMode, docList, selectedDocIds], () => {
+watch([docViewMode, docList], () => {
   syncListTableSelection()
 })
+
+watch(selectedDocIds, () => {
+  syncListTableSelection()
+})
+
+watch(
+  () => docViewMode.value,
+  () => {
+    gridSelectionPreviewIds.value = []
+  }
+)
 
 onBeforeUnmount(() => {
   cleanupPointerListeners()
@@ -755,37 +843,80 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px;
 }
 
 .doc-search {
-  width: 180px;
+  width: 168px;
+}
+
+.doc-toolbar-icon-group {
+  display: flex;
+  align-items: center;
+  margin-left: -1px;
 }
 
 .compact-action-btn {
-  min-width: 30px;
-  padding: 5px 8px;
+  min-width: 28px;
+  padding: 4px 7px;
+}
+
+.doc-toolbar-icon-group :deep(.el-button) {
+  margin-left: -1px;
+}
+
+.doc-toolbar-icon-group :deep(.el-button:first-child) {
+  margin-left: 0;
 }
 
 .doc-view-switch {
   margin-left: 4px;
 }
 
-.upload-files {
-  display: flex;
-  padding: 14px;
-  background: #fff;
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-lg);
-  flex-direction: column;
-  gap: 8px;
-}
-
-.upload-file-item {
+.doc-view-switch-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  margin-left: 4px;
+}
+
+.doc-view-switch-btn {
+  min-width: 30px;
+  padding: 4px 7px;
+  color: #64748b;
+  border: 1px solid var(--app-border-color);
+  border-radius: 0;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.doc-view-switch-btn:first-child {
+  border-bottom-left-radius: var(--app-radius-sm);
+  border-top-left-radius: var(--app-radius-sm);
+}
+
+.doc-view-switch-btn:last-child {
+  margin-left: -1px;
+  border-top-right-radius: var(--app-radius-sm);
+  border-bottom-right-radius: var(--app-radius-sm);
+}
+
+.doc-view-switch-btn:hover {
+  color: #4a93ff;
+  background: rgb(74 147 255 / 8%);
+  border-color: rgb(74 147 255 / 28%);
+}
+
+.doc-view-switch-btn.active {
+  color: #1d69d9;
+  background: rgb(29 105 217 / 10%);
+  border-color: rgb(29 105 217 / 32%);
+}
+
+.doc-view-switch-btn:active {
+  transform: scale(0.96);
 }
 
 .doc-status-bar {
@@ -799,11 +930,13 @@ onBeforeUnmount(() => {
 
 .doc-grid-wrap {
   position: relative;
+  display: flex;
   min-height: 0;
   padding: 16px;
   overflow: auto;
   background: var(--app-bg-subtle);
   border: 1px solid var(--app-border-color);
+  flex-direction: column;
   border-radius: var(--app-radius-lg);
   flex: 1;
 }
@@ -811,6 +944,24 @@ onBeforeUnmount(() => {
 .doc-grid-wrap--dragover {
   background: rgb(0 82 217 / 8%);
   box-shadow: inset 0 0 0 2px rgb(0 82 217 / 35%);
+}
+
+.doc-grid-wrap--selecting {
+  user-select: none;
+}
+
+.doc-grid-wrap--selecting .doc-card,
+.doc-grid-wrap--selecting .doc-card * {
+  user-select: none;
+}
+
+.doc-grid-wrap--selecting .doc-list-table,
+.doc-grid-wrap--selecting .doc-list-table * {
+  user-select: none;
+}
+
+.doc-grid-wrap--selecting .doc-icon-image {
+  pointer-events: none;
 }
 
 .doc-selection-rect {
@@ -825,28 +976,27 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 8px;
 }
 
 .doc-card {
   position: relative;
   display: flex;
-  min-height: 210px;
-  padding: 16px 14px;
-  background: #eef2f7;
-  border: 1px solid #8db8ff;
+  min-height: 120px;
+  padding: 6px 4px 8px;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 10px;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .doc-card:hover {
-  border-color: #6da4ff;
-  box-shadow: 0 2px 8px rgb(59 130 246 / 16%);
+  border-color: rgb(74 147 255 / 16%);
 }
 
 .doc-card.selected {
@@ -854,42 +1004,112 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 10px rgb(59 130 246 / 20%);
 }
 
-.doc-card-checkbox {
+.doc-card.preview {
+  border-color: #c9d0db;
+  box-shadow: none;
+}
+
+.doc-card-checkbox-shell {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 6px;
+  right: 6px;
   z-index: 2;
+  display: flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+}
+
+.doc-card-checkbox-shell--preview {
+  transform: scale(0.98);
+}
+
+:deep(.doc-card-checkbox) {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease,
+    background-color 0.18s ease;
+}
+
+:deep(.doc-card-checkbox .el-checkbox__input) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 :deep(.doc-card-checkbox .el-checkbox__inner) {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background: #1d69d9;
   border: 2px solid #e5edff;
-  border-radius: 6px;
+  border-radius: 50%;
+  transition:
+    transform 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 :deep(.doc-card-checkbox .el-checkbox__inner::after) {
-  top: 6px;
-  left: 10px;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 8px;
+  border-width: 2px;
+  transform: translate(-50%, -60%) rotate(45deg);
+  transition: inherit;
 }
 
 :deep(.doc-card-checkbox .el-checkbox__input.is-checked .el-checkbox__inner) {
   background: #1d69d9;
   border-color: #e5edff;
+  box-shadow: 0 2px 8px rgb(29 105 217 / 18%);
+}
+
+:deep(.doc-card-checkbox-shell--preview .el-checkbox__inner) {
+  background: #c7cdd8;
+  border-color: #edf0f4;
+  box-shadow: none;
+}
+
+:deep(.doc-card-checkbox-shell--preview .el-checkbox__input.is-checked .el-checkbox__inner) {
+  background: #c7cdd8;
+  border-color: #edf0f4;
+  box-shadow: none;
+}
+
+.doc-card-checkbox-transition-enter-active,
+.doc-card-checkbox-transition-leave-active {
+  transition:
+    opacity 0.1s ease,
+    transform 0.1s ease;
+}
+
+.doc-card-checkbox-transition-enter-from,
+.doc-card-checkbox-transition-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
 }
 
 .doc-icon-box {
   display: flex;
-  min-height: 110px;
-  padding-top: 10px;
+  min-height: 68px;
+  padding-top: 2px;
   align-items: center;
   justify-content: center;
 }
 
 .doc-icon-image {
-  width: 98px;
-  height: 98px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 
@@ -898,13 +1118,14 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 0;
   min-height: 0;
+  padding: 0 2px;
 }
 
 .doc-card-name {
   display: -webkit-box;
-  min-height: 56px;
+  min-height: 30px;
   overflow: hidden;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.35;
   color: #27364d;
@@ -920,7 +1141,37 @@ onBeforeUnmount(() => {
 }
 
 .doc-list-table {
+  width: 100%;
+  height: 100%;
   background: #fff;
+}
+
+.doc-list-table :deep(.el-table__header-wrapper th) {
+  font-weight: 600;
+  color: #334155;
+  background: linear-gradient(180deg, #f7faff 0%, #edf3ff 100%);
+}
+
+.doc-list-table :deep(.el-table__header-wrapper th.is-leaf) {
+  border-bottom: 1px solid #dbe6f7;
+}
+
+.doc-list-table :deep(.el-table__body tr.is-selected-row > td) {
+  background: rgb(29 105 217 / 8%);
+}
+
+.doc-list-table :deep(.el-table__body tr.is-selected-row:hover > td) {
+  background: rgb(29 105 217 / 12%);
+}
+
+.doc-list-table :deep(.el-table__body tr.is-selected-row td.el-table-fixed-column--right) {
+  background: rgb(29 105 217 / 8%);
+}
+
+.doc-list-table-wrap {
+  display: flex;
+  min-height: 0;
+  flex: 1;
 }
 
 .doc-list-name-cell {
