@@ -1097,14 +1097,14 @@ onUnmounted(() => {
   font-size: 15px;
   line-height: 1.65;
   color: var(--app-text-primary);
-  border-color: var(--app-border-color-deeper);
+  border-color: var(--app-color-brand);
   border-radius: 12px;
-  box-shadow: none;
+  box-shadow: 0 0 0 3px rgb(0 82 217 / 10%);
 }
 
 .chat-textarea :deep(.el-textarea__inner:focus) {
   border-color: var(--app-color-brand);
-  box-shadow: 0 0 0 3px rgb(0 82 217 / 10%);
+  box-shadow: 0 0 0 3px rgb(0 82 217 / 18%);
 }
 
 .chat-sender-footer {

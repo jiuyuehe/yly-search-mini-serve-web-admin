@@ -40,17 +40,35 @@
                   <el-icon class="session-icon"><ChatLineSquare /></el-icon>
                 </div>
                 <div class="session-copy">
-                  <input
-                    v-if="editingSessionId === session.id"
-                    ref="renameInputRef"
-                    v-model="editingName"
-                    class="session-title-input"
-                    maxlength="60"
-                    @click.stop
-                    @keydown.enter.stop.prevent="submitRename(session)"
-                    @keydown.esc.stop.prevent="cancelRename"
-                    @blur="submitRename(session)"
-                  />
+                  <template v-if="editingSessionId === session.id">
+                    <div class="session-rename-row" @click.stop>
+                      <el-input
+                        ref="renameInputRef"
+                        v-model="editingName"
+                        class="session-rename-input"
+                        maxlength="60"
+                        @keydown.enter.stop.prevent="submitRename(session)"
+                        @keydown.esc.stop.prevent="cancelRename"
+                      />
+                      <el-button
+                        class="session-rename-confirm"
+                        size="small"
+                        type="primary"
+                        :disabled="!editingName.trim()"
+                        @click.stop="submitRename(session)"
+                      >
+                        <el-icon><Check /></el-icon>
+                      </el-button>
+                      <el-button
+                        class="session-rename-cancel"
+                        size="small"
+                        text
+                        @click.stop="cancelRename"
+                      >
+                        <el-icon><Close /></el-icon>
+                      </el-button>
+                    </div>
+                  </template>
                   <span v-else class="session-title" :title="displaySessionName(session)">
                     {{ displaySessionName(session) }}
                   </span>
@@ -93,6 +111,7 @@
           新的会话
         </el-button>
         <el-popconfirm
+          width="220"
           title="确定要重置当前会话吗？"
           confirm-button-text="确定重置"
           cancel-button-text="取消"
@@ -126,11 +145,14 @@ import {
   ArrowLeft,
   ArrowRight,
   ChatLineSquare,
+  Check,
   Clock,
+  Close,
   Delete,
   MoreFilled,
   Plus
 } from '@element-plus/icons-vue'
+import { ElMessageBox } from 'element-plus'
 import type { PropType } from 'vue'
 
 defineOptions({ name: 'RagAiChatSessionList' })
@@ -184,7 +206,7 @@ const emit = defineEmits([
 const DEFAULT_SESSION_NAME = '新的会话'
 const editingSessionId = ref('')
 const editingName = ref('')
-const renameInputRef = ref<HTMLInputElement | HTMLInputElement[] | null>(null)
+const renameInputRef = ref<any>(null)
 
 const sessionCountText = computed(() => {
   const count = props.sessionList?.length || 0
@@ -197,20 +219,16 @@ const displaySessionName = (session: any) => {
   return name || DEFAULT_SESSION_NAME
 }
 
-const getRenameInputElement = () => {
-  if (Array.isArray(renameInputRef.value)) {
-    return renameInputRef.value[0] || null
-  }
-  return renameInputRef.value
-}
-
 const startRename = async (session: any) => {
   editingSessionId.value = session?.id || ''
   editingName.value = displaySessionName(session)
   await nextTick()
-  const input = getRenameInputElement()
-  input?.focus?.()
-  input?.select?.()
+  // el-input ref may be an array in v-for
+  const inputEl = Array.isArray(renameInputRef.value)
+    ? renameInputRef.value[0]
+    : renameInputRef.value
+  inputEl?.focus?.()
+  inputEl?.select?.()
 }
 
 const cancelRename = () => {
@@ -229,13 +247,22 @@ const submitRename = (session: any) => {
   emit('rename-session', { sessionId, name: nextName })
 }
 
-const handleSessionAction = (command: string, session: any) => {
+const handleSessionAction = async (command: string, session: any) => {
   if (command === 'rename') {
     startRename(session)
     return
   }
   if (command === 'delete') {
-    emit('delete-session', session?.id)
+    try {
+      await ElMessageBox.confirm(
+        `确定删除会话「${displaySessionName(session)}」吗？删除后无法恢复。`,
+        '删除会话',
+        { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+      )
+      emit('delete-session', session?.id)
+    } catch {
+      // cancelled
+    }
   }
 }
 </script>
@@ -470,6 +497,58 @@ const handleSessionAction = (command: string, session: any) => {
   box-shadow: 0 0 0 2px rgb(0 82 217 / 12%);
 }
 
+/* ---- rename row ---- */
+
+.session-rename-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.session-rename-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.session-rename-input :deep(.el-input__wrapper) {
+  padding: 0 8px;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgb(0 82 217 / 28%);
+}
+
+.session-rename-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgb(0 82 217 / 40%);
+}
+
+.session-rename-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px rgb(0 82 217 / 16%);
+}
+
+.session-rename-input :deep(.el-input__inner) {
+  height: 30px;
+  font-size: 14px;
+  font-weight: var(--app-font-weight-medium);
+  color: var(--app-text-primary);
+}
+
+.session-rename-confirm,
+.session-rename-cancel {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.session-rename-confirm {
+  border-radius: 6px;
+}
+
+.session-rename-cancel {
+  color: var(--app-text-secondary);
+}
+
 .session-item-actions {
   display: flex;
   margin-left: 8px;
@@ -530,13 +609,16 @@ const handleSessionAction = (command: string, session: any) => {
 .session-sidebar-footer {
   display: flex;
   padding: 0;
-  flex-direction: column;
+  flex-direction: row;
   gap: 10px;
   flex-shrink: 0;
 }
 
+.session-sidebar-footer > :first-child {
+  flex: 1;
+}
+
 .session-sidebar-footer :deep(.el-button) {
-  width: 100%;
   height: 36px;
   margin-left: 0;
   font-size: 15px;
