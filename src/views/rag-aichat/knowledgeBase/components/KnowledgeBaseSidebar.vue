@@ -19,7 +19,6 @@
         clearable
         placeholder="搜索知识库"
         class="mb-10px"
-        @keyup.enter="emit('search')"
       >
         <template #prefix>
           <el-icon><Search /></el-icon>
@@ -32,7 +31,7 @@
       </el-button>
 
       <el-scrollbar class="kb-list-scroll">
-        <div v-for="group in datasetGroups" :key="group.key" class="kb-group">
+        <div v-for="group in filteredDatasetGroups" :key="group.key" class="kb-group">
           <div class="kb-group-header">
             <span>{{ group.label }}</span>
             <el-tag size="small">{{ group.list.length }}</el-tag>
@@ -87,7 +86,6 @@ defineOptions({ name: 'RagAiKnowledgeBaseSidebar' })
 
 const props = defineProps({
   collapsed: { type: Boolean, default: false },
-  searchName: { type: String, default: '' },
   datasetGroups: {
     type: Array as PropType<Array<{ key: string; label: string; list: any[] }>>,
     default: () => []
@@ -97,12 +95,10 @@ const props = defineProps({
 
 const emit = defineEmits([
   'toggle-collapse',
-  'search',
   'create',
   'select',
   'manage',
-  'delete',
-  'update:searchName'
+  'delete'
 ])
 
 const contextMenuVisible = ref(false)
@@ -118,9 +114,21 @@ const getDatasetInitials = (name = '') =>
     .slice(0, 2)
     .toUpperCase() || 'KB'
 
-const localSearchName = computed({
-  get: () => props.searchName,
-  set: (value: string) => emit('update:searchName', value)
+const localSearchName = ref('')
+
+const filteredDatasetGroups = computed(() => {
+  const keyword = localSearchName.value.trim().toLowerCase()
+  if (!keyword) return props.datasetGroups
+
+  return props.datasetGroups
+    .map((group) => ({
+      ...group,
+      list: group.list.filter((item) => {
+        const name = String(item.dataset_name || item.name || '').toLowerCase()
+        return name.includes(keyword)
+      })
+    }))
+    .filter((group) => group.list.length > 0)
 })
 
 const closeContextMenu = () => {

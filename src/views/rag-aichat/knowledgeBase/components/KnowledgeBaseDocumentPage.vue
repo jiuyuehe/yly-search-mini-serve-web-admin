@@ -14,16 +14,16 @@
           size="small"
           placeholder="请输入文件名称"
           class="doc-search"
-          @keyup.enter="fetchDocs"
+          @keyup.enter="getList"
         />
         <div class="doc-toolbar-icon-group">
           <el-tooltip content="查询" placement="top">
-            <el-button size="small" class="compact-action-btn" @click="fetchDocs">
+            <el-button size="small" class="compact-action-btn" @click="getList">
               <el-icon><Search /></el-icon>
             </el-button>
           </el-tooltip>
           <el-tooltip content="刷新" placement="top">
-            <el-button size="small" class="compact-action-btn" @click="fetchDocs">
+            <el-button size="small" class="compact-action-btn" @click="getList">
               <el-icon><Refresh /></el-icon>
             </el-button>
           </el-tooltip>
@@ -88,7 +88,7 @@
 
     <div class="doc-status-bar">
       <span v-if="selectedDocIds.length">已选择 {{ selectedDocIds.length }} 个文档</span>
-      <span v-else>可通过复选框或鼠标框选多选文档</span>
+      <span v-else>可通过[复选框][鼠标框选][快捷键command ctrl]多选文档</span>
     </div>
 
     <div
@@ -100,6 +100,7 @@
         'doc-grid-wrap--selecting': dragState.active
       }"
       @pointerdown="handleDocWrapPointerDown"
+      @contextmenu="handleDocContextMenu"
       @dragenter.prevent="handleDragEnter"
       @dragover.prevent="handleDragOver"
       @dragleave.prevent="handleDragLeave"
@@ -119,7 +120,8 @@
               selectedDocIdSet.has(String(row.id)),
             preview: isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))
           }"
-          @click="handleCardClick(String(row.id))"
+          @click="handleCardClick(String(row.id), $event)"
+          @contextmenu="handleCardContextMenu(String(row.id), $event)"
         >
           <transition name="doc-card-checkbox-transition">
             <div
@@ -173,9 +175,10 @@
           :data="docList"
           row-key="id"
           class="doc-list-table"
-          height="100%"
           :row-class-name="getListRowClassName"
           @selection-change="handleListSelectionChange"
+          @row-click="handleListRowClick"
+          @row-contextmenu="handleListRowContextMenu"
         >
           <el-table-column type="selection" width="52" />
           <el-table-column label="名称" min-width="420" resizable>
@@ -212,14 +215,11 @@
     </div>
 
     <div class="doc-pagination">
-      <el-pagination
-        background
-        layout="total, prev, pager, next, jumper"
-        :current-page="docPagination.pageNo"
-        :page-size="docPagination.pageSize"
-        :total="docPagination.total"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
+      <Pagination
+        :total="total"
+        v-model:page="queryParams.pageNo"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
       />
     </div>
 
@@ -236,12 +236,26 @@
       @close="uploadPanelVisible = false"
       @clear-all="handleClearUploadTasks"
     />
+
+    <KnowledgeBaseDocContextMenu
+      :visible="contextMenuVisible"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :selected-count="selectedDocIds.length"
+      @close="hideContextMenu"
+      @refresh="handleContextRefresh"
+      @upload="handleContextUpload"
+      @batch-parse="handleContextBatchParse"
+      @batch-stop-parse="handleContextBatchStopParse"
+      @batch-delete="handleContextBatchDelete"
+      @change-view="handleContextChangeView"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { formatDate } from '@/utils/formatTime'
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   CaretRight,
@@ -265,6 +279,7 @@ import {
 } from '@/api/rag-aichat/document'
 import { getFileIconByExt } from '@/utils/fileIconMap'
 import DocChunkList from './DocChunkList.vue'
+import KnowledgeBaseDocContextMenu from './KnowledgeBaseDocContextMenu.vue'
 import KnowledgeBaseUploadTaskPopup from './KnowledgeBaseUploadTaskPopup.vue'
 
 defineOptions({ name: 'RagAiKnowledgeBaseDocumentPage' })
@@ -281,12 +296,16 @@ const docSearchName = ref('')
 const docViewMode = ref<'grid' | 'list'>('grid')
 const docLoading = ref(false)
 const docList = ref<any[]>([])
-const docPagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const total = ref(0)
+const queryParams = reactive({ pageNo: 1, pageSize: 100 })
 const selectedDocIds = ref<string[]>([])
 const gridSelectionPreviewIds = ref<string[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const uploadFileList = ref<any[]>([])
 const uploadPanelVisible = ref(false)
+const contextMenuVisible = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
 const chunkDrawerVisible = ref(false)
 const activeChunkDocument = ref({ id: '', name: '' })
 const gridWrapRef = ref<HTMLElement | null>(null)
@@ -320,6 +339,7 @@ const gridSelectionPreviewIdSet = computed(() => new Set(gridSelectionPreviewIds
 const isGridSelectionDragging = computed(
   () => docViewMode.value === 'grid' && selectionRectVisible.value
 )
+const selectionAnchorId = ref<string | null>(null)
 
 const selectionRectVisible = computed(() => dragState.active && dragState.moved)
 
@@ -349,10 +369,75 @@ const normalizeList = (res: any) => {
   return []
 }
 
-const fetchDocs = async () => {
+const normalizeSelectedIds = (ids: string[]) => Array.from(new Set(ids.map((id) => String(id))))
+
+const getDocIndexById = (docId: string) =>
+  docList.value.findIndex((row) => String(row.id) === docId)
+
+const getRangeDocIds = (startId: string, endId: string) => {
+  const startIndex = getDocIndexById(startId)
+  const endIndex = getDocIndexById(endId)
+  if (startIndex === -1 || endIndex === -1) return [endId]
+  const from = Math.min(startIndex, endIndex)
+  const to = Math.max(startIndex, endIndex)
+  return docList.value.slice(from, to + 1).map((row) => String(row.id))
+}
+
+const setSelectedDocIds = (ids: string[], anchorId: string | null = null) => {
+  selectedDocIds.value = normalizeSelectedIds(ids)
+  selectionAnchorId.value = anchorId
+}
+
+const selectAllDocs = () => {
+  const ids = docList.value.map((row) => String(row.id))
+  setSelectedDocIds(ids, ids[0] || null)
+}
+
+const isEditableShortcutTarget = (target: EventTarget | null) => {
+  const element = target as HTMLElement | null
+  if (!element) return false
+  return Boolean(
+    element.closest('input, textarea, select, [contenteditable="true"]') ||
+      element.closest('.el-input, .el-textarea, .el-select')
+  )
+}
+
+const handleDocShortcutKeydown = (event: KeyboardEvent) => {
+  const isMac = /Mac|iPhone|iPad|iPod/.test(window.navigator.platform)
+  const isSelectAll = (isMac ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'a'
+  if (!isSelectAll || isEditableShortcutTarget(event.target)) return
+  event.preventDefault()
+  selectAllDocs()
+}
+
+const applyDocSelection = (docId: string, event?: MouseEvent) => {
+  const isToggle = Boolean(event?.metaKey || event?.ctrlKey)
+  const isRange = Boolean(event?.shiftKey)
+
+  if (isRange && selectionAnchorId.value) {
+    const rangeIds = getRangeDocIds(selectionAnchorId.value, docId)
+    const nextIds = isToggle
+      ? normalizeSelectedIds([...selectedDocIds.value, ...rangeIds])
+      : rangeIds
+    setSelectedDocIds(nextIds, docId)
+    return
+  }
+
+  if (isToggle) {
+    const nextIds = selectedDocIds.value.includes(docId)
+      ? selectedDocIds.value.filter((id) => id !== docId)
+      : [...selectedDocIds.value, docId]
+    setSelectedDocIds(nextIds, docId)
+    return
+  }
+
+  setSelectedDocIds([docId], docId)
+}
+
+const getList = async () => {
   if (!props.datasetId) {
     docList.value = []
-    docPagination.total = 0
+    total.value = 0
     gridSelectionPreviewIds.value = []
     return
   }
@@ -360,15 +445,19 @@ const fetchDocs = async () => {
   try {
     const res = await listDocuments({
       dataset_id: props.datasetId,
-      page: docPagination.pageNo,
-      page_size: docPagination.pageSize,
+      page: queryParams.pageNo,
+      page_size: queryParams.pageSize,
       name: docSearchName.value.trim() || undefined
     })
     const docs = normalizeList(res)
     docList.value = docs
-    docPagination.total = res?.total || res?.data?.total || 0
-    selectedDocIds.value = selectedDocIds.value.filter((id) =>
-      docs.some((item: any) => String(item.id) === id)
+    total.value = res?.total || res?.data?.total || 0
+    setSelectedDocIds(
+      selectedDocIds.value.filter((id) => docs.some((item: any) => String(item.id) === id)),
+      selectionAnchorId.value &&
+        docs.some((item: any) => String(item.id) === selectionAnchorId.value)
+        ? selectionAnchorId.value
+        : null
     )
     gridSelectionPreviewIds.value = []
   } catch (error) {
@@ -420,7 +509,8 @@ const updateSelectionByRect = () => {
   }
 
   if (docViewMode.value === 'list') {
-    selectedDocIds.value = selectedIds
+    const lastSelectedId = selectedIds[selectedIds.length - 1] || null
+    setSelectedDocIds(selectedIds, lastSelectedId)
   }
 }
 
@@ -446,11 +536,13 @@ function handlePointerMove(event: PointerEvent) {
 
 function handlePointerUp() {
   if (pointerDownOnBlankSpace.value && !dragState.moved) {
-    selectedDocIds.value = []
+    setSelectedDocIds([], null)
     gridSelectionPreviewIds.value = []
   }
   if (docViewMode.value === 'grid' && dragState.moved) {
-    selectedDocIds.value = [...gridSelectionPreviewIds.value]
+    const lastPreviewId =
+      gridSelectionPreviewIds.value[gridSelectionPreviewIds.value.length - 1] || null
+    setSelectedDocIds([...gridSelectionPreviewIds.value], lastPreviewId)
   }
   if (docViewMode.value === 'grid') {
     gridSelectionPreviewIds.value = []
@@ -460,6 +552,7 @@ function handlePointerUp() {
 }
 
 const handleGridPointerDown = (event: PointerEvent) => {
+  if (event.button !== 0) return
   const target = event.target as HTMLElement | null
   if (!gridWrapRef.value || !target) return
   if (
@@ -486,6 +579,7 @@ const handleGridPointerDown = (event: PointerEvent) => {
 }
 
 const handleDocWrapPointerDown = (event: PointerEvent) => {
+  if (event.button !== 0) return
   if (docViewMode.value === 'grid') {
     handleGridPointerDown(event)
     return
@@ -514,25 +608,86 @@ const handleDocWrapPointerDown = (event: PointerEvent) => {
   window.addEventListener('pointerup', handlePointerUp)
 }
 
+const hideContextMenu = () => {
+  contextMenuVisible.value = false
+}
+
+const handleDocContextMenu = (event: MouseEvent) => {
+  event.preventDefault()
+
+  const menuWidth = 176
+  const menuHeight = selectedDocIds.value.length > 0 ? 140 : 164
+  const gap = 8
+  const maxX = Math.max(gap, window.innerWidth - menuWidth - gap)
+  const maxY = Math.max(gap, window.innerHeight - menuHeight - gap)
+  contextMenuX.value = Math.max(gap, Math.min(event.clientX, maxX))
+  contextMenuY.value = Math.max(gap, Math.min(event.clientY, maxY))
+  contextMenuVisible.value = true
+}
+
+const openContextMenuAt = (clientX: number, clientY: number, menuHeight: number) => {
+  const menuWidth = 176
+  const gap = 8
+  const maxX = Math.max(gap, window.innerWidth - menuWidth - gap)
+  const maxY = Math.max(gap, window.innerHeight - menuHeight - gap)
+  contextMenuX.value = Math.max(gap, Math.min(clientX, maxX))
+  contextMenuY.value = Math.max(gap, Math.min(clientY, maxY))
+  contextMenuVisible.value = true
+}
+
+const handleCardContextMenu = (docId: string, event: MouseEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  applyDocSelection(docId, event)
+  openContextMenuAt(event.clientX, event.clientY, selectedDocIds.value.length > 0 ? 140 : 164)
+}
+
 const handleDocCheckedChange = (docId: string, checked: boolean | string | number) => {
   const isChecked = checked === true || checked === 'true' || checked === 1
   if (isChecked) {
     if (!selectedDocIds.value.includes(docId)) {
-      selectedDocIds.value = [...selectedDocIds.value, docId]
+      setSelectedDocIds([...selectedDocIds.value, docId], docId)
     }
     return
   }
-  selectedDocIds.value = selectedDocIds.value.filter((id) => id !== docId)
+  setSelectedDocIds(
+    selectedDocIds.value.filter((id) => id !== docId),
+    selectionAnchorId.value === docId ? null : selectionAnchorId.value
+  )
 }
 
-const handleCardClick = (docId: string) => {
+const handleCardClick = (docId: string, event?: MouseEvent) => {
   if (docViewMode.value !== 'grid' || dragState.moved) return
-  selectedDocIds.value = [docId]
+  applyDocSelection(docId, event)
+}
+
+const handleListRowClick = (row: any, _column: any, event: MouseEvent) => {
+  const target = event.target as HTMLElement | null
+  if (
+    target?.closest('.el-table-column--selection') ||
+    target?.closest('.el-checkbox') ||
+    target?.closest('.el-button') ||
+    target?.closest('.el-popconfirm')
+  ) {
+    return
+  }
+  applyDocSelection(String(row.id), event)
+}
+
+const handleListRowContextMenu = (row: any, _column: any, event: MouseEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  applyDocSelection(String(row.id), event)
+  openContextMenuAt(event.clientX, event.clientY, selectedDocIds.value.length > 0 ? 140 : 164)
 }
 
 const handleListSelectionChange = (rows: any[]) => {
   if (syncingListSelection.value) return
-  selectedDocIds.value = rows.map((row) => String(row.id))
+  const lastRow = rows[rows.length - 1]
+  setSelectedDocIds(
+    rows.map((row) => String(row.id)),
+    lastRow ? String(lastRow.id) : null
+  )
 }
 
 const getListRowClassName = ({ row }: { row: any }) =>
@@ -628,7 +783,7 @@ const uploadFiles = async (files: File[]) => {
   } else {
     ElMessage.success('上传完成')
   }
-  await fetchDocs()
+  await getList()
 }
 
 const handleFileSelect = async (event: Event) => {
@@ -669,6 +824,36 @@ const handleClearUploadTasks = () => {
   uploadPanelVisible.value = false
 }
 
+const handleContextRefresh = () => {
+  hideContextMenu()
+  void getList()
+}
+
+const handleContextUpload = () => {
+  hideContextMenu()
+  fileInputRef.value?.click()
+}
+
+const handleContextBatchParse = () => {
+  hideContextMenu()
+  void handleBatchParse()
+}
+
+const handleContextBatchStopParse = () => {
+  hideContextMenu()
+  void handleBatchStopParse()
+}
+
+const handleContextBatchDelete = () => {
+  hideContextMenu()
+  void handleBatchDeleteDocs()
+}
+
+const handleContextChangeView = (mode: 'grid' | 'list') => {
+  hideContextMenu()
+  docViewMode.value = mode
+}
+
 const parseDoc = async (row: any) => {
   if (!props.datasetId) return
   try {
@@ -679,7 +864,7 @@ const parseDoc = async (row: any) => {
     ElMessage.error('解析失败')
     return
   }
-  await fetchDocs()
+  await getList()
 }
 
 const handleBatchParse = async () => {
@@ -692,7 +877,7 @@ const handleBatchParse = async () => {
     ElMessage.error('批量解析失败')
     return
   }
-  await fetchDocs()
+  await getList()
 }
 
 const handleBatchStopParse = async () => {
@@ -705,7 +890,7 @@ const handleBatchStopParse = async () => {
     ElMessage.error('批量停止解析失败')
     return
   }
-  await fetchDocs()
+  await getList()
 }
 
 const deleteDoc = async (row: any) => {
@@ -718,21 +903,21 @@ const deleteDoc = async (row: any) => {
     ElMessage.error('删除失败')
     return
   }
-  await fetchDocs()
+  await getList()
 }
 
 const handleBatchDeleteDocs = async () => {
   if (!selectedDocIds.value.length || !props.datasetId) return
   try {
     await deleteDocuments(String(props.datasetId), selectedDocIds.value.join(','))
-    selectedDocIds.value = []
+    setSelectedDocIds([], null)
     ElMessage.success('删除成功')
   } catch (error) {
     console.error(error)
     ElMessage.error('批量删除失败')
     return
   }
-  await fetchDocs()
+  await getList()
 }
 
 const downloadDoc = async (row: any) => {
@@ -761,28 +946,17 @@ const openChunkDrawer = (row: any) => {
   chunkDrawerVisible.value = true
 }
 
-const handlePageChange = (page: number) => {
-  docPagination.pageNo = page
-  fetchDocs()
-}
-
-const handleSizeChange = (size: number) => {
-  docPagination.pageSize = size
-  docPagination.pageNo = 1
-  fetchDocs()
-}
-
 watch(
   () => props.datasetId,
   async () => {
-    docPagination.pageNo = 1
+    queryParams.pageNo = 1
     docSearchName.value = ''
-    selectedDocIds.value = []
+    setSelectedDocIds([], null)
     gridSelectionPreviewIds.value = []
     uploadFileList.value = []
     uploadPanelVisible.value = false
     cardElementMap.clear()
-    await fetchDocs()
+    await getList()
   },
   { immediate: true }
 )
@@ -793,17 +967,26 @@ watch([docViewMode, docList], () => {
 
 watch(selectedDocIds, () => {
   syncListTableSelection()
+  if (!selectedDocIds.value.length) {
+    hideContextMenu()
+  }
 })
 
 watch(
   () => docViewMode.value,
   () => {
     gridSelectionPreviewIds.value = []
+    hideContextMenu()
   }
 )
 
+onMounted(() => {
+  window.addEventListener('keydown', handleDocShortcutKeydown)
+})
+
 onBeforeUnmount(() => {
   cleanupPointerListeners()
+  window.removeEventListener('keydown', handleDocShortcutKeydown)
   dragUploadActive.value = false
   dragEnterCounter.value = 0
 })
@@ -923,9 +1106,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 20px;
+  min-height: 18px;
   padding: 0 4px;
-  color: var(--app-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--app-text-tertiary, #909399);
 }
 
 .doc-grid-wrap {

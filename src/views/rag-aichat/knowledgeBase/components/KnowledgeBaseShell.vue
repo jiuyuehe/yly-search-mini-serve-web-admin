@@ -2,11 +2,9 @@
   <div class="rag-kb-shell">
     <KnowledgeBaseSidebar
       :collapsed="isSidebarCollapsed"
-      v-model:search-name="searchName"
       :dataset-groups="datasetGroups"
       :selected-dataset-id="selectedDatasetId"
       @toggle-collapse="isSidebarCollapsed = !isSidebarCollapsed"
-      @search="fetchList"
       @create="openCreateDialog"
       @select="selectDataset"
       @manage="handleManageDataset"
@@ -52,7 +50,6 @@ import {
 defineOptions({ name: 'RagAiKnowledgeBaseShell' })
 
 const isSidebarCollapsed = ref(false)
-const searchName = ref('')
 const datasetGroups = ref<{ key: string; label: string; list: any[] }[]>([])
 const selectedDatasetId = ref('')
 const selectedDataset = ref<any>(null)
@@ -102,8 +99,8 @@ const syncSelectedDataset = () => {
 
 const fetchList = async () => {
   const [myRes, inviteRes] = await Promise.allSettled([
-    getKnowledgeBaseListByMe({ dataset_name: searchName.value.trim() || undefined }),
-    getKnowledgeBaseListInvite({ dataset_name: searchName.value.trim() || undefined })
+    getKnowledgeBaseListByMe(),
+    getKnowledgeBaseListInvite()
   ])
   const personalList =
     myRes.status === 'fulfilled'
