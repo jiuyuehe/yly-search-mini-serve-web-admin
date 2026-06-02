@@ -11,41 +11,39 @@
       class="model-setting-form"
     >
       <div class="setting-layout">
-        <aside class="setting-left">
-          <div class="model-setting-card avatar-card">
-            <div class="section-header">
-              <div class="section-title">知识库图片</div>
-            </div>
-
-            <div class="avatar-content">
-              <el-upload
-                class="avatar-uploader"
-                action="#"
-                :show-file-list="false"
-                :before-upload="handleAvatarUpload"
-                accept="image/*"
-              >
-                <div v-if="form.avatar" class="avatar-preview">
-                  <el-image :src="form.avatar" fit="cover" />
-                </div>
-
-                <div v-else class="avatar-placeholder">
-                  <el-icon><Plus /></el-icon>
-                  <span>上传图片</span>
-                </div>
-              </el-upload>
-            </div>
-
-            <div class="avatar-actions">
-              <el-button v-if="form.avatar" text type="danger" @click="handleAvatarRemove">
-                移除图片
-              </el-button>
-            </div>
-          </div>
-        </aside>
-
         <main class="setting-right">
           <div class="setting-scroll">
+            <div class="model-setting-card avatar-card">
+              <div class="section-header">
+                <div class="section-title">知识库图片</div>
+              </div>
+
+              <div class="avatar-content">
+                <el-upload
+                  class="avatar-uploader"
+                  action="#"
+                  :show-file-list="false"
+                  :before-upload="handleAvatarUpload"
+                  accept="image/*"
+                >
+                  <div v-if="form.avatar" class="avatar-preview">
+                    <el-image :src="form.avatar" fit="cover" />
+                  </div>
+
+                  <div v-else class="avatar-placeholder">
+                    <el-icon><Plus /></el-icon>
+                    <span>上传图片</span>
+                  </div>
+                </el-upload>
+              </div>
+
+              <div class="avatar-actions">
+                <el-button v-if="form.avatar" text type="danger" @click="handleAvatarRemove">
+                  移除图片
+                </el-button>
+              </div>
+            </div>
+
             <div class="model-setting-card">
               <div class="section-header">
                 <div class="section-title">基础配置</div>
@@ -503,24 +501,17 @@ const handleSubmit = async () => {
 }
 
 .setting-layout {
-  display: grid;
+  display: flex;
   width: 100%;
   height: 100%;
   min-height: 0;
   flex: 1;
-  grid-template-columns: 320px minmax(0, 1fr);
+  flex-direction: column;
   gap: 16px;
-  align-items: stretch;
 }
 
-.setting-left,
 .setting-right {
   min-height: 0;
-}
-
-.setting-left {
-  display: flex;
-  flex-direction: column;
 }
 
 .setting-right {
@@ -561,35 +552,31 @@ const handleSubmit = async () => {
 
 .avatar-card {
   display: flex;
-  height: 100%;
-  min-height: 0;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: stretch;
 }
 
 .avatar-content {
   display: flex;
-  flex: 1;
-  min-height: 0;
-  justify-content: center;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .avatar-uploader {
-  width: 100%;
+  width: auto;
 }
 
 .avatar-placeholder,
 .avatar-preview {
   display: flex;
-  width: 100%;
-  max-height: 420px;
+  width: 180px;
+  height: 180px;
   overflow: hidden;
   color: var(--app-text-secondary);
   background: var(--app-bg-subtle);
   border: 1px dashed var(--app-border-color);
   border-radius: var(--app-radius-lg);
-  aspect-ratio: 1 / 1;
   align-items: center;
   justify-content: center;
 }
@@ -658,9 +645,6 @@ const handleSubmit = async () => {
 }
 
 @media (width <= 1200px) {
-  .setting-layout {
-    grid-template-columns: 280px minmax(0, 1fr);
-  }
 }
 
 @media (width <= 992px) {
@@ -673,20 +657,19 @@ const handleSubmit = async () => {
     height: auto;
   }
 
-  .setting-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .avatar-card {
-    height: auto;
-  }
-
   .avatar-content {
     flex: none;
   }
 
   .avatar-uploader {
-    max-width: 320px;
+    width: 100%;
+  }
+
+  .avatar-placeholder,
+  .avatar-preview {
+    width: min(100%, 220px);
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
 
   .setting-scroll {

@@ -4,50 +4,51 @@
       <div class="kb-workspace-info">
         <el-breadcrumb class="kb-breadcrumb" separator="/">
           <el-breadcrumb-item>
-            <button class="kb-breadcrumb-link" @click="emit('switch-docs')">网格文档管理</button>
+            <button class="kb-breadcrumb-link" @click="emit('switch-docs')">文档管理</button>
           </el-breadcrumb-item>
-          <el-breadcrumb-item>管理知识库</el-breadcrumb-item>
+          <el-breadcrumb-item>管理知识库</el-breadcrumb-item>/ {{ datasetTitle }}
         </el-breadcrumb>
-        <div class="kb-workspace-title">
-          {{ datasetTitle }}
-        </div>
       </div>
     </div>
 
     <div v-if="datasetId" class="kb-workspace-content">
       <el-tabs v-model="activeTab" class="kb-tabs">
-      <el-tab-pane label="知识问答" name="qa">
-        <div class="tab-panel">
-          <KnowledgeBaseQaPanel
-            class="tab-panel-content"
-            :dataset-id="datasetId"
-            :dataset-name="datasetTitle"
-          />
-        </div>
-      </el-tab-pane>
+        <el-tab-pane label="知识问答" name="qa">
+          <div class="tab-panel">
+            <KnowledgeBaseQaPanel
+              class="tab-panel-content"
+              :dataset-id="datasetId"
+              :dataset-name="datasetTitle"
+            />
+          </div>
+        </el-tab-pane>
 
-      <el-tab-pane label="文档管理" name="doc">
-        <div class="tab-panel">
-          <KnowledgeBaseDocManagePanel class="tab-panel-content" :dataset-id="datasetId" />
-        </div>
-      </el-tab-pane>
+        <el-tab-pane label="文档管理" name="doc">
+          <div class="tab-panel">
+            <KnowledgeBaseDocManagePanel class="tab-panel-content" :dataset-id="datasetId" />
+          </div>
+        </el-tab-pane>
 
-      <el-tab-pane label="模型设置" name="model">
-        <div class="tab-panel">
-          <ModelSettingPanel
-            class="tab-panel-content"
-            v-if="datasetId"
-            :dataset-id="datasetId"
-            @saved="handleModelSaved"
-          />
-        </div>
-      </el-tab-pane>
+        <el-tab-pane label="模型设置" name="model">
+          <div class="tab-panel">
+            <ModelSettingPanel
+              class="tab-panel-content"
+              v-if="datasetId"
+              :dataset-id="datasetId"
+              @saved="handleModelSaved"
+            />
+          </div>
+        </el-tab-pane>
 
-      <el-tab-pane label="成员管理" name="member">
-        <div class="tab-panel">
-          <MemberManagerPanel class="tab-panel-content" v-if="datasetId" :dataset-id="datasetId" />
-        </div>
-      </el-tab-pane>
+        <el-tab-pane label="成员管理" name="member">
+          <div class="tab-panel">
+            <MemberManagerPanel
+              class="tab-panel-content"
+              v-if="datasetId"
+              :dataset-id="datasetId"
+            />
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </div>
 
@@ -84,11 +85,7 @@ const emit = defineEmits<{
 const activeTab = ref<'qa' | 'doc' | 'model' | 'member'>('qa')
 
 const datasetTitle = computed(() => {
-  return (
-    props.dataset?.dataset_name ||
-    props.dataset?.name ||
-    '请选择知识库开始管理'
-  )
+  return props.dataset?.dataset_name || props.dataset?.name || '请选择知识库开始管理'
 })
 
 const handleModelSaved = (payload: Record<string, any>) => {
