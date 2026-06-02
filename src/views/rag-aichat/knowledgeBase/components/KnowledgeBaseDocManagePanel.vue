@@ -249,6 +249,55 @@ const handleDocSelectionChange = (rows: any[]) => {
   selectedDocIds.value = rows.map((row) => String(row.id))
 }
 
+const extractUploadedDocumentIds = (value: any): string[] => {
+  if (!value) return []
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => extractUploadedDocumentIds(item))
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    return [String(value)]
+  }
+  if (typeof value !== 'object') return []
+
+  const picked = [
+    value.document_ids,
+    value.documentIds,
+    value.document_id,
+    value.documentId,
+    value.ids,
+    value.id
+  ]
+  return picked.flatMap((item) => extractUploadedDocumentIds(item))
+}
+
+const parseUploadedDocuments = async (documentIds: string[]) => {
+  const uniqueDocumentIds = [...new Set(documentIds.map((id) => String(id)).filter(Boolean))]
+  if (!uniqueDocumentIds.length || !props.datasetId) return false
+
+  try {
+    await parseDocuments(String(props.datasetId), uniqueDocumentIds.join(','))
+    ElMessage.success('上传完成，已开始解析')
+    return true
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('上传完成，但自动解析失败')
+    return true
+  }
+}
+
+const collectDocumentIdsByNames = (docs: any[], fileNames: string[]) => {
+  const nameSet = new Set(fileNames.map((name) => name.trim()).filter(Boolean))
+  if (!nameSet.size) return []
+
+  return docs
+    .filter((doc) => {
+      const docName = String(doc?.name || doc?.title || doc?.document_name || '').trim()
+      return nameSet.has(docName)
+    })
+    .map((doc) => String(doc?.id || doc?.document_id || ''))
+    .filter(Boolean)
+}
+
 const handleFileSelect = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const files = Array.from(input.files || [])
@@ -259,16 +308,27 @@ const handleFileSelect = async (event: Event) => {
     uid: `${file.name}_${file.size}_${Date.now()}`,
     status: 'waiting'
   }))
+  const uploadedDocumentIds: string[] = []
   for (const file of files) {
     try {
-      await uploadDocument(String(props.datasetId), file)
+      const res = await uploadDocument(String(props.datasetId), file)
+      uploadedDocumentIds.push(...extractUploadedDocumentIds(res))
     } catch (error) {
       console.error(error)
     }
   }
-  ElMessage.success('上传完成')
   input.value = ''
   await fetchDocs()
+  const fallbackDocumentIds = collectDocumentIdsByNames(
+    docList.value,
+    files.map((file) => file.name)
+  )
+  const parsed = await parseUploadedDocuments(
+    uploadedDocumentIds.length ? uploadedDocumentIds : fallbackDocumentIds
+  )
+  if (!parsed) {
+    ElMessage.success('上传完成')
+  }
 }
 
 const parseDoc = async (row: any) => {
