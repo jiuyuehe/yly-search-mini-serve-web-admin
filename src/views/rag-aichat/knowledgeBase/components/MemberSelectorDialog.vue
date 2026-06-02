@@ -319,8 +319,8 @@ const handleClosed = () => {
 }
 
 .member-tree-wrap :deep(.el-tree) {
-  overflow: auto;
   padding: 2px 0;
+  overflow: auto;
 }
 
 .member-tree-wrap :deep(.el-table) {
@@ -329,34 +329,34 @@ const handleClosed = () => {
 
 .dept-badge {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  max-width: 180px;
   padding: 3px 10px;
+  overflow: hidden;
   font-size: 12px;
   font-weight: 500;
   color: #0052d9;
-  background: rgba(0, 82, 217, 0.06);
-  border-radius: 999px;
-  max-width: 180px;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: rgb(0 82 217 / 6%);
+  border-radius: 999px;
+  align-items: center;
+  gap: 5px;
 }
 
 .dept-empty {
   display: flex;
   min-height: 0;
+  padding: 32px 20px;
+  font-size: 13px;
+  color: var(--app-text-secondary);
+  background: var(--app-bg-subtle);
+  border: 2px dashed var(--app-border-color);
+  border-radius: var(--app-radius-md);
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 32px 20px;
-  color: var(--app-text-secondary);
-  font-size: 13px;
-  border: 2px dashed var(--app-border-color);
-  border-radius: var(--app-radius-md);
-  background: var(--app-bg-subtle);
 }
 
 .dept-empty-icon {

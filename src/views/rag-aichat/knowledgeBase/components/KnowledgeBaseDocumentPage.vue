@@ -100,6 +100,7 @@
         'doc-grid-wrap--selecting': dragState.active
       }"
       @pointerdown="handleDocWrapPointerDown"
+      @scroll.passive="handleDocWrapScroll"
       @contextmenu="handleDocContextMenu"
       @dragenter.prevent="handleDragEnter"
       @dragover.prevent="handleDragOver"
@@ -323,6 +324,12 @@ const dragState = reactive({
   currentX: 0,
   currentY: 0
 })
+const dragScrollState = reactive({
+  startLeft: 0,
+  startTop: 0,
+  currentLeft: 0,
+  currentTop: 0
+})
 
 const datasetTitle = computed(() => {
   const groupKey = String(
@@ -343,18 +350,29 @@ const selectionAnchorId = ref<string | null>(null)
 
 const selectionRectVisible = computed(() => dragState.active && dragState.moved)
 
-const selectionRectStyle = computed(() => {
-  if (!gridWrapRef.value || !selectionRectVisible.value) return {}
+const getSelectionBounds = () => {
+  if (!gridWrapRef.value || !selectionRectVisible.value) return null
   const wrapRect = gridWrapRef.value.getBoundingClientRect()
-  const left =
-    Math.min(dragState.startX, dragState.currentX) - wrapRect.left + gridWrapRef.value.scrollLeft
-  const top =
-    Math.min(dragState.startY, dragState.currentY) - wrapRect.top + gridWrapRef.value.scrollTop
-  const width = Math.abs(dragState.currentX - dragState.startX)
-  const height = Math.abs(dragState.currentY - dragState.startY)
+  const startX = dragState.startX - wrapRect.left + dragScrollState.startLeft
+  const startY = dragState.startY - wrapRect.top + dragScrollState.startTop
+  const currentX = dragState.currentX - wrapRect.left + dragScrollState.currentLeft
+  const currentY = dragState.currentY - wrapRect.top + dragScrollState.currentTop
   return {
-    left: `${left}px`,
-    top: `${top}px`,
+    minX: Math.min(startX, currentX),
+    maxX: Math.max(startX, currentX),
+    minY: Math.min(startY, currentY),
+    maxY: Math.max(startY, currentY)
+  }
+}
+
+const selectionRectStyle = computed(() => {
+  const bounds = getSelectionBounds()
+  if (!bounds) return {}
+  const width = bounds.maxX - bounds.minX
+  const height = bounds.maxY - bounds.minY
+  return {
+    left: `${bounds.minX}px`,
+    top: `${bounds.minY}px`,
     width: `${width}px`,
     height: `${height}px`
   }
@@ -478,10 +496,11 @@ const setCardRef = (id: string) => (el: Element | null) => {
 
 const updateSelectionByRect = () => {
   if (!gridWrapRef.value) return
-  const minX = Math.min(dragState.startX, dragState.currentX)
-  const maxX = Math.max(dragState.startX, dragState.currentX)
-  const minY = Math.min(dragState.startY, dragState.currentY)
-  const maxY = Math.max(dragState.startY, dragState.currentY)
+  const bounds = getSelectionBounds()
+  if (!bounds) return
+  const wrapRect = gridWrapRef.value.getBoundingClientRect()
+  const scrollLeft = gridWrapRef.value.scrollLeft
+  const scrollTop = gridWrapRef.value.scrollTop
 
   let selectedIds: string[] = []
   if (docViewMode.value === 'grid') {
@@ -490,7 +509,16 @@ const updateSelectionByRect = () => {
         const el = cardElementMap.get(String(row.id))
         if (!el) return false
         const rect = el.getBoundingClientRect()
-        return !(rect.right < minX || rect.left > maxX || rect.bottom < minY || rect.top > maxY)
+        const itemLeft = rect.left - wrapRect.left + scrollLeft
+        const itemRight = rect.right - wrapRect.left + scrollLeft
+        const itemTop = rect.top - wrapRect.top + scrollTop
+        const itemBottom = rect.bottom - wrapRect.top + scrollTop
+        return !(
+          itemRight < bounds.minX ||
+          itemLeft > bounds.maxX ||
+          itemBottom < bounds.minY ||
+          itemTop > bounds.maxY
+        )
       })
       .map((row) => String(row.id))
     gridSelectionPreviewIds.value = selectedIds
@@ -503,7 +531,16 @@ const updateSelectionByRect = () => {
       .filter(({ rowEl, rowData }) => {
         if (!rowData) return false
         const rect = rowEl.getBoundingClientRect()
-        return !(rect.right < minX || rect.left > maxX || rect.bottom < minY || rect.top > maxY)
+        const itemLeft = rect.left - wrapRect.left + scrollLeft
+        const itemRight = rect.right - wrapRect.left + scrollLeft
+        const itemTop = rect.top - wrapRect.top + scrollTop
+        const itemBottom = rect.bottom - wrapRect.top + scrollTop
+        return !(
+          itemRight < bounds.minX ||
+          itemLeft > bounds.maxX ||
+          itemBottom < bounds.minY ||
+          itemTop > bounds.maxY
+        )
       })
       .map(({ rowData }) => String(rowData.id))
   }
@@ -529,6 +566,16 @@ function handlePointerMove(event: PointerEvent) {
     Math.abs(dragState.currentX - dragState.startX) > 4 ||
     Math.abs(dragState.currentY - dragState.startY) > 4
   ) {
+    dragState.moved = true
+  }
+  updateSelectionByRect()
+}
+
+function handleDocWrapScroll() {
+  if (!gridWrapRef.value || !dragState.active) return
+  dragScrollState.currentLeft = gridWrapRef.value.scrollLeft
+  dragScrollState.currentTop = gridWrapRef.value.scrollTop
+  if (!dragState.moved) {
     dragState.moved = true
   }
   updateSelectionByRect()
@@ -574,6 +621,10 @@ const handleGridPointerDown = (event: PointerEvent) => {
   dragState.startY = event.clientY
   dragState.currentX = event.clientX
   dragState.currentY = event.clientY
+  dragScrollState.startLeft = gridWrapRef.value.scrollLeft
+  dragScrollState.startTop = gridWrapRef.value.scrollTop
+  dragScrollState.currentLeft = dragScrollState.startLeft
+  dragScrollState.currentTop = dragScrollState.startTop
   window.addEventListener('pointermove', handlePointerMove)
   window.addEventListener('pointerup', handlePointerUp)
 }
@@ -604,6 +655,10 @@ const handleDocWrapPointerDown = (event: PointerEvent) => {
   dragState.startY = event.clientY
   dragState.currentX = event.clientX
   dragState.currentY = event.clientY
+  dragScrollState.startLeft = gridWrapRef.value.scrollLeft
+  dragScrollState.startTop = gridWrapRef.value.scrollTop
+  dragScrollState.currentLeft = dragScrollState.startLeft
+  dragScrollState.currentTop = dragScrollState.startTop
   window.addEventListener('pointermove', handlePointerMove)
   window.addEventListener('pointerup', handlePointerUp)
 }

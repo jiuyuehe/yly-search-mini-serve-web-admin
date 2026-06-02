@@ -1,5 +1,6 @@
 import request from '@/config/axios'
-import { getAccessToken } from '@/utils/auth'
+import { config } from '@/config/axios/config'
+import { getAccessToken, getTenantId, getVisitTenantId } from '@/utils/auth'
 
 export interface ChatReferenceChunk {
   [key: string]: any
@@ -73,6 +74,7 @@ function buildChatCompletionPayload(params: ChatCompletionStreamRequest) {
   const datasetIds = normalizeDatasetIds(params.datasetIds)
   return {
     question: String(params.question || '').trim(),
+    sessionId: String(params.sessionId || '').trim(),
     session_id: String(params.sessionId || '').trim(),
     stream: true,
     enable_deep_think: Boolean(params.enableDeepThink),
@@ -84,6 +86,33 @@ function buildChatCompletionFormData(params: ChatCompletionStreamRequest) {
   const formData = new FormData()
   formData.append('json', JSON.stringify(buildChatCompletionPayload(params)))
   return formData
+}
+
+function buildApiUrl(path: string) {
+  const baseUrl = String(config.base_url || '').replace(/\/+$/, '')
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!baseUrl) return normalizedPath
+  return `${baseUrl}${normalizedPath}`
+}
+
+function buildStreamHeaders() {
+  const headers = new Headers()
+  const token = getAccessToken()
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+  if (import.meta.env.VITE_APP_TENANT_ENABLE === 'true') {
+    const tenantId = getTenantId()
+    if (tenantId) headers.set('tenant-id', tenantId)
+
+    const visitTenantId = getVisitTenantId()
+    if (token && visitTenantId) {
+      headers.set('visit-tenant-id', visitTenantId)
+    }
+  }
+
+  return headers
 }
 
 async function parseStreamError(response: Response) {
@@ -108,18 +137,12 @@ async function requestChatCompletionStreamInternal(
   params: ChatCompletionStreamRequest,
   signal?: AbortSignal
 ): Promise<Response> {
-  const headers = new Headers()
-  const token = getAccessToken() || document.cookie.match(/(?:^|;\s*)token=([^;]+)/)?.[1]
-  if (token) {
-    headers.set('Authorization', `Bearer ${decodeURIComponent(token)}`)
-  }
-
   const response = await fetch(
-    `/admin-api/ragflow/session/completions/${params.sessionId}`,
+    buildApiUrl(`/ragflow/session/completions/${params.chatId}`),
     {
       method: 'POST',
       body: buildChatCompletionFormData(params),
-      headers,
+      headers: buildStreamHeaders(),
       signal
     }
   )

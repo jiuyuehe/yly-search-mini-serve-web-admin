@@ -1,175 +1,93 @@
 <template>
-  <el-container class="rag-chat-page">
-    <ChatSessionList
-      v-if="!hideSessionList && !isMobile"
-      :session-list="sessionList"
-      :active-session-id="activeSessionId"
-      :can-create-session="canCreateSession && !resettingSession"
-      :can-reset-session="canCreateSession && !!chatAssistantId && !loading"
-      :resetting-session="resettingSession"
-      :collapsed="isSidebarCollapsed"
-      :show-toggle-controls="props.allowSessionSidebarToggle"
-      @new-session="newSession"
-      @reset-session="resetAllSessions"
-      @switch-session="switchSession"
-      @delete-session="deleteSession"
-      @rename-session="renameSession"
-      @collapse="toggleSidebar"
-    />
-
-    <el-container class="rag-chat-main">
-      <el-header class="rag-chat-main-header">
-        <div class="text-18px font-bold truncate">
-          {{ panelTitle }}
-          <span v-if="currentMessages.length">({{ currentMessages.length }})</span>
-        </div>
-        <div v-if="activeSession" class="flex items-center gap-8px">
-          <el-button type="primary" plain size="small" @click="openPromptDialog">
-            <el-icon class="mr-5px"><Setting /></el-icon>
-            {{ assistantLabel }}
-          </el-button>
-          <el-button size="small" @click="handlerMessageClear">
-            <el-icon><Delete /></el-icon>
-          </el-button>
-          <el-button size="small" @click="handleGoTopMessage">
-            <el-icon><Top /></el-icon>
-          </el-button>
-        </div>
-      </el-header>
-
-      <el-main class="rag-chat-message-area">
-        <div class="rag-chat-message-shell">
-          <div v-if="!activeSession" class="rag-chat-empty-state">
-            <el-empty description="暂无会话，点击左侧“新的会话”开始提问" />
-          </div>
-
-          <template v-else>
-            <div v-if="activeMessageListLoading" class="rag-chat-loading">
-              <el-skeleton :rows="6" animated />
-            </div>
-
-            <div v-else-if="!currentMessages.length" class="rag-chat-empty-state">
-              <el-empty description="当前会话暂无消息" />
-            </div>
-
-            <div v-else class="rag-chat-message-list" ref="messageListRef" @scroll="handleMessageScroll">
-              <div
-                v-for="(item, index) in currentMessages"
-                :key="getMessageKey(item, index)"
-                class="rag-chat-message-row"
-                :class="item.role"
-              >
-                <el-avatar :size="34" :src="item.role === 'user' ? userAvatar : aiAvatar" />
-                <div class="rag-chat-message-card">
-                  <div class="rag-chat-message-meta">
-                    <span>{{ item.role === 'user' ? '用户' : '助手' }}</span>
-                  </div>
-                  <div v-if="item.reasoning" class="rag-chat-reasoning">
-                    <el-collapse>
-                      <el-collapse-item title="思考过程" name="reasoning">
-                        <MarkdownView :content="item.reasoning" />
-                      </el-collapse-item>
-                    </el-collapse>
-                  </div>
-                  <MarkdownView v-if="item.content" :content="item.content" />
-                  <div v-else-if="activeSessionStreaming && item.role === 'assistant'" class="flex items-center text-#667085">
-                    <el-icon class="is-loading"><Loading /></el-icon>
-                    <span class="ml-5px">思考中...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-      </el-main>
-
-      <el-footer class="rag-chat-footer">
-        <ChatPanel
-          :session-id="activeSessionId"
-          :chat-id="chatAssistantId"
-          :title="panelTitle"
-          :messages="currentMessages"
-          :input-type="resolvedDatasetId ? 'input' : props.inputType"
-          :show-knowledge-base-selector="props.showKnowledgeBaseSelector"
-          :knowledge-base-options="knowledgeBaseOptions"
-          :selected-knowledge-base-ids="selectedKnowledgeBaseIds"
-          :assistant-scene="assistantScene"
-          :loading="loading"
-          :streaming="activeSessionStreaming"
-          @send="handleSend"
-          @stop="stopActiveStream"
-          @knowledge-base-change="resetChatByKnowledgeBase"
-          @show-session-drawer="showSessionDrawer = true"
-        />
-      </el-footer>
-    </el-container>
-
-    <el-drawer
-      v-if="!hideSessionList && isMobile"
-      v-model="showSessionDrawer"
-      direction="ltr"
-      size="280px"
-      :with-header="false"
-    >
+  <div class="chat-page-shell">
+    <el-container class="chat-container">
       <ChatSessionList
+        v-if="!hideSessionList && !isMobile"
         :session-list="sessionList"
         :active-session-id="activeSessionId"
         :can-create-session="canCreateSession && !resettingSession"
         :can-reset-session="canCreateSession && !!chatAssistantId && !loading"
         :resetting-session="resettingSession"
-        :collapsed="false"
+        :collapsed="isSidebarCollapsed"
         :show-toggle-controls="props.allowSessionSidebarToggle"
-        @switch-session="switchSession"
-        @delete-session="deleteSession"
         @new-session="newSession"
         @reset-session="resetAllSessions"
+        @switch-session="switchSession"
+        @delete-session="deleteSession"
         @rename-session="renameSession"
-        @collapse="() => (showSessionDrawer = false)"
+        @collapse="toggleSidebar"
       />
-    </el-drawer>
 
-    <PromptSettingDialog
-      v-model:visible="showPromptDialog"
-      :knowledge-base="currentKnowledgeBases"
-      :chat-id="chatAssistantId"
-      :assistant-scene="assistantScene"
-    />
-    <ModelSettingDialog
-      v-model:visible="showModelDialog"
-      :knowledge-base="currentKnowledgeBases"
-      :chat-id="chatAssistantId"
-      :assistant-scene="assistantScene"
-    />
-  </el-container>
+      <ChatPanel
+        :session-id="activeSessionId"
+        :chat-id="chatAssistantId"
+        :title="panelTitle"
+        :messages="currentMessages"
+        :input-type="resolvedDatasetId ? 'input' : props.inputType"
+        :show-knowledge-base-selector="props.showKnowledgeBaseSelector"
+        :knowledge-base-options="knowledgeBaseOptions"
+        :selected-knowledge-base-ids="selectedKnowledgeBaseIds"
+        :assistant-scene="assistantScene"
+        :loading="loading"
+        :streaming="activeSessionStreaming"
+        @send="handleSend"
+        @stop="stopActiveStream"
+        @knowledge-base-change="resetChatByKnowledgeBase"
+        @show-session-drawer="showSessionDrawer = true"
+      />
+
+      <el-drawer
+        v-if="!hideSessionList && isMobile"
+        v-model="showSessionDrawer"
+        direction="ltr"
+        size="280px"
+        :with-header="false"
+      >
+        <ChatSessionList
+          :session-list="sessionList"
+          :active-session-id="activeSessionId"
+          :can-create-session="canCreateSession && !resettingSession"
+          :can-reset-session="canCreateSession && !!chatAssistantId && !loading"
+          :resetting-session="resettingSession"
+          :collapsed="false"
+          :show-toggle-controls="props.allowSessionSidebarToggle"
+          @switch-session="switchSession"
+          @delete-session="deleteSession"
+          @new-session="newSession"
+          @reset-session="resetAllSessions"
+          @rename-session="renameSession"
+          @collapse="() => (showSessionDrawer = false)"
+        />
+      </el-drawer>
+    </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Loading, Setting, Top } from '@element-plus/icons-vue'
-
-import MarkdownView from '@/components/MarkdownView/index.vue'
-import userAvatar from '@/assets/imgs/avatar.jpg'
-import aiAvatar from '@/assets/imgs/avatar.gif'
-
-import ChatPanel from '../components/ChatPanel.vue'
-import ChatSessionList from '../components/ChatSessionList.vue'
-import PromptSettingDialog from '../components/PromptSettingDialog.vue'
-import ModelSettingDialog from '../components/ModelSettingDialog.vue'
-import { useChatStream } from '../hooks/useChatStream'
-import { getKnowledgeBaseListByMe, getKnowledgeBaseListInvite } from '@/api/rag-aichat/knowledgeBase'
+import { useRoute } from 'vue-router'
+import type {
+  ChatHistoryMessage,
+  ChatReferenceChunk,
+  ChatStreamEventPayload
+} from '@/api/rag-aichat/chat'
 import {
   createChatAssistant,
   createSession,
   deleteAllChatAssistants,
   deleteSessions,
-  listChatAssistants,
   listHistoryMessage,
   listSessions,
   updateChatAssistant,
   updateSession
 } from '@/api/rag-aichat/chat'
+import {
+  getKnowledgeBaseListByMe,
+  getKnowledgeBaseListInvite
+} from '@/api/rag-aichat/knowledgeBase'
+import { useChatStream } from '../hooks/useChatStream'
+import ChatPanel from './components/ChatPanel.vue'
+import ChatSessionList from './components/ChatSessionList.vue'
 
 defineOptions({ name: 'RagAiChatPage' })
 
@@ -186,9 +104,22 @@ type UiChatMessage = {
   role: 'user' | 'assistant' | 'system' | 'error'
   content: string
   reasoning: string
-  reference: any[]
+  reference: ChatReferenceChunk[]
   rawContent: string
 }
+
+type SendPayload = {
+  question: string
+  datasetIds?: string[]
+  replay?: boolean
+}
+
+const GENERAL_CHAT_SCENE = 'GENERAL_CHAT'
+const KB_CHAT_SCENE = 'KB_CHAT'
+const DEFAULT_SESSION_NAME = '新的会话'
+const SESSION_NAME_MAX_LENGTH = 24
+const knowledgeBaseStorageKey = 'selectedKnowledgeBaseIds'
+const legacyKnowledgeBaseStorageKey = 'selectedKnowledgeBaseId'
 
 const props = defineProps({
   inputType: { type: String, default: 'sender' },
@@ -197,39 +128,36 @@ const props = defineProps({
   useRouteDatasetId: { type: Boolean, default: true },
   showKnowledgeBaseSelector: { type: Boolean, default: true },
   hideSessionList: { type: Boolean, default: false },
-  allowSessionSidebarToggle: { type: Boolean, default: true }
+  allowSessionSidebarToggle: { type: Boolean, default: true },
+  sessionSidebarVisible: { type: Boolean, default: undefined }
 })
-
-const DEFAULT_SESSION_NAME = '新的会话'
-const SESSION_NAME_MAX_LENGTH = 24
-const knowledgeBaseStorageKey = 'selectedKnowledgeBaseIds'
-const legacyKnowledgeBaseStorageKey = 'selectedKnowledgeBaseId'
-const GENERAL_CHAT_SCENE = 'GENERAL_CHAT'
-const KB_CHAT_SCENE = 'KB_CHAT'
 
 const route = useRoute()
 const { isStreamActive, sendChatStream, stopStream } = useChatStream()
 
 const resolvedDatasetId = computed(
-  () =>
-    props.fixedDatasetId ||
-    (props.useRouteDatasetId ? route.params.id : '') ||
-    ''
+  () => props.fixedDatasetId || (props.useRouteDatasetId ? route.params.id : '') || ''
 )
-const assistantScene = computed(() =>
-  resolvedDatasetId.value ? KB_CHAT_SCENE : GENERAL_CHAT_SCENE
+const assistantScene = computed(() => (resolvedDatasetId.value ? KB_CHAT_SCENE : GENERAL_CHAT_SCENE))
+const resetChatAssistantParams = computed(() => {
+  const params: { chatType: string; datasetId?: string } = {
+    chatType: assistantScene.value
+  }
+  if (assistantScene.value === KB_CHAT_SCENE && resolvedDatasetId.value) {
+    params.datasetId = String(resolvedDatasetId.value)
+  }
+  return params
+})
+const resetSessionConfirmBody = computed(() =>
+  assistantScene.value === KB_CHAT_SCENE
+    ? '重置后会删除当前知识库对应的聊天助手和历史会话，且无法恢复。是否继续？'
+    : '重置后会删除当前普通聊天助手和历史会话，且无法恢复。是否继续？'
 )
-const assistantLabel = computed(() => (assistantScene.value === KB_CHAT_SCENE ? '知识库设置' : '助手设置'))
-const activeSessionStreaming = computed(() =>
-  isSessionStreaming(activeSessionId.value)
-)
-const activeSession = computed(() =>
-  sessionList.value.find((item) => item.id === activeSessionId.value) || null
-)
+const hideSessionList = computed(() => props.hideSessionList)
+const isMobile = computed(() => windowWidth.value <= 768)
+const activeSessionStreaming = computed(() => isSessionStreaming(activeSessionId.value))
 const activeSessionTitle = computed(() => {
-  const currentSession = sessionList.value.find(
-    (item) => item.id === activeSessionId.value
-  )
+  const currentSession = sessionList.value.find((item) => item.id === activeSessionId.value)
   return trimSessionName(currentSession?.name) || DEFAULT_SESSION_NAME
 })
 const panelTitle = computed(() => {
@@ -240,21 +168,9 @@ const panelTitle = computed(() => {
   if (currentKnowledgeBases.length === 1) {
     return currentKnowledgeBases[0]?.shortLabel || currentKnowledgeBases[0]?.label || activeSessionTitle.value || 'AI问答'
   }
-  if (currentKnowledgeBases.length > 1) {
-    return `已选择 ${currentKnowledgeBases.length} 个知识库`
-  }
-  if (activeSessionTitle.value === DEFAULT_SESSION_NAME) {
-    return 'AI问答'
-  }
+  if (currentKnowledgeBases.length > 1) return `已选择 ${currentKnowledgeBases.length} 个知识库`
+  if (activeSessionTitle.value === DEFAULT_SESSION_NAME) return 'AI问答'
   return activeSessionTitle.value || 'AI问答'
-})
-const canCreateSession = computed(() => Boolean(chatAssistantId.value))
-const isMobile = computed(() => windowWidth.value <= 768)
-const currentKnowledgeBases = computed(() => {
-  if (!selectedKnowledgeBaseIds.value.length) return []
-  return knowledgeBaseOptions.value.filter((item) =>
-    selectedKnowledgeBaseIds.value.includes(item.value)
-  )
 })
 
 const chatAssistantId = ref('')
@@ -264,22 +180,23 @@ const currentMessages = ref<UiChatMessage[]>([])
 const sessionMessageCache = ref<Record<string, UiChatMessage[]>>({})
 const knowledgeBaseOptions = ref<any[]>([])
 const selectedKnowledgeBaseIds = ref<string[]>([])
+const canCreateSession = ref(true)
 const loading = ref(false)
 const resettingSession = ref(false)
 const isSidebarCollapsed = ref(false)
 const showSessionDrawer = ref(false)
-const showPromptDialog = ref(false)
-const showModelDialog = ref(false)
 const initSeq = ref(0)
 const windowWidth = ref(window.innerWidth)
 const autoNamingSessionIds = new Set<string>()
-const messageListRef = ref<HTMLElement | null>(null)
+
+const showRequestError = (error: any, fallback: string) => {
+  const message = error?.msg || error?.message || error?.response?.data?.msg || fallback
+  ElMessage.error(message)
+}
 
 const normalizeKnowledgeBaseIds = (value: any): string[] => {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item || '').trim())
-      .filter(Boolean)
+    return value.map((item) => String(item || '').trim()).filter(Boolean)
   }
   if (typeof value === 'string') {
     const trimmed = value.trim()
@@ -288,6 +205,17 @@ const normalizeKnowledgeBaseIds = (value: any): string[] => {
   if (value === null || value === undefined) return []
   return [String(value).trim()].filter(Boolean)
 }
+
+const normalizeReferenceList = (reference: any): ChatReferenceChunk[] => {
+  if (Array.isArray(reference)) return reference
+  if (Array.isArray(reference?.chunks)) return reference.chunks
+  return []
+}
+
+const buildStreamKey = (sessionId: string) => `${chatAssistantId.value || 'chat'}:${String(sessionId || '')}`
+
+const isSessionStreaming = (sessionId: string) =>
+  Boolean(sessionId && isStreamActive(buildStreamKey(sessionId)))
 
 const splitAssistantMessage = (rawContent: any) => {
   const text = String(rawContent ?? '')
@@ -298,10 +226,17 @@ const splitAssistantMessage = (rawContent: any) => {
   }
 }
 
-const normalizeReferenceList = (reference: any): any[] => {
-  if (Array.isArray(reference)) return reference
-  if (Array.isArray(reference?.chunks)) return reference.chunks
-  return []
+const resolveStreamRawContent = (
+  payload: ChatStreamEventPayload,
+  currentRawContent: string
+) => {
+  if (typeof payload.fullAnswer === 'string' && payload.fullAnswer.length > 0) {
+    return payload.fullAnswer
+  }
+  if (typeof payload.delta === 'string' && payload.delta.length > 0) {
+    return `${currentRawContent || ''}${payload.delta}`
+  }
+  return currentRawContent || ''
 }
 
 const createUiMessage = (payload: Partial<UiChatMessage> & { role: UiChatMessage['role'] }) => {
@@ -318,7 +253,6 @@ const createUiMessage = (payload: Partial<UiChatMessage> & { role: UiChatMessage
       rawContent
     } as UiChatMessage
   }
-
   return {
     id: payload.id || '',
     localId: payload.localId,
@@ -343,123 +277,58 @@ const buildUiMessagesFromSession = (messages: any[] = []) =>
     )
     .reverse()
 
-const getSessionById = (sessionId: string) =>
-  sessionList.value.find((session) => session.id === sessionId)
+const hasPairedUserQuestion = (messages: UiChatMessage[], index: number) =>
+  messages[index + 1]?.role === 'user'
 
-const hasCachedSessionMessages = (sessionId: string) =>
-  Object.prototype.hasOwnProperty.call(sessionMessageCache.value, sessionId)
-
-const getSessionMessages = (sessionId: string) => {
-  if (!sessionId) return []
-  if (hasCachedSessionMessages(sessionId)) {
-    return sessionMessageCache.value[sessionId] || []
-  }
-  if (sessionId === activeSessionId.value) {
-    return currentMessages.value
-  }
-  const session = getSessionById(sessionId)
-  return buildUiMessagesFromSession(session?.messages || [])
-}
-
-const setSessionMessages = (sessionId: string, messages: UiChatMessage[]) => {
-  if (!sessionId) return
-  const nextMessages = messages || []
-  sessionMessageCache.value = {
-    ...sessionMessageCache.value,
-    [sessionId]: nextMessages
-  }
-  if (activeSessionId.value === sessionId) {
-    currentMessages.value = nextMessages
-  }
-}
-
-const updateSessionMessages = (
-  sessionId: string,
-  updater: (messages: UiChatMessage[]) => UiChatMessage[]
+const mergeHistoryIntoMessages = (
+  messages: UiChatMessage[],
+  histories: ChatHistoryMessage[] = []
 ) => {
-  setSessionMessages(sessionId, updater(getSessionMessages(sessionId)))
+  if (!histories.length) return messages
+
+  const historyMap = new Map<string, ChatHistoryMessage>()
+  histories.forEach((item) => {
+    const key = String(item.msgId || item.id || '').trim()
+    if (key) historyMap.set(key, item)
+  })
+
+  const assistantHistories = histories
+    .filter((item) => String(item.role || 'assistant') === 'assistant')
+    .slice()
+    .reverse()
+  let assistantIndex = 0
+  const usedHistories = new Set<ChatHistoryMessage>()
+
+  return messages.map((message, index) => {
+    if (message.role !== 'assistant') return message
+    if (!hasPairedUserQuestion(messages, index)) return message
+
+    let matchedHistory = (message.id && historyMap.get(String(message.id))) || undefined
+    if (matchedHistory) usedHistories.add(matchedHistory)
+
+    while (!matchedHistory && assistantIndex < assistantHistories.length) {
+      const candidate = assistantHistories[assistantIndex++]
+      if (usedHistories.has(candidate)) continue
+      matchedHistory = candidate
+      usedHistories.add(candidate)
+    }
+
+    if (!matchedHistory) return message
+    const rawContent = matchedHistory.rawContent || message.rawContent
+    const splitResult = splitAssistantMessage(rawContent)
+    return {
+      ...message,
+      id: message.id || String(matchedHistory.msgId || ''),
+      rawContent,
+      content: matchedHistory.content ?? message.content ?? splitResult.content,
+      reasoning: matchedHistory.reasoning ?? message.reasoning ?? splitResult.reasoning,
+      reference:
+        normalizeReferenceList(matchedHistory.reference).length > 0
+          ? normalizeReferenceList(matchedHistory.reference)
+          : message.reference
+    }
+  })
 }
-
-const setLocalSessionName = (sessionId: string, name: string) => {
-  const session = getSessionById(sessionId)
-  if (session) {
-    session.name = name
-  }
-}
-
-const trimSessionName = (value: any) =>
-  String(value ?? '')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-const truncateSessionName = (value: string, max = SESSION_NAME_MAX_LENGTH) =>
-  value.length <= max ? value : `${value.slice(0, max).trim()}...`
-
-const summarizeQuestionTitle = (value: string) => {
-  const normalized = String(value ?? '')
-    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
-    .replace(/\[[^\]]*]\([^)]*\)/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/[`*_>#]+/g, ' ')
-    .replace(/(^|\s)-+\s+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  if (!normalized) return ''
-  return (
-    normalized
-      .split(/[。！？!?；;，,\n]/)
-      .map((item) => trimSessionName(item))
-      .find(Boolean) || normalized
-  )
-}
-
-const buildSessionNameFromQuestion = (question: string) => {
-  const summary = summarizeQuestionTitle(question)
-  if (!summary) return DEFAULT_SESSION_NAME
-  return truncateSessionName(summary)
-}
-
-const isUntitledSession = (session: any) => {
-  const name = trimSessionName(session?.name)
-  return !name || name === DEFAULT_SESSION_NAME
-}
-
-const syncSessionName = async (sessionId: string, name: string) => {
-  if (!chatAssistantId.value || !sessionId) return
-  const nextName = trimSessionName(name) || DEFAULT_SESSION_NAME
-  const session = getSessionById(sessionId)
-  const previousName = trimSessionName(session?.name) || DEFAULT_SESSION_NAME
-  if (previousName === nextName) return
-
-  setLocalSessionName(sessionId, nextName)
-  try {
-    await updateSession(chatAssistantId.value, sessionId, { name: nextName })
-  } catch (error) {
-    setLocalSessionName(sessionId, previousName)
-    throw error
-  }
-}
-
-const autoRenameSession = async (sessionId: string, question: string) => {
-  if (!sessionId || autoNamingSessionIds.has(sessionId)) return
-  const session = getSessionById(sessionId)
-  if (!isUntitledSession(session)) return
-  const generatedName = buildSessionNameFromQuestion(question)
-  if (!generatedName || generatedName === DEFAULT_SESSION_NAME) return
-
-  autoNamingSessionIds.add(sessionId)
-  try {
-    await syncSessionName(sessionId, generatedName)
-  } finally {
-    autoNamingSessionIds.delete(sessionId)
-  }
-}
-
-const isSessionStreaming = (sessionId: string) =>
-  Boolean(sessionId && isStreamActive(`${chatAssistantId.value || 'chat'}:${String(sessionId || '')}`))
-
-const buildStreamKey = (sessionId: string) =>
-  `${chatAssistantId.value || 'chat'}:${String(sessionId || '')}`
 
 const persistKnowledgeBaseIds = (ids: string[]) => {
   localStorage.setItem(knowledgeBaseStorageKey, JSON.stringify(ids))
@@ -468,6 +337,14 @@ const persistKnowledgeBaseIds = (ids: string[]) => {
 
 const areKnowledgeBaseIdsEqual = (left: string[] = [], right: string[] = []) =>
   left.length === right.length && left.every((id, index) => id === right[index])
+
+const saveChatAssistantKnowledgeBases = async (knowledgeBaseIds: string[]) => {
+  if (!chatAssistantId.value) return
+  await updateChatAssistant(chatAssistantId.value, {
+    scene: assistantScene.value,
+    dataset_ids: knowledgeBaseIds
+  })
+}
 
 const normalizeKnowledgeBaseOptions = (list: any[] = [], group: 'personal' | 'campus') => {
   const groupLabel = group === 'personal' ? '个人知识库' : '共享知识库'
@@ -498,19 +375,15 @@ const mergeKnowledgeBaseOptions = (personalList: any[] = [], campusList: any[] =
   ]
   const dedupedMap = new Map<string, any>()
   merged.forEach((item) => {
-    if (!dedupedMap.has(item.value)) {
-      dedupedMap.set(item.value, item)
-    }
+    if (!dedupedMap.has(item.value)) dedupedMap.set(item.value, item)
   })
   return Array.from(dedupedMap.values())
 }
 
 const resolveInitialKnowledgeBaseIds = (options: any[]) => {
   if (!options.length) return []
-
   const availableIds = new Set(options.filter((item) => !item.disabled).map((item) => item.value))
   let storedIds: string[] = []
-
   const raw = localStorage.getItem(knowledgeBaseStorageKey)
   if (raw) {
     try {
@@ -519,504 +392,665 @@ const resolveInitialKnowledgeBaseIds = (options: any[]) => {
       storedIds = normalizeKnowledgeBaseIds(raw)
     }
   }
-
   if (!storedIds.length) {
     storedIds = normalizeKnowledgeBaseIds(localStorage.getItem(legacyKnowledgeBaseStorageKey) || '')
   }
-
   const matchedIds = storedIds.filter((id) => availableIds.has(id))
   return matchedIds.length ? matchedIds : []
 }
 
-const syncKnowledgeBaseSelection = async (ids: string[]) => {
-  if (!chatAssistantId.value) return
-  const uniqueIds = Array.from(new Set(ids))
-  selectedKnowledgeBaseIds.value = uniqueIds
-  persistKnowledgeBaseIds(uniqueIds)
-  await updateChatAssistant(chatAssistantId.value, {
-    scene: assistantScene.value,
-    dataset_ids: uniqueIds
-  })
+const trimSessionName = (value: any) =>
+  String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const extractQuestionTitle = (value: any) =>
+  String(value ?? '')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[`*_>#]+/g, ' ')
+    .replace(/(^|\s)-+\s+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const truncateSessionName = (value: string, max = SESSION_NAME_MAX_LENGTH) =>
+  value.length <= max ? value : `${value.slice(0, max).trim()}...`
+
+const summarizeQuestionTitle = (value: string) => {
+  const normalized = extractQuestionTitle(value)
+  if (!normalized) return ''
+  return normalized
+    .split(/[。！？!?；;，,\n]/)
+    .map((item) => trimSessionName(item))
+    .find(Boolean) || normalized
 }
 
-const loadKnowledgeBases = async () => {
-  const [myRes, inviteRes] = await Promise.allSettled([
-    getKnowledgeBaseListByMe({}),
-    getKnowledgeBaseListInvite({})
-  ])
-  const resolveListResponse = (result: PromiseSettledResult<any>) => {
-    if (result.status !== 'fulfilled') return []
-    const data = result.value?.data || result.value
-    return data?.list || data?.items || data || []
-  }
-  const personalList = resolveListResponse(myRes)
-  const campusList = resolveListResponse(inviteRes)
-  knowledgeBaseOptions.value = mergeKnowledgeBaseOptions(personalList, campusList)
-  const initialIds = resolveInitialKnowledgeBaseIds(knowledgeBaseOptions.value)
-  if (!selectedKnowledgeBaseIds.value.length && initialIds.length) {
-    selectedKnowledgeBaseIds.value = initialIds
-  }
+const buildSessionNameFromQuestion = (question: string) => {
+  const summary = summarizeQuestionTitle(question)
+  if (!summary) return DEFAULT_SESSION_NAME
+  return truncateSessionName(summary)
 }
 
-const ensureAssistant = async () => {
-  let items: any[] = []
-  try {
-    const res = await listChatAssistants({ chat_id: resolvedDatasetId.value ? String(resolvedDatasetId.value) : undefined })
-    items = res.data || res.items || []
-  } catch {
-    // 未找到助手，将自动创建
-  }
-  const current = items.find((item: any) => String(item?.scene || '') === assistantScene.value) || items[0]
-  if (current?.chatId || current?.id) {
-    chatAssistantId.value = String(current.chatId || current.id)
-    if (Array.isArray(current.dataset_ids) && !selectedKnowledgeBaseIds.value.length) {
-      selectedKnowledgeBaseIds.value = current.dataset_ids.map((item: any) => String(item))
-    }
-    return
-  }
+const getSessionById = (sessionId: string) =>
+  sessionList.value.find((session) => session.id === sessionId)
 
-  const created = await createChatAssistant({
-    scene: assistantScene.value,
-    dataset_ids: selectedKnowledgeBaseIds.value,
-    name: assistantScene.value === KB_CHAT_SCENE ? '知识库问答' : 'AI问答'
-  })
-  chatAssistantId.value = String(created.data?.chatId || created.data?.id || created.chatId || created.id || '')
+const hasCachedSessionMessages = (sessionId: string) =>
+  Object.prototype.hasOwnProperty.call(sessionMessageCache.value, sessionId)
+
+const getSessionMessages = (sessionId: string) => {
+  if (!sessionId) return []
+  if (hasCachedSessionMessages(sessionId)) return sessionMessageCache.value[sessionId] || []
+  if (sessionId === activeSessionId.value) return currentMessages.value
+  const session = getSessionById(sessionId)
+  return buildUiMessagesFromSession(session?.messages || [])
 }
 
-const loadSessions = async () => {
-  if (!chatAssistantId.value) return
-  const res = await listSessions(chatAssistantId.value)
-  const items = res.data || res.list || []
-  sessionList.value = Array.isArray(items) ? items : []
-  if (activeSessionId.value && !sessionList.value.some((item) => item.id === activeSessionId.value)) {
-    activeSessionId.value = ''
-    currentMessages.value = []
-  }
-}
-
-const fetchSessionHistory = async (sessionId: string) => {
-  if (!chatAssistantId.value || !sessionId) return []
-  const res = await listHistoryMessage(chatAssistantId.value, sessionId)
-  return res.data || []
-}
-
-const loadSessionMessages = async (sessionId: string) => {
+const setSessionMessages = (sessionId: string, messages: UiChatMessage[]) => {
   if (!sessionId) return
-  const history = await fetchSessionHistory(sessionId)
-  const messages = buildUiMessagesFromSession(history)
-  setSessionMessages(sessionId, messages)
-}
-
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
-}
-
-const openPromptDialog = () => {
-  showPromptDialog.value = true
-}
-
-const handleMessageScroll = () => {
-  const wrap = messageListRef.value
-  if (!wrap) return
-}
-
-const getMessageKey = (item: UiChatMessage, index: number) =>
-  [String(activeSessionId.value || ''), item.localId || item.id || '', item.role, index].join(':')
-
-const handleGoTopMessage = () => {
-  const wrap = messageListRef.value
-  if (wrap) wrap.scrollTop = 0
-}
-
-const stopActiveStream = () => {
-  stopStream(buildStreamKey(activeSessionId.value))
-}
-
-const resetChatByKnowledgeBase = async (ids: string[]) => {
-  if (!props.showKnowledgeBaseSelector) return
-  if (!areKnowledgeBaseIdsEqual(ids, selectedKnowledgeBaseIds.value)) {
-    try {
-      await syncKnowledgeBaseSelection(ids)
-    } catch (error) {
-      console.error(error)
-      ElMessage.error('知识库设置更新失败')
-    }
+  const nextMessages = messages || []
+  sessionMessageCache.value = {
+    ...sessionMessageCache.value,
+    [sessionId]: nextMessages
   }
+  if (activeSessionId.value === sessionId) currentMessages.value = nextMessages
 }
 
-const handleSend = async (payload: { question: string; datasetIds?: string[]; replay?: boolean }) => {
-  if (!chatAssistantId.value) {
-    ElMessage.warning('聊天助手尚未初始化')
-    return
-  }
+const updateSessionMessages = (
+  sessionId: string,
+  updater: (messages: UiChatMessage[]) => UiChatMessage[]
+) => {
+  setSessionMessages(sessionId, updater(getSessionMessages(sessionId)))
+}
 
-  let sessionId = activeSessionId.value
-  if (!sessionId) {
-    sessionId = await newSession()
-  }
-  if (!sessionId) return
+const removeSessionMessages = (sessionId: string) => {
+  const nextCache = { ...sessionMessageCache.value }
+  delete nextCache[sessionId]
+  sessionMessageCache.value = nextCache
+  if (activeSessionId.value === sessionId) currentMessages.value = []
+}
 
-  const userMessage: UiChatMessage = createUiMessage({
-    role: 'user',
-    content: payload.question,
-    rawContent: payload.question,
-    localId: `user-${Date.now()}`
-  })
-  const assistantMessage: UiChatMessage = createUiMessage({
-    role: 'assistant',
-    content: '',
-    rawContent: '',
-    localId: `assistant-${Date.now()}`
-  })
+const isUntitledSession = (session: any) => {
+  const name = trimSessionName(session?.name)
+  return !name || name === DEFAULT_SESSION_NAME
+}
 
-  updateSessionMessages(sessionId, (messages) => [...messages, userMessage, assistantMessage])
+const hasSessionMessages = (sessionId: string) => {
+  if (!sessionId) return false
+  if (getSessionMessages(sessionId).length > 0) return true
+  if (sessionId === activeSessionId.value) return currentMessages.value.length > 0
+  const session = getSessionById(sessionId)
+  return Array.isArray(session?.messages) && session.messages.length > 0
+}
 
-  await sendChatStream(
-    {
-      chatId: chatAssistantId.value,
-      question: payload.question,
-      sessionId,
-      datasetIds: payload.datasetIds || selectedKnowledgeBaseIds.value
-    },
-    {
-      onDelta: (streamPayload) => {
-        updateSessionMessages(sessionId, (messages) => {
-          const next = [...messages]
-          const index = next.findIndex((item) => item.localId === assistantMessage.localId)
-          if (index >= 0) {
-            const current = next[index]
-            const nextContent = String(streamPayload.fullAnswer || `${current.rawContent || ''}${streamPayload.delta || ''}`)
-            const splitResult = splitAssistantMessage(nextContent)
-            next[index] = {
-              ...current,
-              rawContent: nextContent,
-              content: splitResult.content,
-              reasoning: splitResult.reasoning,
-              reference: normalizeReferenceList(streamPayload.reference) || current.reference
-            }
-          }
-          return next
-        })
-      },
-      onDone: async (streamPayload) => {
-        updateSessionMessages(sessionId, (messages) => {
-          const next = [...messages]
-          const index = next.findIndex((item) => item.localId === assistantMessage.localId)
-          if (index >= 0) {
-            const current = next[index]
-            const nextContent = String(streamPayload.fullAnswer || current.rawContent || current.content || '')
-            const splitResult = splitAssistantMessage(nextContent)
-            next[index] = {
-              ...current,
-              rawContent: nextContent,
-              content: splitResult.content,
-              reasoning: splitResult.reasoning,
-              reference: normalizeReferenceList(streamPayload.reference) || current.reference
-            }
-          }
-          return next
-        })
-        await autoRenameSession(sessionId, payload.question)
-        await loadSessions()
-      },
-      onError: (streamPayload) => {
-        updateSessionMessages(sessionId, (messages) => {
-          const next = [...messages]
-          const index = next.findIndex((item) => item.localId === assistantMessage.localId)
-          if (index >= 0) {
-            next[index] = {
-              ...next[index],
-              content: streamPayload.message || '回复失败',
-              rawContent: streamPayload.message || '回复失败'
-            }
-          }
-          return next
-        })
-        ElMessage.error(streamPayload.message || '发送失败')
-      }
-    },
-    { streamKey: buildStreamKey(sessionId) }
+const shouldReplaceEmptySession = (sessionId: string) => {
+  const session = getSessionById(sessionId)
+  return Boolean(
+    sessionId && !isSessionStreaming(sessionId) && isUntitledSession(session) && !hasSessionMessages(sessionId)
   )
 }
 
-const handleConversationClick = async (session: SessionRecord) => {
-  if (activeSessionStreaming.value) {
-    ElMessage.warning('对话中，不允许切换')
-    return false
-  }
-  activeSessionId.value = String(session.id)
-  currentMessages.value = getSessionMessages(activeSessionId.value)
-  await loadSessionMessages(activeSessionId.value)
-  currentMessages.value = getSessionMessages(activeSessionId.value)
-  showSessionDrawer.value = false
-  return true
+const setLocalSessionName = (sessionId: string, name: string) => {
+  const session = getSessionById(sessionId)
+  if (session) session.name = name
 }
 
-const switchSession = async (session: SessionRecord) => handleConversationClick(session)
-
-const handlerMessageClear = async () => {
-  if (!activeSessionId.value || !chatAssistantId.value) return
+const syncSessionName = async (sessionId: string, name: string) => {
+  if (!chatAssistantId.value || !sessionId) return
+  const nextName = trimSessionName(name) || DEFAULT_SESSION_NAME
+  const session = getSessionById(sessionId)
+  const previousName = trimSessionName(session?.name) || DEFAULT_SESSION_NAME
+  if (previousName === nextName) return
+  setLocalSessionName(sessionId, nextName)
   try {
-    await ElMessageBox.confirm('确定要清空当前会话吗？', '清空会话', { type: 'warning' })
+    await updateSession(chatAssistantId.value, sessionId, { name: nextName })
+  } catch (error) {
+    setLocalSessionName(sessionId, previousName)
+    showRequestError(error, '会话名称更新失败')
+    throw error
+  }
+}
+
+const autoRenameSession = async (sessionId: string, question: string) => {
+  if (!sessionId || autoNamingSessionIds.has(sessionId)) return
+  const session = getSessionById(sessionId)
+  if (!isUntitledSession(session)) return
+  const generatedName = buildSessionNameFromQuestion(question)
+  if (!generatedName || generatedName === DEFAULT_SESSION_NAME) return
+  autoNamingSessionIds.add(sessionId)
+  try {
+    await syncSessionName(sessionId, generatedName)
+  } finally {
+    autoNamingSessionIds.delete(sessionId)
+  }
+}
+
+const fetchAssistantHistory = async (
+  chatId: string,
+  sessionId: string,
+  messages: UiChatMessage[]
+) => {
+  if (!messages.some((item) => item.role === 'assistant')) return messages
+  try {
+    const response = await listHistoryMessage(chatId, sessionId)
+    if (Array.isArray(response?.data)) return mergeHistoryIntoMessages(messages, response.data)
   } catch {
+    // 历史增强失败时保留基础消息，避免会话切换卡住
+  }
+  return messages
+}
+
+const buildMessagesFromSessionRecord = async (
+  chatId: string,
+  sessionId: string,
+  session?: SessionRecord
+) => {
+  const baseMessages = buildUiMessagesFromSession(session?.messages || [])
+  return fetchAssistantHistory(chatId, sessionId, baseMessages)
+}
+
+const resolveSessionList = (response: any) => {
+  if (Array.isArray(response)) return response
+  const data = response?.data || response
+  if (Array.isArray(data)) return data
+  return data?.list || data?.items || []
+}
+
+const refreshSessionMessages = async (chatId: string, sessionId: string) => {
+  const response = await listSessions(chatId)
+  const sessions = resolveSessionList(response)
+  sessionList.value = sessions
+  const session = sessions.find((item: SessionRecord) => item.id === sessionId)
+  if (!session) {
+    removeSessionMessages(sessionId)
+    return []
+  }
+  const messages = await buildMessagesFromSessionRecord(chatId, sessionId, session)
+  setSessionMessages(sessionId, messages)
+  return messages
+}
+
+const applySessionState = async (
+  chatId: string,
+  sessions: SessionRecord[] = [],
+  sessionId?: string
+) => {
+  sessionList.value = sessions || []
+  if (!sessionList.value.length) {
+    activeSessionId.value = ''
+    currentMessages.value = []
     return
   }
 
-  try {
-    const currentSessionId = activeSessionId.value
-    await deleteSessions(chatAssistantId.value, String(currentSessionId))
-    sessionList.value = sessionList.value.filter((item) => item.id !== currentSessionId)
-    sessionMessageCache.value = {
-      ...sessionMessageCache.value,
-      [currentSessionId]: []
-    }
-    activeSessionId.value = ''
-    currentMessages.value = []
-    await newSession()
-    ElMessage.success('已清空')
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('清空失败')
+  const targetSessionId =
+    (sessionId && sessionList.value.find((session) => session.id === sessionId)?.id) ||
+    sessionList.value[0].id
+  activeSessionId.value = targetSessionId
+  const currentSession = sessionList.value.find((session) => session.id === targetSessionId)
+  if (hasCachedSessionMessages(targetSessionId) && isSessionStreaming(targetSessionId)) {
+    currentMessages.value = getSessionMessages(targetSessionId)
+    return
   }
+  const messages = await buildMessagesFromSessionRecord(chatId, targetSessionId, currentSession)
+  setSessionMessages(targetSessionId, messages)
 }
 
-const openNewSession = async () => {
-  if (!chatAssistantId.value) return ''
-  const created = await createSession(chatAssistantId.value, { name: DEFAULT_SESSION_NAME })
-  const sessionId = String(created.data?.id || created.id || created.sessionId || '')
-  if (sessionId) {
-    sessionList.value = [
-      {
-        id: sessionId,
-        name: DEFAULT_SESSION_NAME
-      },
-      ...sessionList.value
-    ]
-    activeSessionId.value = sessionId
-    currentMessages.value = []
+const fetchSessions = async (chatId: string, sessionId?: string) => {
+  const response = await listSessions(chatId)
+  await applySessionState(chatId, resolveSessionList(response), sessionId)
+}
+
+const resetChatState = () => {
+  stopStream()
+  chatAssistantId.value = ''
+  activeSessionId.value = ''
+  sessionList.value = []
+  currentMessages.value = []
+  sessionMessageCache.value = {}
+}
+
+const stopActiveStream = () => {
+  if (!activeSessionId.value) return
+  stopStream(buildStreamKey(activeSessionId.value))
+}
+
+const updateWindowWidth = () => {
+  windowWidth.value = window.innerWidth
+}
+
+function toggleSidebar() {
+  if (hideSessionList.value) return
+  if (isMobile.value) {
+    showSessionDrawer.value = !showSessionDrawer.value
+    return
   }
-  return sessionId
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+function setSidebarVisible(visible: boolean) {
+  if (hideSessionList.value) return
+  if (isMobile.value) {
+    showSessionDrawer.value = visible
+    return
+  }
+  isSidebarCollapsed.value = !visible
 }
 
 const newSession = async () => {
-  if (activeSessionStreaming.value) return ''
-  const sessionId = await openNewSession()
-  showSessionDrawer.value = false
-  return sessionId
-}
-
-const resetAllSessions = async () => {
-  if (!chatAssistantId.value) return
-  try {
-    await ElMessageBox.confirm('重置后会删除当前聊天助手和历史会话，且无法恢复。是否继续？', '重置会话', {
-      type: 'warning'
-    })
-  } catch {
-    return
-  }
-
-  resettingSession.value = true
-  try {
-    await deleteAllChatAssistants({
-      chatType: assistantScene.value,
-      datasetId: resolvedDatasetId.value ? String(resolvedDatasetId.value) : undefined
-    })
-    chatAssistantId.value = ''
-    sessionList.value = []
-    activeSessionId.value = ''
-    currentMessages.value = []
-    await initPage()
-    ElMessage.success('重置成功')
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('重置失败')
-  } finally {
-    resettingSession.value = false
-  }
-}
-
-const deleteSession = async (sessionId: string) => {
-  if (!chatAssistantId.value || !sessionId) return
-  try {
-    await ElMessageBox.confirm('确定要删除这个会话吗？', '删除会话', { type: 'warning' })
-  } catch {
-    return
-  }
-
-  try {
-    await deleteSessions(chatAssistantId.value, String(sessionId))
-    sessionList.value = sessionList.value.filter((item) => item.id !== sessionId)
-    if (activeSessionId.value === sessionId) {
-      activeSessionId.value = ''
-      currentMessages.value = []
-    }
-    ElMessage.success('删除成功')
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('删除失败')
-  }
-}
-
-const renameSession = async ({ sessionId, name }: { sessionId: string; name: string }) => {
-  if (!chatAssistantId.value || !sessionId) return
-  try {
-    await syncSessionName(sessionId, name)
-    await loadSessions()
-    ElMessage.success('重命名成功')
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('重命名失败')
-  }
-}
-
-const activeMessageListLoading = ref(false)
-
-const initPage = async () => {
-  const currentInitSeq = ++initSeq.value
+  if (!chatAssistantId.value || resettingSession.value) return
   loading.value = true
   try {
-    await loadKnowledgeBases()
-    await ensureAssistant()
-    if (currentInitSeq !== initSeq.value) return
-    await loadSessions()
-    if (!activeSessionId.value && sessionList.value.length) {
-      activeSessionId.value = sessionList.value[0].id
-      await loadSessionMessages(activeSessionId.value)
-      currentMessages.value = getSessionMessages(activeSessionId.value)
+    const currentSessionId = activeSessionId.value
+    if (shouldReplaceEmptySession(currentSessionId)) {
+      try {
+        await deleteSessions(chatAssistantId.value, currentSessionId)
+      } catch {
+        // 删除空会话失败时不阻塞新会话创建
+      }
     }
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('初始化失败')
+
+    const previousIds = new Set(sessionList.value.map((item) => item.id))
+    const createResponse = await createSession(chatAssistantId.value, {
+      name: DEFAULT_SESSION_NAME
+    })
+    const createdSessionId =
+      createResponse?.data?.id ||
+      createResponse?.id ||
+      createResponse?.data?.session_id ||
+      createResponse?.session_id ||
+      ''
+    const sessionResponse = await listSessions(chatAssistantId.value)
+    const nextSessions = resolveSessionList(sessionResponse)
+    const inferredSessionId =
+      createdSessionId ||
+      nextSessions.find((item: SessionRecord) => !previousIds.has(item.id))?.id ||
+      nextSessions[0]?.id ||
+      ''
+    await applySessionState(chatAssistantId.value, nextSessions, inferredSessionId)
+    if (isMobile.value) showSessionDrawer.value = false
   } finally {
     loading.value = false
   }
 }
 
-const handleWindowResize = () => {
-  windowWidth.value = window.innerWidth
+const resetAllSessions = async () => {
+  if (resettingSession.value) return
+  try {
+    await ElMessageBox.confirm(resetSessionConfirmBody.value, '重置会话', {
+      type: 'warning',
+      confirmButtonText: '确认重置',
+      cancelButtonText: '取消'
+    })
+  } catch {
+    return
+  }
+
+  const nextKnowledgeBaseIds = selectedKnowledgeBaseIds.value.slice()
+  resettingSession.value = true
+  loading.value = true
+  try {
+    await deleteAllChatAssistants(resetChatAssistantParams.value)
+    resetChatState()
+    await initChatByKnowledgeBase(nextKnowledgeBaseIds)
+    ElMessage.success('会话已重置')
+    if (isMobile.value) showSessionDrawer.value = false
+  } catch (error) {
+    showRequestError(error, '重置会话失败')
+  } finally {
+    loading.value = false
+    resettingSession.value = false
+  }
 }
 
-const handlePromptDialogEvent = () => {
-  showPromptDialog.value = true
+const deleteSession = async (sessionId: string) => {
+  if (!chatAssistantId.value || resettingSession.value) return
+  stopStream(buildStreamKey(sessionId))
+  removeSessionMessages(sessionId)
+  loading.value = true
+  try {
+    const preservedSessionId = activeSessionId.value === sessionId ? undefined : activeSessionId.value
+    await deleteSessions(chatAssistantId.value, sessionId)
+    await fetchSessions(chatAssistantId.value, preservedSessionId)
+    if (sessionList.value.length === 0) await newSession()
+  } finally {
+    loading.value = false
+  }
 }
 
-const handleModelDialogEvent = () => {
-  showModelDialog.value = true
+const switchSession = async (session: SessionRecord) => {
+  if (resettingSession.value) return
+  const targetSessionId = String(session?.id || '')
+  if (!targetSessionId) return
+  const localMessages = getSessionMessages(targetSessionId)
+  activeSessionId.value = targetSessionId
+  if (localMessages.length || isSessionStreaming(targetSessionId)) currentMessages.value = localMessages
+  loading.value = !localMessages.length && !isSessionStreaming(targetSessionId)
+  try {
+    await fetchSessions(chatAssistantId.value, targetSessionId)
+  } finally {
+    loading.value = false
+  }
+  if (isMobile.value) showSessionDrawer.value = false
+}
+
+const renameSession = async ({ sessionId, name }: { sessionId: string; name: string }) => {
+  try {
+    await syncSessionName(sessionId, name)
+  } catch {
+    // syncSessionName 已提示
+  }
+}
+
+const resolveListResponse = (response: any) => {
+  const data = response?.data || response
+  return data?.list || data?.items || data || []
+}
+
+const initChatByKnowledgeBase = async (knowledgeBaseIds: string[]) => {
+  const normalizedIds = normalizeKnowledgeBaseIds(knowledgeBaseIds)
+  selectedKnowledgeBaseIds.value = normalizedIds
+  if (!resolvedDatasetId.value) persistKnowledgeBaseIds(normalizedIds)
+
+  const createPayload: Record<string, any> = {
+    scene: assistantScene.value,
+    name: null
+  }
+  if (normalizedIds.length) createPayload.dataset_ids = normalizedIds
+
+  const chatResponse = await createChatAssistant(createPayload)
+  chatAssistantId.value = String(
+    chatResponse?.data?.id ||
+      chatResponse?.data?.chatId ||
+      chatResponse?.id ||
+      chatResponse?.chatId ||
+      ''
+  )
+  if (!chatAssistantId.value) return
+  await fetchSessions(chatAssistantId.value)
+  if (sessionList.value.length === 0) {
+    await createSession(chatAssistantId.value, { name: DEFAULT_SESSION_NAME })
+    await fetchSessions(chatAssistantId.value)
+  }
+}
+
+const resetChatByKnowledgeBase = async (knowledgeBaseIds: string[]) => {
+  const normalizedIds = normalizeKnowledgeBaseIds(knowledgeBaseIds)
+  const previousIds = selectedKnowledgeBaseIds.value.slice()
+  const hasChanged = !areKnowledgeBaseIdsEqual(previousIds, normalizedIds)
+  selectedKnowledgeBaseIds.value = normalizedIds
+  if (!resolvedDatasetId.value) persistKnowledgeBaseIds(normalizedIds)
+  if (!hasChanged) return
+
+  try {
+    await saveChatAssistantKnowledgeBases(normalizedIds)
+  } catch (error) {
+    selectedKnowledgeBaseIds.value = previousIds
+    if (!resolvedDatasetId.value) persistKnowledgeBaseIds(previousIds)
+    showRequestError(error, '知识库设置保存失败')
+  }
+}
+
+const initializeChat = async () => {
+  const currentSeq = ++initSeq.value
+  loading.value = true
+  resetChatState()
+  try {
+    const [personalRes, campusRes] = await Promise.all([
+      getKnowledgeBaseListByMe({}),
+      getKnowledgeBaseListInvite({})
+    ])
+    const knowledgeBases = mergeKnowledgeBaseOptions(
+      resolveListResponse(personalRes),
+      resolveListResponse(campusRes)
+    )
+    const datasetId = resolvedDatasetId.value
+    if (currentSeq !== initSeq.value) return
+
+    if (datasetId) {
+      const matchedKnowledgeBase = knowledgeBases.find((item) => item.value === String(datasetId))
+      if (!matchedKnowledgeBase) {
+        ElMessage.warning('未找到对应知识库')
+        canCreateSession.value = false
+        knowledgeBaseOptions.value = props.fixedKnowledgeBaseLabel
+          ? [
+              {
+                label: props.fixedKnowledgeBaseLabel,
+                shortLabel: props.fixedKnowledgeBaseLabel,
+                value: String(datasetId)
+              }
+            ]
+          : []
+        selectedKnowledgeBaseIds.value = [String(datasetId)]
+        return
+      }
+      if (matchedKnowledgeBase.disabled) {
+        ElMessage.warning('当前知识库未解析或文档数为0，暂不可用')
+        knowledgeBaseOptions.value = [
+          {
+            ...matchedKnowledgeBase,
+            label: props.fixedKnowledgeBaseLabel || matchedKnowledgeBase.label,
+            shortLabel: props.fixedKnowledgeBaseLabel || matchedKnowledgeBase.shortLabel
+          }
+        ]
+        canCreateSession.value = false
+        selectedKnowledgeBaseIds.value = []
+        return
+      }
+      knowledgeBaseOptions.value = [
+        {
+          ...matchedKnowledgeBase,
+          label: props.fixedKnowledgeBaseLabel || matchedKnowledgeBase.label,
+          shortLabel: props.fixedKnowledgeBaseLabel || matchedKnowledgeBase.shortLabel
+        }
+      ]
+      canCreateSession.value = true
+      selectedKnowledgeBaseIds.value = [String(datasetId)]
+      await initChatByKnowledgeBase(selectedKnowledgeBaseIds.value)
+      return
+    }
+
+    knowledgeBaseOptions.value = knowledgeBases
+    canCreateSession.value = true
+    if (!knowledgeBases.length) {
+      selectedKnowledgeBaseIds.value = []
+      localStorage.removeItem(knowledgeBaseStorageKey)
+      localStorage.removeItem(legacyKnowledgeBaseStorageKey)
+      await initChatByKnowledgeBase([])
+      return
+    }
+
+    selectedKnowledgeBaseIds.value = resolveInitialKnowledgeBaseIds(knowledgeBases)
+    persistKnowledgeBaseIds(selectedKnowledgeBaseIds.value)
+    await initChatByKnowledgeBase(selectedKnowledgeBaseIds.value)
+  } catch (error) {
+    canCreateSession.value = false
+    showRequestError(error, '初始化失败')
+  } finally {
+    if (currentSeq === initSeq.value) loading.value = false
+  }
+}
+
+const handleSend = async (payload: SendPayload) => {
+  if (resettingSession.value) return
+  const question = String(payload?.question || '').trim()
+  if (!question) return
+  if (!chatAssistantId.value || !activeSessionId.value) {
+    ElMessage.warning('新会话初始化中，请稍候再试')
+    return
+  }
+
+  const sessionId = String(activeSessionId.value)
+  if (isSessionStreaming(sessionId)) return
+  const datasetIds = normalizeKnowledgeBaseIds(payload?.datasetIds ?? selectedKnowledgeBaseIds.value)
+
+  if (!payload?.replay) {
+    try {
+      await autoRenameSession(sessionId, question)
+    } catch {
+      // 自动重命名失败不阻塞提问
+    }
+  }
+
+  const assistantLocalId = `assistant-${sessionId}-${Date.now()}`
+  const userMessage = createUiMessage({
+    localId: `user-${sessionId}-${Date.now()}`,
+    role: 'user',
+    content: question,
+    rawContent: question
+  })
+  const assistantMessage = createUiMessage({
+    localId: assistantLocalId,
+    role: 'assistant',
+    content: '',
+    rawContent: '',
+    reference: []
+  })
+
+  setSessionMessages(sessionId, [assistantMessage, userMessage, ...getSessionMessages(sessionId)])
+
+  const updateStreamingAssistantMessage = (patch: Partial<UiChatMessage>) => {
+    Object.assign(assistantMessage, patch)
+    updateSessionMessages(sessionId, (messages) =>
+      messages.map((message) => {
+        const isCurrentStreamingMessage =
+          message.role === 'assistant' && message.localId === assistantLocalId
+        if (!isCurrentStreamingMessage) return message
+        return { ...message, ...patch }
+      })
+    )
+  }
+
+  const applyAssistantStreamPayload = (streamPayload: ChatStreamEventPayload) => {
+    const rawContent = resolveStreamRawContent(streamPayload, assistantMessage.rawContent)
+    const splitResult = splitAssistantMessage(rawContent)
+    const references = normalizeReferenceList(streamPayload.reference)
+    updateStreamingAssistantMessage({
+      id: streamPayload.messageId || assistantMessage.id,
+      rawContent,
+      content: splitResult.content,
+      reasoning: splitResult.reasoning,
+      reference: references.length > 0 ? references : assistantMessage.reference
+    })
+  }
+
+  let completed = false
+  let hasError = false
+
+  await sendChatStream(
+    {
+      chatId: chatAssistantId.value,
+      sessionId,
+      question,
+      datasetIds
+    },
+    {
+      onStart(streamPayload) {
+        updateStreamingAssistantMessage({
+          id: streamPayload.messageId || assistantMessage.id
+        })
+      },
+      onDelta(streamPayload) {
+        applyAssistantStreamPayload(streamPayload)
+      },
+      onDone(streamPayload) {
+        completed = true
+        applyAssistantStreamPayload(streamPayload)
+      },
+      onAbort() {
+        if (!assistantMessage.content && !assistantMessage.reasoning) {
+          updateStreamingAssistantMessage({ content: '【回答已中止】' })
+        }
+      },
+      onError(streamPayload) {
+        hasError = true
+        const message = streamPayload.message || '回答失败，请稍后重试'
+        if (!assistantMessage.content && !assistantMessage.reasoning) {
+          updateStreamingAssistantMessage({ content: `发生错误：${message}` })
+        }
+        ElMessage.error(message)
+      }
+    },
+    {
+      streamKey: buildStreamKey(sessionId)
+    }
+  )
+
+  if (completed && !hasError && chatAssistantId.value) {
+    await refreshSessionMessages(chatAssistantId.value, sessionId)
+  }
 }
 
 watch(
-  () => activeSessionId.value,
-  async (sessionId) => {
-    if (!sessionId) return
-    activeMessageListLoading.value = true
-    try {
-      await loadSessionMessages(sessionId)
-      currentMessages.value = getSessionMessages(sessionId)
-    } finally {
-      activeMessageListLoading.value = false
-    }
-  }
+  () => resolvedDatasetId.value,
+  () => {
+    initializeChat()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.sessionSidebarVisible,
+  (visible) => {
+    if (typeof visible !== 'boolean' || hideSessionList.value) return
+    setSidebarVisible(visible)
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
-  window.addEventListener('resize', handleWindowResize)
-  window.addEventListener('rag-aichat-open-prompt-dialog', handlePromptDialogEvent as EventListener)
-  window.addEventListener('rag-aichat-open-model-dialog', handleModelDialogEvent as EventListener)
-  initPage()
+  window.addEventListener('resize', updateWindowWidth)
+  const token = route.query.token
+  if (token) localStorage.setItem('token', token as string)
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleWindowResize)
-  window.removeEventListener('rag-aichat-open-prompt-dialog', handlePromptDialogEvent as EventListener)
-  window.removeEventListener('rag-aichat-open-model-dialog', handleModelDialogEvent as EventListener)
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWindowWidth)
   stopActiveStream()
+})
+
+defineExpose({
+  newSession,
+  toggleHistoryPanel: () => {
+    if (hideSessionList.value) return
+    if (isMobile.value) {
+      showSessionDrawer.value = !showSessionDrawer.value
+      return
+    }
+    toggleSidebar()
+  },
+  openHistoryPanel: () => {
+    setSidebarVisible(true)
+  },
+  closeHistoryPanel: () => {
+    setSidebarVisible(false)
+  },
+  setHistoryPanelVisible: setSidebarVisible
 })
 </script>
 
 <style scoped>
-.rag-chat-page {
-  position: relative;
+.chat-page-shell {
   width: 100%;
   height: 100%;
   min-height: 0;
   background: var(--app-bg-page);
 }
 
-.rag-chat-main {
-  min-width: 0;
-  background: #fff;
-}
-
-.rag-chat-main-header {
+.chat-container {
   display: flex;
-  background: var(--app-bg-subtle);
-  border-bottom: 1px solid var(--app-border-color);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.rag-chat-message-area {
-  padding: 0;
-  overflow: hidden;
-}
-
-.rag-chat-message-shell {
-  position: relative;
-  display: flex;
+  width: 100%;
   height: 100%;
   min-height: 0;
-  flex-direction: column;
-}
-
-.rag-chat-message-list {
-  display: flex;
-  padding: 16px;
-  overflow-y: auto;
-  flex: 1;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.rag-chat-message-row {
-  display: flex;
-  gap: 12px;
-}
-
-.rag-chat-message-row.user {
-  flex-direction: row-reverse;
-}
-
-.rag-chat-message-card {
-  max-width: min(820px, calc(100% - 60px));
-  padding: 12px 14px;
+  overflow: hidden;
   background: #fff;
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
-  box-shadow: var(--app-shadow-xs);
+  box-shadow: none;
+  flex-direction: row;
 }
 
-.rag-chat-message-row.user .rag-chat-message-card {
-  background: rgb(0 82 217 / 6%);
-  border-color: rgb(0 82 217 / 12%);
-}
-
-.rag-chat-message-meta {
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: var(--app-text-secondary);
-}
-
-.rag-chat-footer {
+:deep(.el-drawer__body) {
   padding: 0;
   background: #fff;
-}
-
-.rag-chat-empty-state,
-.rag-chat-loading {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 280px;
 }
 </style>

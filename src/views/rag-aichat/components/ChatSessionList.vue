@@ -22,23 +22,14 @@
           新的会话
         </el-button>
 
-        <el-button
-          class="w-full"
-          :disabled="!canResetSession"
-          @click="$emit('reset-session')"
-        >
+        <el-button class="w-full" :disabled="!canResetSession" @click="$emit('reset-session')">
           <el-icon class="mr-5px"><RefreshRight /></el-icon>
           重置会话
         </el-button>
       </div>
 
       <div class="session-list-wrap">
-        <el-input
-          v-model="searchName"
-          clearable
-          placeholder="搜索历史记录"
-          class="mb-10px"
-        >
+        <el-input v-model="searchName" clearable placeholder="搜索历史记录" class="mb-10px">
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
@@ -76,7 +67,10 @@
               </div>
             </div>
 
-            <el-dropdown trigger="click" @command="(command) => handleSessionAction(command, session)">
+            <el-dropdown
+              trigger="click"
+              @command="(command) => handleSessionAction(command, session)"
+            >
               <el-button text circle @click.stop>
                 <el-icon><MoreFilled /></el-icon>
               </el-button>
@@ -102,7 +96,15 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { ArrowLeft, ArrowRight, ChatLineSquare, MoreFilled, Plus, RefreshRight, Search } from '@element-plus/icons-vue'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChatLineSquare,
+  MoreFilled,
+  Plus,
+  RefreshRight,
+  Search
+} from '@element-plus/icons-vue'
 
 defineOptions({ name: 'RagAiChatSessionList' })
 
@@ -157,7 +159,9 @@ const filteredSessions = computed(() => {
   const list = (props.sessionList || []) as any[]
   if (!keyword) return list
   return list.filter((item) =>
-    String(item?.name || DEFAULT_SESSION_NAME).toLowerCase().includes(keyword)
+    String(item?.name || DEFAULT_SESSION_NAME)
+      .toLowerCase()
+      .includes(keyword)
   )
 })
 

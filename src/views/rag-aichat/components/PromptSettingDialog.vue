@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <Dialog
     v-model="dialogVisible"
     title="提示词设置"
     width="72vw"
@@ -30,7 +30,12 @@
 
       <div class="prompt-setting-side">
         <div class="prompt-manage-toolbar">
-          <el-input v-model="searchPrompt" clearable placeholder="搜索提示词" @keyup.enter="handleSearch" />
+          <el-input
+            v-model="searchPrompt"
+            clearable
+            placeholder="搜索提示词"
+            @keyup.enter="handleSearch"
+          />
           <el-button @click="handleSearch">查询</el-button>
           <el-button type="primary" plain @click="handleManageAdd">新增</el-button>
         </div>
@@ -75,15 +80,23 @@
     >
       <el-form :model="manageEditForm" label-width="70px">
         <el-form-item label="提示词" prop="prompt">
-          <el-input v-model="manageEditForm.prompt" type="textarea" :autosize="{ minRows: 4, maxRows: 8 }" maxlength="2048" show-word-limit />
+          <el-input
+            v-model="manageEditForm.prompt"
+            type="textarea"
+            :autosize="{ minRows: 4, maxRows: 8 }"
+            maxlength="2048"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="handleManageEditCancel">取消</el-button>
-        <el-button type="primary" :loading="manageEditLoading" @click="handleManageEditOk">确定</el-button>
+        <el-button type="primary" :loading="manageEditLoading" @click="handleManageEditOk"
+          >确定</el-button
+        >
       </template>
     </el-dialog>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -134,9 +147,7 @@ const kbName = computed(() => {
 })
 
 const defaultPrompt = computed(() => {
-  const knowledgeBaseIds = knowledgeBaseList.value
-    .map((item: any) => item.value)
-    .filter(Boolean)
+  const knowledgeBaseIds = knowledgeBaseList.value.map((item: any) => item.value).filter(Boolean)
   if (!knowledgeBaseIds.length) {
     return '你是一个中文智能助手'
   }
