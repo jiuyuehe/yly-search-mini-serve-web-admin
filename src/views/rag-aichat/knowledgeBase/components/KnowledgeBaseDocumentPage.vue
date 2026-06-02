@@ -638,7 +638,9 @@ const openContextMenuAt = (clientX: number, clientY: number, menuHeight: number)
 const handleCardContextMenu = (docId: string, event: MouseEvent) => {
   event.preventDefault()
   event.stopPropagation()
-  applyDocSelection(docId, event)
+  if (!selectedDocIds.value.length) {
+    setSelectedDocIds([docId], docId)
+  }
   openContextMenuAt(event.clientX, event.clientY, selectedDocIds.value.length > 0 ? 140 : 164)
 }
 
@@ -677,7 +679,9 @@ const handleListRowClick = (row: any, _column: any, event: MouseEvent) => {
 const handleListRowContextMenu = (row: any, _column: any, event: MouseEvent) => {
   event.preventDefault()
   event.stopPropagation()
-  applyDocSelection(String(row.id), event)
+  if (!selectedDocIds.value.length) {
+    setSelectedDocIds([String(row.id)], String(row.id))
+  }
   openContextMenuAt(event.clientX, event.clientY, selectedDocIds.value.length > 0 ? 140 : 164)
 }
 

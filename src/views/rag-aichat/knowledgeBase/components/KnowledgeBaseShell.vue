@@ -6,6 +6,7 @@
       :selected-dataset-id="selectedDatasetId"
       @toggle-collapse="isSidebarCollapsed = !isSidebarCollapsed"
       @create="openCreateDialog"
+      @refresh="fetchList"
       @select="selectDataset"
       @manage="handleManageDataset"
       @delete="handleDeleteDataset"

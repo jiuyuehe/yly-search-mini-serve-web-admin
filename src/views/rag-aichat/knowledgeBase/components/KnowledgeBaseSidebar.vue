@@ -25,10 +25,16 @@
         </template>
       </el-input>
 
-      <el-button type="primary" class="w-full mb-10px" @click="emit('create')">
-        <el-icon class="mr-5px"><Plus /></el-icon>
-        新建知识库
-      </el-button>
+      <div class="kb-sidebar-actions">
+        <el-button type="primary" class="kb-sidebar-action-btn" @click="emit('create')">
+          <el-icon class="mr-5px"><Plus /></el-icon>
+          新建知识库
+        </el-button>
+        <el-button class="kb-sidebar-action-btn" @click="emit('refresh')">
+          <el-icon class="mr-5px"><Refresh /></el-icon>
+          刷新知识库
+        </el-button>
+      </div>
 
       <el-scrollbar class="kb-list-scroll">
         <div v-for="group in filteredDatasetGroups" :key="group.key" class="kb-group">
@@ -80,7 +86,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { PropType } from 'vue'
-import { ArrowLeft, ArrowRight, Plus, Search } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, Plus, Refresh, Search } from '@element-plus/icons-vue'
 
 defineOptions({ name: 'RagAiKnowledgeBaseSidebar' })
 
@@ -96,6 +102,7 @@ const props = defineProps({
 const emit = defineEmits([
   'toggle-collapse',
   'create',
+  'refresh',
   'select',
   'manage',
   'delete'
@@ -213,6 +220,16 @@ onBeforeUnmount(() => {
   margin-top: 2px;
   font-size: 12px;
   color: var(--app-text-secondary);
+}
+
+.kb-sidebar-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.kb-sidebar-action-btn {
+  flex: 1;
 }
 
 .kb-list-scroll {
