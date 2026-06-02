@@ -2,31 +2,51 @@
   <div class="doc-manage-panel">
     <div class="doc-toolbar">
       <el-input
+        size="small"
         v-model="docSearchName"
         clearable
         placeholder="请输入文件名称"
         class="doc-search"
         @keyup.enter="fetchDocs"
       />
-      <el-button @click="fetchDocs">查询</el-button>
-      <el-button @click="fetchDocs">刷新</el-button>
-      <input ref="fileInputRef" type="file" multiple hidden @change="handleFileSelect" />
-      <el-button type="primary" plain @click="fileInputRef?.click()">
-        <el-icon class="mr-5px"><Upload /></el-icon>
-        上传文档
-      </el-button>
-      <el-button :disabled="!selectedDocIds.length" @click="handleBatchParse">批量解析</el-button>
-      <el-button :disabled="!selectedDocIds.length" @click="handleBatchStopParse">批量停止解析</el-button>
-      <el-popconfirm title="确定要批量删除选中的文档吗？" @confirm="handleBatchDeleteDocs">
-        <template #reference>
-          <el-button type="danger" plain :disabled="!selectedDocIds.length">批量删除</el-button>
-        </template>
-      </el-popconfirm>
+      <el-button-group>
+        <el-button size="small" @click="fetchDocs">查询</el-button>
+        <el-button size="small" @click="fetchDocs">刷新</el-button>
+        <input
+          size="small"
+          ref="fileInputRef"
+          type="file"
+          multiple
+          hidden
+          @change="handleFileSelect"
+        />
+        <el-button size="small" type="primary" plain @click="fileInputRef?.click()">
+          <el-icon class="mr-5px"><Upload /></el-icon>
+          上传文档
+        </el-button>
+        <el-button size="small" :disabled="!selectedDocIds.length" @click="handleBatchParse"
+          >批量解析</el-button
+        >
+        <el-button size="small" :disabled="!selectedDocIds.length" @click="handleBatchStopParse"
+          >批量停止解析</el-button
+        >
+        <el-popconfirm title="确定要批量删除选中的文档吗？" @confirm="handleBatchDeleteDocs">
+          <template #reference>
+            <el-button size="small" type="danger" plain :disabled="!selectedDocIds.length"
+              >批量删除</el-button
+            >
+          </template>
+        </el-popconfirm>
+      </el-button-group>
     </div>
 
     <div v-if="uploadFileList.length" class="upload-files">
-      <div v-for="file in uploadFileList" :key="`${file.name}_${file.uid}`" class="upload-file-item">
-        <el-icon><Document /></el-icon>
+      <div
+        v-for="file in uploadFileList"
+        :key="`${file.name}_${file.uid}`"
+        class="upload-file-item"
+      >
+        <img class="upload-file-icon" :src="getDocIcon(file.name)" alt="" />
         <span class="truncate">{{ file.name }}</span>
         <el-progress
           v-if="['progress', 'parsing'].includes(file.status)"
@@ -42,12 +62,13 @@
         v-loading="docLoading"
         :data="docList"
         row-key="id"
+        size="small"
         stripe
         height="100%"
         @selection-change="handleDocSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column label="预览" width="92">
+        <el-table-column label="预览" width="72">
           <template #default="{ row }">
             <div class="doc-preview-cell">
               <el-image
@@ -59,14 +80,10 @@
                 lazy
               >
                 <template #error>
-                  <div class="doc-preview-fallback">
-                    <el-icon><Document /></el-icon>
-                  </div>
+                  <img class="doc-preview-fallback" :src="getDocIcon(row.name)" alt="" />
                 </template>
               </el-image>
-              <div v-else class="doc-preview-fallback">
-                <el-icon><Document /></el-icon>
-              </div>
+              <img v-else class="doc-preview-fallback" :src="getDocIcon(row.name)" alt="" />
             </div>
           </template>
         </el-table-column>
@@ -83,7 +100,7 @@
         </el-table-column>
         <el-table-column label="字符数" prop="contentLength" width="100" />
         <el-table-column label="Token" prop="tokens" width="100" />
-        <el-table-column label="操作" fixed="right" width="260">
+        <el-table-column label="操作" fixed="right" width="220">
           <template #default="{ row }">
             <el-button link type="primary" @click="parseDoc(row)">
               {{ isDocumentParsing(row) ? '重新解析' : '开始解析' }}
@@ -101,14 +118,11 @@
     </div>
 
     <div class="doc-pagination">
-      <el-pagination
-        background
-        layout="total, prev, pager, next, jumper"
-        :current-page="docPagination.pageNo"
-        :page-size="docPagination.pageSize"
+      <Pagination
         :total="docPagination.total"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
+        v-model:page="docPagination.pageNo"
+        v-model:limit="docPagination.pageSize"
+        @pagination="fetchDocs"
       />
     </div>
 
@@ -124,7 +138,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Document, Upload } from '@element-plus/icons-vue'
+import { Upload } from '@element-plus/icons-vue'
 
 import {
   deleteDocuments,
@@ -141,6 +155,7 @@ import {
   getDocumentParseStatusTheme,
   isDocumentParsing
 } from '../../utils/documentParse'
+import { getFileIconByExt } from '@/utils/fileIconMap'
 import DocChunkList from './DocChunkList.vue'
 
 defineOptions({ name: 'RagAiKnowledgeBaseDocManagePanel' })
@@ -173,6 +188,14 @@ const isImageLikeDoc = (row: any) => {
   const fileName = String(row?.name || '').toLowerCase()
   return row?.type === 'visual' || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(fileName)
 }
+
+const getDocExt = (value: any) => {
+  const fileName = String(value?.name || value || '').split('?')[0]
+  const match = fileName.match(/\.([^.\\/:]+)$/)
+  return match?.[1]?.toLowerCase() || ''
+}
+
+const getDocIcon = (value: any) => getFileIconByExt(getDocExt(value))
 
 const clearDocPreviewUrls = () => {
   Object.values(docPreviewUrlMap).forEach((url) => {
@@ -316,17 +339,6 @@ const getUploadStatusLabel = (status: string) => {
   return map[status] || status
 }
 
-const handlePageChange = (page: number) => {
-  docPagination.pageNo = page
-  fetchDocs()
-}
-
-const handleSizeChange = (size: number) => {
-  docPagination.pageSize = size
-  docPagination.pageNo = 1
-  fetchDocs()
-}
-
 watch(
   () => props.datasetId,
   () => {
@@ -358,15 +370,15 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .doc-search {
-  width: 220px;
+  width: 180px;
 }
 
 .upload-files {
-  padding: 14px;
+  padding: 10px 12px;
   background: #fff;
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
@@ -375,8 +387,14 @@ onBeforeUnmount(() => {
 .upload-file-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.upload-file-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .doc-table-wrap {
@@ -388,6 +406,18 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
+.doc-table-wrap :deep(.el-table__cell) {
+  padding: 6px 0;
+}
+
+.doc-table-wrap :deep(.el-table .cell) {
+  line-height: 1.25;
+}
+
+.doc-table-wrap :deep(.el-table__row) {
+  height: 46px;
+}
+
 .doc-pagination {
   display: flex;
   justify-content: flex-end;
@@ -395,27 +425,33 @@ onBeforeUnmount(() => {
 
 .doc-preview-cell {
   display: flex;
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
 }
 
 .doc-preview-image,
 .doc-preview-fallback {
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   overflow: hidden;
   background: var(--app-bg-subtle);
   border: 1px solid var(--app-border-color);
-  border-radius: 12px;
+  border-radius: 10px;
+  object-fit: contain;
 }
 
 .doc-preview-fallback {
   display: flex;
-  font-size: 18px;
+  font-size: 16px;
   color: var(--app-text-secondary);
   align-items: center;
   justify-content: center;
+}
+
+.doc-table-wrap :deep(.el-button.is-link) {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 </style>

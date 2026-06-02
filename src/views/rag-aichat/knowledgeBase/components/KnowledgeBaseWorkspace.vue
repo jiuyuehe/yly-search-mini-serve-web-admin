@@ -11,23 +11,6 @@
         <div class="kb-workspace-title">
           {{ datasetTitle }}
         </div>
-        <div class="kb-workspace-subtitle">
-          {{ datasetDescription }}
-        </div>
-      </div>
-      <div class="kb-workspace-actions">
-        <el-button @click="emit('switch-docs')">
-          <el-icon class="mr-5px"><Document /></el-icon>
-          返回文件管理
-        </el-button>
-        <el-button @click="emit('edit')">
-          <el-icon class="mr-5px"><Edit /></el-icon>
-          编辑
-        </el-button>
-        <el-button type="danger" plain @click="emit('delete')">
-          <el-icon class="mr-5px"><Delete /></el-icon>
-          删除
-        </el-button>
       </div>
     </div>
 
@@ -74,7 +57,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Delete, Document, Edit } from '@element-plus/icons-vue'
 import type { PropType } from 'vue'
 
 import KnowledgeBaseDocManagePanel from './KnowledgeBaseDocManagePanel.vue'
@@ -107,10 +89,6 @@ const datasetTitle = computed(() => {
     props.dataset?.name ||
     '请选择知识库开始管理'
   )
-})
-
-const datasetDescription = computed(() => {
-  return props.dataset?.description || '可在此管理知识问答、模型设置与成员'
 })
 
 const handleModelSaved = (payload: Record<string, any>) => {
@@ -170,17 +148,6 @@ watch(
 .kb-workspace-title {
   font-size: 18px;
   font-weight: 600;
-}
-
-.kb-workspace-subtitle {
-  margin-top: 4px;
-  color: var(--app-text-secondary);
-}
-
-.kb-workspace-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .kb-workspace-content {

@@ -1,24 +1,23 @@
 <template>
   <div class="member-manager-panel">
-    <div class="member-card">
-      <div class="section-title">成员列表</div>
+    <div class="member-card member-card--members">
+      <div class="section-title">已添加成员</div>
       <div class="member-toolbar">
         <el-input
           v-model="memberSearchKey"
           clearable
-          placeholder="搜索用户"
+          placeholder="搜索用户名 / 昵称 / 部门"
           class="member-search"
-          @keyup.enter="fetchMembers"
         />
-        <el-button @click="fetchMembers">刷新成员</el-button>
+        <el-button :loading="memberLoading" @click="fetchMembers">刷新成员</el-button>
       </div>
 
-      <div class="member-table-wrap">
-        <el-table :data="memberList" v-loading="memberLoading" stripe height="100%">
-          <el-table-column prop="userName" label="账号" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="realName" label="姓名" min-width="120" show-overflow-tooltip />
+      <div class="member-table-wrap" v-loading="memberLoading">
+        <el-table :data="filteredMemberList" stripe height="100%">
+          <el-table-column prop="userName" label="用户名" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="realName" label="昵称" min-width="140" show-overflow-tooltip />
           <el-table-column prop="deptName" label="部门" min-width="160" show-overflow-tooltip />
-          <el-table-column label="操作" width="120">
+          <el-table-column label="操作" width="100">
             <template #default="{ row }">
               <el-popconfirm title="确定移除该成员吗？" @confirm="removeMember(row)">
                 <template #reference>
@@ -33,36 +32,63 @@
       </div>
     </div>
 
-    <div class="member-card">
-      <div class="section-title">添加成员</div>
-      <div class="member-toolbar">
-        <el-input
-          v-model="treeSearchKey"
-          clearable
-          placeholder="按名称搜索部门 / 用户"
-          class="member-search"
-          @keyup.enter="reloadTree"
-        />
-        <el-button @click="reloadTree">刷新树</el-button>
-        <el-button type="primary" :disabled="!selectedUserIds.length" :loading="saving" @click="addMembers">
-          添加成员
-        </el-button>
+    <div class="member-bottom">
+      <div class="member-card">
+        <div class="section-title">部门树</div>
+        <div class="member-toolbar">
+          <el-input
+            v-model="treeSearchKey"
+            clearable
+            placeholder="搜索部门"
+            class="member-search"
+          />
+          <el-button @click="reloadTree">刷新树</el-button>
+        </div>
+
+        <div class="member-tree-wrap" v-loading="treeLoading">
+          <el-tree
+            :data="displayDeptTreeData"
+            :expand-on-click-node="false"
+            :props="defaultProps"
+            highlight-current
+            node-key="id"
+            @node-expand="handleDeptExpand"
+          />
+        </div>
       </div>
 
-      <div class="member-tree-wrap">
-        <el-tree
-          ref="treeRef"
-          :key="treeKey"
-          class="member-tree"
-          node-key="value"
-          show-checkbox
-          lazy
-          :load="loadTreeNode"
-          :props="treeProps"
-          :expand-on-click-node="false"
-          :check-strictly="true"
-          @check="handleCheckChange"
-        />
+      <div class="member-card">
+        <div class="section-title flex items-center justify-between gap-12px">
+          <span>部门用户</span>
+          <span class="section-subtitle">{{ currentDeptName || '请先展开并选择一个部门' }}</span>
+        </div>
+        <div class="member-toolbar">
+          <el-input
+            v-model="userSearchKey"
+            clearable
+            placeholder="搜索昵称 / 用户名 / ID"
+            class="member-search"
+          />
+          <el-button type="primary" :disabled="!selectedUsers.length" :loading="saving" @click="addMembers">
+            添加成员
+          </el-button>
+        </div>
+
+        <div class="member-tree-wrap" v-if="currentDeptId" v-loading="userLoading">
+          <el-table
+            :data="filteredDeptUsers"
+            row-key="id"
+            height="100%"
+            stripe
+            @selection-change="handleUserSelectionChange"
+          >
+            <el-table-column type="selection" width="48" />
+            <el-table-column prop="nickname" label="昵称" min-width="140" show-overflow-tooltip />
+            <el-table-column prop="username" label="用户名" min-width="160" show-overflow-tooltip />
+            <el-table-column prop="id" label="ID" width="100" />
+          </el-table>
+        </div>
+        <el-empty v-else class="member-empty" description="请先点击左侧部门" />
       </div>
     </div>
   </div>
@@ -70,16 +96,21 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ElMessage, type ElTree } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
-import { useUserStoreWithOut } from '@/store/modules/user'
 import {
   addMember,
   deleteMember,
+  type KnowledgeBaseDeptVO,
+  type KnowledgeBaseMemberVO,
+  type KnowledgeBaseMemberAddReqVO,
+  type KnowledgeBaseUserVO,
   getDeptList,
   getMemberList,
   getUserList
 } from '@/api/rag-aichat/knowledgeBase'
+import { useUserStoreWithOut } from '@/store/modules/user'
+import { defaultProps, filter, handleTree } from '@/utils/tree'
 
 defineOptions({ name: 'RagAiKnowledgeBaseMemberManagerPanel' })
 
@@ -87,122 +118,165 @@ const props = defineProps({
   datasetId: { type: [String, Number], required: true }
 })
 
+type MemberRow = KnowledgeBaseMemberVO
+
 const currentUserId = computed(() => Number(useUserStoreWithOut().getUser.id || 0))
-const memberList = ref<any[]>([])
+const memberList = ref<MemberRow[]>([])
 const memberLoading = ref(false)
+const treeLoading = ref(false)
+const userLoading = ref(false)
 const saving = ref(false)
 const treeSearchKey = ref('')
 const memberSearchKey = ref('')
-const selectedUserIds = ref<string[]>([])
-const treeRef = ref<InstanceType<typeof ElTree> | null>(null)
-const loadedUserMap = ref(new Map<string, any>())
-const treeKey = ref(0)
+const userSearchKey = ref('')
+const deptTreeList = ref<KnowledgeBaseDeptVO[]>([])
+const currentDeptId = ref<number | null>(null)
+const currentDeptName = ref('')
+const currentDeptUsers = ref<KnowledgeBaseUserVO[]>([])
+const selectedUsers = ref<KnowledgeBaseUserVO[]>([])
+const deptUserCache = ref(new Map<number, KnowledgeBaseUserVO[]>())
 
-const treeProps = {
-  children: 'children',
-  label: 'label',
-  isLeaf: 'isLeaf'
-}
-
-const normalizeList = (res: any) => {
-  if (Array.isArray(res)) return res
-  if (Array.isArray(res?.data)) return res.data
-  if (Array.isArray(res?.data?.list)) return res.data.list
-  if (Array.isArray(res?.list)) return res.list
-  return []
+const formatMemberRow = (row: Record<string, any>): MemberRow => {
+  return {
+    ...row,
+    userId: Number(row.userId ?? row.id)
+  }
 }
 
 const fetchMembers = async () => {
   if (!props.datasetId) return
   memberLoading.value = true
   try {
-    const res = await getMemberList(String(props.datasetId))
-    const list = normalizeList(res)
-    memberList.value = list
+    memberList.value = (await getMemberList(String(props.datasetId))).map(formatMemberRow)
   } catch (error) {
     console.error(error)
+    memberList.value = []
     ElMessage.error('获取成员失败')
   } finally {
     memberLoading.value = false
   }
 }
 
-const buildDeptNode = (dept: any) => ({
-  label: dept.deptName || dept.name || '',
-  value: `dept_${dept.deptId || dept.id}`,
-  isLeaf: false
-})
-
-const buildUserNode = (user: any) => ({
-  label: `${user.realName || user.nickname || user.userName || ''}`,
-  value: `user_${user.userId || user.id}`,
-  userId: String(user.userId || user.id),
-  userName: user.userName || user.username || '',
-  realName: user.realName || user.nickname || '',
-  isLeaf: true
-})
-
-const reloadTree = () => {
-  selectedUserIds.value = []
-  loadedUserMap.value = new Map()
-  treeKey.value += 1
-}
-
-const loadTreeNode = async (node: any, resolve: (data: any[]) => void) => {
-  const di = !node || node.level === 0
-    ? -1
-    : String(node.data?.value || '').startsWith('dept_')
-      ? Number(String(node.data.value).replace('dept_', ''))
-      : -1
-
+const fetchMemberTree = async () => {
+  treeLoading.value = true
   try {
-    const [deptRes, userRes] = await Promise.all([
-      getDeptList({ di, key: treeSearchKey.value.trim() || undefined }),
-      di === -1 ? Promise.resolve([]) : getUserList({ di, key: treeSearchKey.value.trim() || undefined })
-    ])
-    const deptNodes = normalizeList(deptRes).map(buildDeptNode)
-    const userNodes = normalizeList(userRes).map((user: any) => {
-      const nodeItem = buildUserNode(user)
-      loadedUserMap.value.set(nodeItem.value, nodeItem)
-      return nodeItem
-    })
-    resolve([...deptNodes, ...userNodes])
+    deptTreeList.value = await getDeptList()
   } catch (error) {
     console.error(error)
-    resolve([])
+    deptTreeList.value = []
+  } finally {
+    treeLoading.value = false
   }
+}
+
+const displayDeptTreeData = computed(() => {
+  const keyword = treeSearchKey.value.trim().toLowerCase()
+  if (!keyword) {
+    return handleTree(
+      deptTreeList.value.map((item) => ({ ...item })),
+      'id',
+      'parentId',
+      'children'
+    )
+  }
+  return filter(
+    handleTree(
+      deptTreeList.value.map((item) => ({ ...item })),
+      'id',
+      'parentId',
+      'children'
+    ),
+    (node: KnowledgeBaseDeptVO) => node.name.toLowerCase().includes(keyword)
+  )
+})
+
+const filteredMemberList = computed(() => {
+  const keyword = memberSearchKey.value.trim().toLowerCase()
+  if (!keyword) {
+    return memberList.value
+  }
+  return memberList.value.filter((row) =>
+    [row.userName, row.realName, row.deptName]
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+  )
+})
+
+const filteredDeptUsers = computed(() => {
+  const keyword = userSearchKey.value.trim().toLowerCase()
+  const list = currentDeptUsers.value
+  if (!keyword) {
+    return list
+  }
+  return list.filter((user) =>
+    [user.nickname, user.username, String(user.id)]
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+  )
+})
+
+const buildUserReqList = (users: KnowledgeBaseUserVO[]): KnowledgeBaseMemberAddReqVO[] => {
+  return users.map((user) => ({
+    userName: user.username,
+    realName: user.nickname
+  }))
+}
+
+const loadDeptUsers = async (dept: KnowledgeBaseDeptVO) => {
+  currentDeptId.value = dept.id
+  currentDeptName.value = dept.name
+  selectedUsers.value = []
+  currentDeptUsers.value = []
+  userLoading.value = true
+  try {
+    const cached = deptUserCache.value.get(dept.id)
+    if (cached) {
+      currentDeptUsers.value = cached
+      return
+    }
+    const users = await getUserList({ di: dept.id })
+    deptUserCache.value.set(dept.id, users)
+    currentDeptUsers.value = users
+  } catch (error) {
+    console.error(error)
+    currentDeptUsers.value = []
+    ElMessage.error('获取部门用户失败')
+  } finally {
+    userLoading.value = false
+  }
+}
+
+const handleDeptExpand = (data: KnowledgeBaseDeptVO) => {
+  void loadDeptUsers(data)
+}
+
+const handleUserSelectionChange = (rows: KnowledgeBaseUserVO[]) => {
+  selectedUsers.value = rows
+}
+
+const reloadTree = async () => {
+  currentDeptId.value = null
+  currentDeptName.value = ''
+  currentDeptUsers.value = []
+  selectedUsers.value = []
+  deptUserCache.value = new Map()
+  await fetchMemberTree()
 }
 
 const addMembers = async () => {
-  const checkedKeys = selectedUserIds.value.length
-    ? selectedUserIds.value
-    : treeRef.value?.getCheckedKeys(false) || []
-  const userKeys = checkedKeys.filter((key: string) => String(key).startsWith('user_'))
-  if (!userKeys.length) {
+  if (!selectedUsers.value.length) {
     ElMessage.warning('请选择要添加的用户')
-    return
-  }
-
-  const users = userKeys
-    .map((key: string) => loadedUserMap.value.get(key))
-    .filter(Boolean)
-    .map((user: any) => ({
-      userId: Number(user.userId),
-      userName: user.userName,
-      realName: user.realName
-    }))
-
-  if (!users.length) {
-    ElMessage.warning('当前选中的用户尚未加载，请先展开树节点')
     return
   }
 
   saving.value = true
   try {
+    const users = buildUserReqList(selectedUsers.value)
     await addMember(String(props.datasetId), users)
     ElMessage.success('添加成功')
-    treeRef.value?.setCheckedKeys([])
-    selectedUserIds.value = []
+    selectedUsers.value = []
     await fetchMembers()
   } catch (error) {
     console.error(error)
@@ -212,17 +286,13 @@ const addMembers = async () => {
   }
 }
 
-const handleCheckChange = () => {
-  selectedUserIds.value = (treeRef.value?.getCheckedKeys(false) || []) as string[]
-}
-
-const removeMember = async (row: any) => {
-  if (Number(row.userId || row.id) === currentUserId.value) {
+const removeMember = async (row: MemberRow) => {
+  if (row.userId === currentUserId.value) {
     ElMessage.warning('不能移除当前登录用户')
     return
   }
   try {
-    await deleteMember(String(props.datasetId), String(row.userId || row.id))
+    await deleteMember(String(props.datasetId), String(row.userId))
     ElMessage.success('移除成功')
     await fetchMembers()
   } catch (error) {
@@ -235,7 +305,7 @@ watch(
   () => props.datasetId,
   () => {
     void fetchMembers()
-    reloadTree()
+    void reloadTree()
   },
   { immediate: true }
 )
@@ -243,11 +313,23 @@ watch(
 
 <style scoped>
 .member-manager-panel {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   height: 100%;
   min-height: 0;
+}
+
+.member-card--members {
+  flex: 0 0 auto;
+}
+
+.member-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 0;
+  flex: 1;
 }
 
 .member-card {
@@ -302,6 +384,10 @@ watch(
 
 @media (width <= 1200px) {
   .member-manager-panel {
+    display: flex;
+  }
+
+  .member-bottom {
     grid-template-columns: 1fr;
   }
 }

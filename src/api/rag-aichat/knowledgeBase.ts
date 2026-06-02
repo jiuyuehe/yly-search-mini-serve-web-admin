@@ -10,6 +10,35 @@ export interface KnowledgeBaseVO {
   [key: string]: any
 }
 
+export interface KnowledgeBaseDeptVO {
+  id: number
+  name: string
+  parentId: number
+  [key: string]: any
+}
+
+export interface KnowledgeBaseMemberVO {
+  userId: number
+  userName: string
+  realName: string
+  deptName: string
+  [key: string]: any
+}
+
+export interface KnowledgeBaseUserVO {
+  id: number
+  username: string
+  nickname: string
+  deptId?: number
+  deptName?: string
+  [key: string]: any
+}
+
+export interface KnowledgeBaseMemberAddReqVO {
+  userName: string
+  realName: string
+}
+
 export function getKnowledgeBaseList(params: {
   dataset_name?: string
   dataset_id?: string
@@ -77,12 +106,12 @@ export function deleteKnowledgeBase(datasetId: string) {
 }
 
 export function getMemberList(datasetId: string) {
-  return request.get({
+  return request.get<KnowledgeBaseMemberVO[]>({
     url: `/ragflow/datasets/listMember/${datasetId}`,
   })
 }
 
-export function addMember(datasetId: string, users: any[]) {
+export function addMember(datasetId: string, users: KnowledgeBaseMemberAddReqVO[]) {
   return request.post({
     url: `/ragflow/datasets/addMember/${datasetId}`,
     data: users
@@ -96,15 +125,14 @@ export function deleteMember(datasetId: string, userIds: string) {
   })
 }
 
-export function getDeptList(params: { di?: number; key?: string }) {
-  return request.get({
-    url: '/ragflow/datasets/listDept',
-    params
+export function getDeptList() {
+  return request.get<KnowledgeBaseDeptVO[]>({
+    url: '/ragflow/datasets/listDept'
   })
 }
 
-export function getUserList(params: { di?: number; key?: string }) {
-  return request.get({
+export function getUserList(params: { di: number }) {
+  return request.get<KnowledgeBaseUserVO[]>({
     url: '/ragflow/datasets/listUser',
     params
   })

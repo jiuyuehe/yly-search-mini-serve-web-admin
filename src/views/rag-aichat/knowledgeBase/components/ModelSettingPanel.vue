@@ -13,7 +13,9 @@
       <div class="setting-layout">
         <aside class="setting-left">
           <div class="model-setting-card avatar-card">
-            <div class="section-title">知识库图片</div>
+            <div class="section-header">
+              <div class="section-title">知识库图片</div>
+            </div>
 
             <div class="avatar-content">
               <el-upload
@@ -45,9 +47,11 @@
         <main class="setting-right">
           <div class="setting-scroll">
             <div class="model-setting-card">
-              <div class="section-title">基础配置</div>
+              <div class="section-header">
+                <div class="section-title">基础配置</div>
+              </div>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="知识库名称" prop="name">
                     <el-input
@@ -68,7 +72,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="权限" prop="permission">
                     <el-radio-group v-model="form.permission">
@@ -88,7 +92,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="切片方法" prop="chunk_method">
                     <el-select v-model="form.chunk_method" class="w-full">
@@ -114,7 +118,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="文本分段标识符" prop="parser_config.delimiter">
                     <el-input v-model="form.parser_config.delimiter" placeholder="如 \n" />
@@ -130,7 +134,9 @@
             </div>
 
             <div class="model-setting-card">
-              <div class="section-title">提示词</div>
+              <div class="section-header">
+                <div class="section-title">提示词</div>
+              </div>
 
               <el-form-item prop="parser_config.raptor.prompt" label="RAPTOR 提示词">
                 <el-input
@@ -145,9 +151,11 @@
             </div>
 
             <div v-if="form.chunk_method === 'naive'" class="model-setting-card">
-              <div class="section-title">Naive 切片配置</div>
+              <div class="section-header">
+                <div class="section-title">Naive 切片配置</div>
+              </div>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="自动关键词提取" prop="parser_config.auto_keywords">
                     <el-input-number
@@ -171,7 +179,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="表格转 HTML" prop="parser_config.html4excel">
                     <el-switch v-model="form.parser_config.html4excel" />
@@ -197,9 +205,11 @@
               "
               class="model-setting-card"
             >
-              <div class="section-title">高级策略</div>
+              <div class="section-header">
+                <div class="section-title">高级策略</div>
+              </div>
 
-              <el-row :gutter="24">
+              <el-row class="form-grid" :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="RAPTOR 设置" prop="parser_config.raptor.use_raptor">
                     <el-switch v-model="form.parser_config.raptor.use_raptor" />
@@ -215,7 +225,9 @@
             </div>
 
             <div class="model-setting-card">
-              <div class="section-title">描述</div>
+              <div class="section-header">
+                <div class="section-title">描述</div>
+              </div>
 
               <el-form-item label="知识库描述" prop="description">
                 <el-input
@@ -520,11 +532,11 @@ const handleSubmit = async () => {
 .setting-scroll {
   display: flex;
   min-height: 0;
+  padding-right: 2px;
+  overflow: auto;
   flex: 1;
   flex-direction: column;
   gap: 16px;
-  overflow: auto;
-  padding-right: 2px;
 }
 
 .model-setting-card {
@@ -534,9 +546,14 @@ const handleSubmit = async () => {
   border-radius: var(--app-radius-lg);
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
 .section-title {
-  flex-shrink: 0;
-  margin-bottom: 16px;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
@@ -609,6 +626,16 @@ const handleSubmit = async () => {
   margin-bottom: 0;
 }
 
+.model-setting-card :deep(.el-form-item__label) {
+  line-height: 1.4;
+  text-align: right;
+  white-space: normal;
+}
+
+.model-setting-card :deep(.el-form-item__content) {
+  min-width: 0;
+}
+
 .model-setting-card :deep(.el-input-number),
 .model-setting-card :deep(.el-select) {
   width: 100%;
@@ -616,6 +643,18 @@ const handleSubmit = async () => {
 
 .w-full {
   width: 100%;
+}
+
+.form-grid {
+  margin-bottom: 2px;
+}
+
+.form-grid :deep(.el-col) {
+  min-width: 0;
+}
+
+.form-grid :deep(.el-form-item) {
+  margin-bottom: 0;
 }
 
 @media (width <= 1200px) {
@@ -665,6 +704,7 @@ const handleSubmit = async () => {
   }
 
   .model-setting-card :deep(.el-form-item__label) {
+    padding-right: 10px;
     line-height: 1.4;
   }
 
