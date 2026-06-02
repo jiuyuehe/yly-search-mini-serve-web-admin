@@ -30,6 +30,7 @@
       <div class="selector-card">
         <div class="section-title section-title--between">
           <span>部门用户</span>
+          <span>点击左侧部门树展开，选择要添加的部门</span>
           <span v-if="currentDeptId" class="dept-badge">
             <el-icon><FolderOpened /></el-icon>
             {{ currentDeptName }}
@@ -68,11 +69,6 @@
             <el-table-column prop="username" label="用户名" min-width="140" show-overflow-tooltip />
             <el-table-column prop="id" label="ID" width="90" align="center" show-overflow-tooltip />
           </el-table>
-        </div>
-
-        <div v-else class="dept-empty">
-          <el-icon class="dept-empty-icon"><ArrowLeft /></el-icon>
-          <span>点击左侧部门树展开，选择要添加的部门</span>
         </div>
       </div>
     </div>
