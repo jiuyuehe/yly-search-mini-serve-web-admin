@@ -1378,7 +1378,6 @@ onBeforeUnmount(() => {
   min-height: 30px;
   overflow: hidden;
   font-size: 12px;
-  font-weight: 500;
   line-height: 1.35;
   color: #27364d;
   text-overflow: ellipsis;

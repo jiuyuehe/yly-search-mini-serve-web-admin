@@ -14,12 +14,7 @@
     </div>
 
     <div class="kb-sidebar-body" :class="{ 'is-collapsed': collapsed }">
-      <el-input
-        v-model="localSearchName"
-        clearable
-        placeholder="搜索知识库"
-        class="mb-10px"
-      >
+      <el-input v-model="localSearchName" clearable placeholder="搜索知识库" class="mb-10px">
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>
@@ -42,6 +37,7 @@
             <span>{{ group.label }}</span>
             <el-tag size="small">{{ group.list.length }}</el-tag>
           </div>
+          <div v-if="group.list == 0" class="kb-list-empty"> 还没有知识库~ </div>
           <button
             v-for="item in group.list"
             :key="item.dataset_id || item.id"
@@ -99,14 +95,7 @@ const props = defineProps({
   selectedDatasetId: { type: [String, Number], default: '' }
 })
 
-const emit = defineEmits([
-  'toggle-collapse',
-  'create',
-  'refresh',
-  'select',
-  'manage',
-  'delete'
-])
+const emit = defineEmits(['toggle-collapse', 'create', 'refresh', 'select', 'manage', 'delete'])
 
 const contextMenuVisible = ref(false)
 const contextMenuItem = ref<any>(null)
@@ -273,6 +262,15 @@ onBeforeUnmount(() => {
 .kb-list-scroll {
   flex: 1;
   min-height: 0;
+}
+
+.kb-list-empty {
+  display: flex;
+  height: 120px;
+  color: var(--app-text-secondary);
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
 }
 
 .kb-group + .kb-group {

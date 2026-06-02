@@ -172,8 +172,7 @@ async function loadAssistantPrompt() {
 
   try {
     const res = await listChatAssistants({ chat_id: props.chatId })
-    const detail = res.data?.[0] || {}
-    promptText.value = detail?.prompt || defaultPrompt.value
+    promptText.value = res?.[0]?.prompt?.prompt || defaultPrompt.value
   } catch {
     promptText.value = defaultPrompt.value
   }
