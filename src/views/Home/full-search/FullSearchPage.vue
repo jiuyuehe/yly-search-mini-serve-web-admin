@@ -10,6 +10,7 @@
           :collapsed="filterCollapsed"
           @reset="resetFilters"
           @toggle-collapse="filterCollapsed = !filterCollapsed"
+          @search="handleFilterSearch"
         />
 
         <main class="search-main">
@@ -241,28 +242,33 @@ const handleSearch = async () => {
   }
 }
 
+const handleFilterSearch = () => {
+  filters.offset = 0
+  void handleSearch()
+}
+
 const resetFilters = () => {
   Object.assign(filters, defaultFilters())
   currentAgg.value = ''
-  handleSearch()
+  void handleSearch()
 }
 
 const selectAggregation = (docType: string) => {
   currentAgg.value = docType
   filters.docType = docType
   filters.offset = 0
-  handleSearch()
+  void handleSearch()
 }
 
 const changePage = (nextPage: number) => {
   filters.offset = (nextPage - 1) * (filters.limit || 20)
-  handleSearch()
+  void handleSearch()
 }
 
 const changeSize = (size: number) => {
   filters.limit = size
   filters.offset = 0
-  handleSearch()
+  void handleSearch()
 }
 
 const saveBlob = (blob: Blob, fileName: string) => {

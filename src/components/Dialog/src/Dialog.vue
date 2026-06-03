@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { ElDialog as BaseElDialog } from 'element-plus'
+
 import { propTypes } from '@/utils/propTypes'
 import { isNumber } from '@/utils/is'
 
@@ -71,9 +73,9 @@ function closedHandler() {
 </script>
 
 <template>
-  <ElDialog
+  <BaseElDialog
     v-bind="getBindValue"
-    :close-on-click-modal="true"
+    :close-on-click-modal="false"
     :fullscreen="isFullscreen"
     :width="width"
     destroy-on-close
@@ -120,7 +122,7 @@ function closedHandler() {
         <slot name="footer"></slot>
       </div>
     </template>
-  </ElDialog>
+  </BaseElDialog>
 </template>
 
 <style lang="scss">

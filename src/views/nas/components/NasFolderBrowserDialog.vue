@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" title="选择文件夹" width="900px" append-to-body destroy-on-close>
+  <Dialog v-model="dialogVisible" title="选择文件夹" width="900px" append-to-body destroy-on-close>
     <div class="file-browser">
       <div class="file-browser__toolbar">
         <div class="file-browser__breadcrumb">
@@ -66,7 +66,7 @@
         确定
       </el-button>
     </template>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script lang="ts" setup>

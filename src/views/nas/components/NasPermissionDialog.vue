@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="dialogTitle" width="980px" destroy-on-close>
+  <Dialog v-model="dialogVisible" :title="dialogTitle" width="980px" destroy-on-close>
     <template #header>
       <div>
         <div class="text-16px font-600">{{ dialogTitle }}</div>
@@ -58,7 +58,7 @@
     </el-card>
 
 
-    <el-dialog v-model="permissionFormVisible" :title="permissionFormTitle" width="720px" append-to-body destroy-on-close>
+    <Dialog v-model="permissionFormVisible" :title="permissionFormTitle" width="720px" append-to-body destroy-on-close>
       <el-form ref="permissionFormRef" :model="permissionFormModel" :rules="permissionFormRules" label-width="110px">
         <el-form-item label="选择文件夹" prop="filePath">
           <div class="permission-path-picker">
@@ -164,8 +164,8 @@
         <el-button @click="permissionFormVisible = false">取消</el-button>
         <el-button type="primary" :loading="permissionFormSubmitting" @click="submitPermissionForm">保存</el-button>
       </template>
-    </el-dialog>
-  </el-dialog>
+    </Dialog>
+  </Dialog>
 
   <NasFolderBrowserDialog ref="folderBrowserDialogRef" @confirm="handleFolderBrowserConfirm" />
 </template>
