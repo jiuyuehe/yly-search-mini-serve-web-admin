@@ -156,8 +156,8 @@ import {
   uploadDocument
 } from '@/api/rag-aichat/document'
 import { getConfigKey } from '@/api/rag-aichat/system'
-import { config } from '@/config/axios/config'
 import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
+import { buildPreviewApiUrl } from '@/utils/previewApiUrl'
 import {
   getDocumentParsePercent,
   getDocumentParseStatusLabel,
@@ -224,21 +224,12 @@ const getDocumentDisplayName = (row: any) => {
   return String(row?.name || row?.thumbnail || row?.location || 'document').trim()
 }
 
-const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
-
-const buildApiUrl = (path: string) => {
-  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  if (!baseUrl) return normalizedPath
-  return `${baseUrl}${normalizedPath}`
-}
-
 const buildDownloadViewUrl = (row: any) => {
   const datasetId = String(props.datasetId || '').trim()
   const documentId = String(row?.id || '').trim()
   const fileName = String(row?.name || row?.document_name || '').trim()
   if (!datasetId || !documentId || !fileName) return ''
-  return buildApiUrl(
+  return buildPreviewApiUrl(
     `ragflow/documents/downloadView/${datasetId}/${documentId}/${encodeURIComponent(fileName)}`
   )
 }

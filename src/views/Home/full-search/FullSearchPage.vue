@@ -107,8 +107,8 @@ import {
   type SearchResult
 } from '@/api/rag/search'
 import { getConfigKey } from '@/api/rag-aichat/system'
-import { config } from '@/config/axios/config'
 import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
+import { buildPreviewApiUrl } from '@/utils/previewApiUrl'
 import { PreviewModal } from '@/components/PreviewModal'
 
 defineOptions({ name: 'HomeFullSearchPage' })
@@ -315,15 +315,6 @@ const getNasPath = (file: CommonFile) =>
     'full_path'
   ])
 
-const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
-
-const buildApiUrl = (path: string) => {
-  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  if (!baseUrl) return normalizedPath
-  return `${baseUrl}${normalizedPath}`
-}
-
 const getFileDisplayName = (file: CommonFile) => {
   return (
     getStringValue(file as SearchFileRecord, [
@@ -340,7 +331,7 @@ const getFileDisplayName = (file: CommonFile) => {
 const normalizeFileUrl = (url: string) => {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith('/')) return buildApiUrl(url)
+  if (url.startsWith('/')) return buildPreviewApiUrl(url)
   return url
 }
 

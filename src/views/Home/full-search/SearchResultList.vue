@@ -238,7 +238,6 @@
       :total="total"
       v-model:page="currentPage"
       v-model:limit="currentPageSize"
-      @pagination="handlePagination"
     />
   </section>
 </template>
@@ -436,11 +435,6 @@ const copyPath = async (path?: string) => {
 
   await navigator.clipboard?.writeText(path)
   ElMessage.success('路径已复制')
-}
-
-const handlePagination = () => {
-  emit('page-change', currentPage.value)
-  emit('size-change', currentPageSize.value)
 }
 
 onMounted(() => {

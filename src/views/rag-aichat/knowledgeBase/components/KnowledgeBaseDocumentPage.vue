@@ -296,9 +296,9 @@ import {
   uploadDocument
 } from '@/api/rag-aichat/document'
 import { getConfigKey } from '@/api/rag-aichat/system'
-import { config } from '@/config/axios/config'
 import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
 import { getFileIconByExt } from '@/utils/fileIconMap'
+import { buildPreviewApiUrl } from '@/utils/previewApiUrl'
 import { PreviewModal } from '@/components/PreviewModal'
 import DocChunkList from './DocChunkList.vue'
 import KnowledgeBaseDocContextMenu from './KnowledgeBaseDocContextMenu.vue'
@@ -412,15 +412,6 @@ const normalizeList = (res: any) => {
   return []
 }
 
-const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
-
-const buildApiUrl = (path: string) => {
-  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  if (!baseUrl) return normalizedPath
-  return `${baseUrl}${normalizedPath}`
-}
-
 const getDocumentDisplayName = (row: any) => {
   return String(row?.name || row?.title || row?.document_name || row?.thumbnail || 'document').trim()
 }
@@ -430,7 +421,7 @@ const buildDownloadViewUrl = (row: any) => {
   const documentId = String(row?.id || '').trim()
   const fileName = String(row?.name || row?.document_name || row?.title || '').trim()
   if (!datasetId || !documentId || !fileName) return ''
-  return buildApiUrl(
+  return buildPreviewApiUrl(
     `ragflow/documents/downloadView/${datasetId}/${documentId}/${encodeURIComponent(fileName)}`
   )
 }

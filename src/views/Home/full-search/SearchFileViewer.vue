@@ -86,9 +86,9 @@ import {
   listNasFolderChildren
 } from '@/api/rag/search'
 import { getConfigKey } from '@/api/rag-aichat/system'
-import { config } from '@/config/axios/config'
 import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
 import { getFileIconByExt } from '@/utils/fileIconMap'
+import { buildPreviewApiUrl } from '@/utils/previewApiUrl'
 
 defineOptions({ name: 'HomeSearchFileViewer' })
 
@@ -117,19 +117,10 @@ const revokeObjectUrl = () => {
   }
 }
 
-const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
-
-const buildApiUrl = (path: string) => {
-  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  if (!baseUrl) return normalizedPath
-  return `${baseUrl}${normalizedPath}`
-}
-
 const normalizeFileUrl = (url?: string) => {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith('/')) return buildApiUrl(url)
+  if (url.startsWith('/')) return buildPreviewApiUrl(url)
   return url
 }
 
