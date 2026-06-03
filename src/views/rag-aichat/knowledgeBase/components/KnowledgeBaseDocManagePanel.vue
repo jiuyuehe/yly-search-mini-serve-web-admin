@@ -104,6 +104,7 @@
             <el-button link type="primary" @click="parseDoc(row)">
               {{ isDocumentParsing(row) ? '重新解析' : '开始解析' }}
             </el-button>
+            <el-button link type="primary" @click="openFileviewPreview(row)"> 预览 </el-button>
             <el-button link type="primary" @click="openChunkDrawer(row)"> 切片 </el-button>
             <el-button link @click="downloadDoc(row)">下载</el-button>
             <el-popconfirm title="确定删除该文档吗？" @confirm="deleteDoc(row)">
@@ -134,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 
@@ -147,6 +148,8 @@ import {
   stopParsingDocuments,
   uploadDocument
 } from '@/api/rag-aichat/document'
+import { getConfigKey } from '@/api/rag-aichat/system'
+import { config } from '@/config/axios/config'
 import {
   getDocumentParsePercent,
   getDocumentParseStatusLabel,
@@ -172,6 +175,7 @@ const uploadFileList = ref<any[]>([])
 const chunkDrawerVisible = ref(false)
 const activeChunkDocument = ref({ id: '', name: '' })
 const docPreviewUrlMap = reactive<Record<string, string>>({})
+const fileviewBaseUrl = ref('')
 
 const normalizeList = (res: any) => {
   if (Array.isArray(res)) return res
@@ -202,6 +206,64 @@ const clearDocPreviewUrls = () => {
   Object.keys(docPreviewUrlMap).forEach((key) => {
     delete docPreviewUrlMap[key]
   })
+}
+
+const getDocumentDisplayName = (row: any) => {
+  return String(row?.name || row?.thumbnail || row?.location || 'document').trim()
+}
+
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
+
+const buildApiUrl = (path: string) => {
+  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!baseUrl) return normalizedPath
+  return `${baseUrl}${normalizedPath}`
+}
+
+const buildDownloadViewUrl = (row: any) => {
+  const datasetId = String(props.datasetId || '').trim()
+  const documentId = String(row?.id || '').trim()
+  const fileName = String(row?.name || row?.document_name || '').trim()
+  if (!datasetId || !documentId || !fileName) return ''
+  return buildApiUrl(
+    `ragflow/documents/downloadView/${datasetId}/${documentId}/${encodeURIComponent(fileName)}`
+  )
+}
+
+const buildFileviewPreviewUrl = (fileUrl: string, fileName: string, displayName: string) => {
+  if (!fileviewBaseUrl.value || !fileUrl) return ''
+  try {
+    const previewUrl = new URL(fileviewBaseUrl.value)
+    const query: string[] = [`url=${encodeURIComponent(fileUrl)}`]
+    if (fileName) query.push(`fileName=${encodeURIComponent(fileName)}`)
+    if (displayName) query.push(`displayName=${encodeURIComponent(displayName)}`)
+    const joiner = previewUrl.search ? '&' : '?'
+    return `${previewUrl.toString()}${joiner}${query.join('&')}`
+  } catch (error) {
+    console.error('构建文件预览地址失败:', error)
+    return ''
+  }
+}
+
+const openFileviewPreview = async (row: any) => {
+  const fileUrl = buildDownloadViewUrl(row)
+  if (!fileUrl) {
+    ElMessage.warning('未获取到可预览的文件地址')
+    return
+  }
+
+  const previewUrl = buildFileviewPreviewUrl(
+    fileUrl,
+    String(row?.name || ''),
+    getDocumentDisplayName(row)
+  )
+  if (!previewUrl) {
+    ElMessage.warning('文件预览服务未配置')
+    return
+  }
+
+  window.open(previewUrl, '_blank')
 }
 
 const syncDocPreviews = async (docs: any[]) => {
@@ -377,6 +439,16 @@ const downloadDoc = async (row: any) => {
   window.URL.revokeObjectURL(url)
 }
 
+const loadPreviewServiceConfig = async () => {
+  try {
+    const data = await getConfigKey('ragflow_basemetas')
+    fileviewBaseUrl.value = String(data || '').trim()
+  } catch (error) {
+    console.error('获取文件预览服务配置失败:', error)
+    fileviewBaseUrl.value = ''
+  }
+}
+
 const openChunkDrawer = (row: any) => {
   activeChunkDocument.value = {
     id: String(row.id || ''),
@@ -411,6 +483,10 @@ watch(
 
 onBeforeUnmount(() => {
   clearDocPreviewUrls()
+})
+
+onMounted(async () => {
+  await loadPreviewServiceConfig()
 })
 </script>
 
