@@ -29,14 +29,16 @@
           @change="(checked: boolean) => toggleOne(file, checked)"
         />
         <div class="file-icon" :class="`type-${getDocGroup(file)}`">
-          <el-icon>
-            <Folder v-if="file.folder" />
-            <component :is="getFileIcon(file)" v-else />
-          </el-icon>
+          <img class="file-icon-image" :src="getFileIcon(file)" :alt="file.folder ? '文件夹' : '文件'" />
         </div>
         <div class="file-body">
           <div class="file-title-row">
-            <button class="file-title" type="button" v-dompurify-html="highlightName(file.fileName || '')" @click="$emit('preview', file)"></button>
+            <button
+              class="file-title"
+              type="button"
+              v-dompurify-html="highlightName(file.fileName || '')"
+              @click="$emit('preview', file)"
+            ></button>
             <span v-if="file.score !== undefined" class="score">{{ formatScore(file.score) }}</span>
           </div>
           <div v-if="file.fileContents" class="snippet" v-dompurify-html="file.fileContents"></div>
@@ -62,13 +64,13 @@
           </div>
         </div>
         <div class="item-actions">
-          <el-button v-if="!file.folder" link type="primary" @click="$emit('kk-preview', file)">
+          <el-button v-if="!file.folder" link type="primary" @click="$emit('basemetas-preview', file)">
             <el-icon><Monitor /></el-icon>
-            KK查看
+            BaseMetas预览
           </el-button>
-          <el-button link type="primary" @click="$emit('preview', file)">
+          <el-button v-if="file.folder" link type="primary" @click="$emit('preview', file)">
             <el-icon><View /></el-icon>
-            {{ file.folder ? '打开' : '在线查看' }}
+            打开
           </el-button>
           <el-button v-if="!file.folder" link type="primary" @click="$emit('download', file)">
             <el-icon><Download /></el-icon>
@@ -94,9 +96,10 @@
 </template>
 
 <script lang="ts" setup>
-import { Box, CopyDocument, Document, Download, Files, Folder, Headset, Location, Monitor, Picture, VideoPlay, View } from '@element-plus/icons-vue'
+import { CopyDocument, Download, Location, Monitor, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CommonFile } from '@/api/rag/search'
+import { getFileIconByExt } from '@/utils/fileIconMap'
 
 const props = defineProps<{
   files: CommonFile[]
@@ -110,7 +113,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'kk-preview': [file: CommonFile]
+  'basemetas-preview': [file: CommonFile]
   preview: [file: CommonFile]
   download: [file: CommonFile]
   'batch-download': []
@@ -160,16 +163,11 @@ const getDocGroup = (file: CommonFile) => {
 }
 
 const getFileIcon = (file: CommonFile) => {
-  const group = getDocGroup(file)
-  const icons = {
-    image: Picture,
-    doc: Document,
-    audio: Headset,
-    video: VideoPlay,
-    zip: Box,
-    other: Files
-  }
-  return icons[group as keyof typeof icons] || Files
+  if (file.folder) return getFileIconByExt('dept-folder')
+  const fileName = String(file.fileName || file.filePath || '')
+  const fileExt = String(file.fileExt || '').replace(/^\./, '')
+  const inferredExt = fileName.split('?')[0].match(/\.([^.\\/:]+)$/)?.[1] || ''
+  return getFileIconByExt(fileExt || inferredExt)
 }
 
 const formatSize = (size?: number) => {
@@ -253,10 +251,13 @@ const copyPath = async (path?: string) => {
   place-items: center;
   width: 40px;
   height: 40px;
-  font-size: 22px;
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
   border-radius: var(--el-border-radius-base);
+}
+
+.file-icon-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .type-folder {

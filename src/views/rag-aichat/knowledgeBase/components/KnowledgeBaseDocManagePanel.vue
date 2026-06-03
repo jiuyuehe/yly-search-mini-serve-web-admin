@@ -157,6 +157,7 @@ import {
 } from '@/api/rag-aichat/document'
 import { getConfigKey } from '@/api/rag-aichat/system'
 import { config } from '@/config/axios/config'
+import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
 import {
   getDocumentParsePercent,
   getDocumentParseStatusLabel,
@@ -242,21 +243,6 @@ const buildDownloadViewUrl = (row: any) => {
   )
 }
 
-const buildFileviewPreviewUrl = (fileUrl: string, fileName: string, displayName: string) => {
-  if (!fileviewBaseUrl.value || !fileUrl) return ''
-  try {
-    const previewUrl = new URL(fileviewBaseUrl.value)
-    const query: string[] = [`url=${encodeURIComponent(fileUrl)}`]
-    if (fileName) query.push(`fileName=${encodeURIComponent(fileName)}`)
-    if (displayName) query.push(`displayName=${encodeURIComponent(displayName)}`)
-    const joiner = previewUrl.search ? '&' : '?'
-    return `${previewUrl.toString()}${joiner}${query.join('&')}`
-  } catch (error) {
-    console.error('构建文件预览地址失败:', error)
-    return ''
-  }
-}
-
 const openFileviewPreview = async (row: any) => {
   const fileUrl = buildDownloadViewUrl(row)
   if (!fileUrl) {
@@ -264,7 +250,8 @@ const openFileviewPreview = async (row: any) => {
     return
   }
 
-  const previewUrlValue = buildFileviewPreviewUrl(
+  const previewUrlValue = buildBaseMetasPreviewUrl(
+    fileviewBaseUrl.value,
     fileUrl,
     String(row?.name || ''),
     getDocumentDisplayName(row)

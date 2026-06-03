@@ -23,14 +23,11 @@
           <span>第一层文件清单</span>
           <strong>{{ folderChildren.length }}</strong>
         </div>
-        <el-empty v-if="!folderChildren.length" description="该文件夹下暂无可见文件" />
+        <el-empty v-if="!folderChildren.length" description="该文件夹下暂无可见文件～" />
         <div v-else class="folder-list">
           <div v-for="item in folderChildren" :key="item.filePath" class="folder-item">
             <div class="folder-item-icon" :class="{ dir: item.folder }">
-              <el-icon>
-                <Folder v-if="item.folder" />
-                <Document v-else />
-              </el-icon>
+              <img class="folder-item-icon-image" :src="getFolderItemIcon(item)" :alt="item.folder ? '文件夹' : '文件'" />
             </div>
             <div class="folder-item-body">
               <div class="folder-item-name">{{ item.fileName }}</div>
@@ -41,13 +38,19 @@
               <span>{{ item.updateTime || '-' }}</span>
             </div>
             <div class="folder-item-actions">
-              <el-button v-if="!item.folder" link type="primary" size="small" @click="handleFolderItemKkPreview(item)">
-                <el-icon><Monitor /></el-icon>
-                KK查看
-              </el-button>
-              <el-button link type="primary" size="small" @click="handleFolderItemPreview(item)">
+              <el-button v-if="item.folder" link type="primary" size="small" @click="handleFolderItemPreview(item)">
                 <el-icon><View /></el-icon>
-                {{ item.folder ? '打开' : '预览' }}
+                打开
+              </el-button>
+              <el-button
+                v-else
+                link
+                type="primary"
+                size="small"
+                @click="handleFolderItemBaseMetasPreview(item)"
+              >
+                <el-icon><Monitor /></el-icon>
+                BaseMetas预览
               </el-button>
               <el-button v-if="!item.folder" link type="primary" size="small" @click="handleFolderItemDownload(item)">
                 <el-icon><Download /></el-icon>
@@ -69,19 +72,23 @@
 </template>
 
 <script lang="ts" setup>
-import { Document, Download, Folder, FolderOpened, Monitor, View } from '@element-plus/icons-vue'
+import { Download, FolderOpened, Monitor, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CommonFile, FilePreviewMeta, NasFileEntry } from '@/api/rag/search'
 import {
   downloadFileBlob,
   downloadNasFileBlob,
-  getKkPreviewUrl,
+  getBaseMetasPreview,
   getNasFilePermissions,
   getNasFileViewUrl,
   getPreviewBlob,
   getPreviewMeta,
   listNasFolderChildren
 } from '@/api/rag/search'
+import { getConfigKey } from '@/api/rag-aichat/system'
+import { config } from '@/config/axios/config'
+import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
+import { getFileIconByExt } from '@/utils/fileIconMap'
 
 const visible = ref(false)
 const loading = ref(false)
@@ -91,6 +98,7 @@ const meta = ref<FilePreviewMeta>()
 const objectUrl = ref('')
 const textContent = ref('')
 const folderChildren = ref<NasFileEntry[]>([])
+const fileviewBaseUrl = ref('')
 const folderMode = computed(() => Boolean(currentFile.value?.folder))
 const NAS_PERMISSION = {
   VIEW: 8,
@@ -104,6 +112,32 @@ const revokeObjectUrl = () => {
   if (objectUrl.value) {
     URL.revokeObjectURL(objectUrl.value)
     objectUrl.value = ''
+  }
+}
+
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
+
+const buildApiUrl = (path: string) => {
+  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!baseUrl) return normalizedPath
+  return `${baseUrl}${normalizedPath}`
+}
+
+const normalizeFileUrl = (url?: string) => {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  if (url.startsWith('/')) return buildApiUrl(url)
+  return url
+}
+
+const loadPreviewServiceConfig = async () => {
+  try {
+    const data = await getConfigKey('ragflow_basemetas')
+    fileviewBaseUrl.value = String(data || '').trim()
+  } catch (error) {
+    console.error('获取 BaseMetas 预览服务配置失败:', error)
+    fileviewBaseUrl.value = ''
   }
 }
 
@@ -148,6 +182,17 @@ const open = async (file: CommonFile) => {
   } finally {
     loading.value = false
   }
+}
+
+const openBaseMetasPreviewUrl = async (response: { sourceUrl?: string; url?: string } | string, fileName: string) => {
+  const rawUrl = typeof response === 'string' ? response : response.sourceUrl || response.url || ''
+  const normalizedUrl = normalizeFileUrl(rawUrl)
+  if (!normalizedUrl) {
+    ElMessage.warning('未获取到预览地址')
+    return
+  }
+  const previewUrl = buildBaseMetasPreviewUrl(fileviewBaseUrl.value, normalizedUrl, fileName, fileName)
+  openExternalPreview(previewUrl || normalizedUrl)
 }
 
 const saveBlob = (blob: Blob, fileName: string) => {
@@ -209,8 +254,16 @@ const openExternalPreview = (url?: string) => {
   }
 }
 
-// 处理文件夹中子项的 KK 预览
-const handleFolderItemKkPreview = async (item: NasFileEntry) => {
+const getFolderItemIcon = (item: NasFileEntry) => {
+  if (item.folder) return getFileIconByExt('dept-folder')
+  const fileName = String(item.fileName || item.filePath || '')
+  const fileExt = String((item as NasFileEntry & { fileExt?: string }).fileExt || '').replace(/^\./, '')
+  const inferredExt = fileName.split('?')[0].match(/\.([^.\\/:]+)$/)?.[1] || ''
+  return getFileIconByExt(fileExt || inferredExt)
+}
+
+// 处理文件夹中子项的 BaseMetas 预览
+const handleFolderItemBaseMetasPreview = async (item: NasFileEntry) => {
   if (item.folder) return
 
   try {
@@ -220,7 +273,8 @@ const handleFolderItemKkPreview = async (item: NasFileEntry) => {
       return
     }
     if (item.esId) {
-      openExternalPreview(await getKkPreviewUrl(item.esId))
+      const response = await getBaseMetasPreview(item.esId)
+      await openBaseMetasPreviewUrl(response, item.fileName)
       return
     }
 
@@ -231,9 +285,9 @@ const handleFolderItemKkPreview = async (item: NasFileEntry) => {
     }
     // NAS 目录接口当前不返回 esId 时，降级复用 NAS 在线查看 token，权限与“在线查看”一致。
     const response = await getNasFileViewUrl(nasId, item.filePath)
-    openExternalPreview(response?.url)
+    await openBaseMetasPreviewUrl(response as { sourceUrl?: string; url?: string }, item.fileName)
   } catch (e: any) {
-    ElMessage.error(e?.message || 'KK预览失败')
+    ElMessage.error(e?.message || '预览失败')
   }
 }
 
@@ -260,26 +314,6 @@ const handleFolderItemPreview = async (item: NasFileEntry) => {
       error.value = e?.message || '加载文件夹失败'
     } finally {
       loading.value = false
-    }
-  } else {
-    // 如果是文件，尝试使用 NAS 在线预览接口
-    try {
-      const permissions = await getEntryPermissions(item)
-      if (!hasAnyPermission(permissions, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE])) {
-        ElMessage.warning('无预览或在线查看权限')
-        return
-      }
-      const nasId = currentFile.value?.nasId
-      if (!nasId) {
-        ElMessage.error('缺少 nasId，无法预览')
-        return
-      }
-
-      const response = await getNasFileViewUrl(nasId, item.filePath)
-
-      openExternalPreview(response?.url)
-    } catch (e: any) {
-      ElMessage.error(e?.message || '预览失败')
     }
   }
 }
@@ -316,6 +350,10 @@ watch(visible, (value) => {
 })
 
 onBeforeUnmount(revokeObjectUrl)
+
+onMounted(() => {
+  void loadPreviewServiceConfig()
+})
 
 defineExpose({ open })
 </script>
@@ -407,6 +445,12 @@ defineExpose({ open })
     color: var(--el-color-warning);
     background: var(--el-color-warning-light-9);
   }
+}
+
+.folder-item-icon-image {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
 }
 
 .folder-item-body {

@@ -96,6 +96,16 @@ export interface NasFileEntry {
 
 export interface NasFileViewResp {
   url?: string
+  sourceUrl?: string
+  [key: string]: unknown
+}
+
+export interface BaseMetasPreviewResp {
+  sourceUrl?: string
+  url?: string
+  fileName?: string
+  nasId?: string
+  nasFilePath?: string
   [key: string]: unknown
 }
 
@@ -148,9 +158,9 @@ export const getPreviewBlob = (esId: string) => {
   })
 }
 
-export const getKkPreviewUrl = (esId: string) => {
-  return request.get<string>({
-    url: '/rag/documents/preview/kk',
+export const getBaseMetasPreview = (esId: string) => {
+  return request.get<BaseMetasPreviewResp>({
+    url: '/rag/documents/preview/basemetas',
     params: { esId }
   })
 }

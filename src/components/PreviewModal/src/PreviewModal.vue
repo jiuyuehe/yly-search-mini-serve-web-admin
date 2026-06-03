@@ -10,7 +10,7 @@ type RectState = {
   height: number
 }
 
-type ResizeDirection = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+type ResizeDirection = 'bottom-left' | 'bottom-right'
 
 const MIN_WIDTH = 520
 const MIN_HEIGHT = 360
@@ -160,9 +160,6 @@ function normalizeResizeRect(
   }
 
   if (rectValue.height < heightMin) {
-    if (direction.includes('top')) {
-      rectValue.top = startRect.top + startRect.height - heightMin
-    }
     rectValue.height = heightMin
   }
 
@@ -175,11 +172,7 @@ function normalizeResizeRect(
   }
 
   if (rectValue.top + rectValue.height > viewportHeight) {
-    if (direction.includes('top')) {
-      rectValue.top = Math.max(0, viewportHeight - rectValue.height)
-    } else {
-      rectValue.height = Math.max(heightMin, viewportHeight - rectValue.top)
-    }
+    rectValue.height = Math.max(heightMin, viewportHeight - rectValue.top)
   }
 
   return rectValue
@@ -274,11 +267,6 @@ const handleResizePointerDown = (event: PointerEvent, direction: ResizeDirection
 
     if (direction.includes('bottom')) {
       nextRect.height = startRect.height + deltaY
-    }
-
-    if (direction.includes('top')) {
-      nextRect.top = startRect.top + deltaY
-      nextRect.height = startRect.height - deltaY
     }
 
     scheduleRectUpdate(clampRect(normalizeResizeRect(nextRect, startRect, direction)))
@@ -445,14 +433,6 @@ const showIframe = computed(() => !slots.default && Boolean(props.url))
           </div>
 
           <template v-if="!isFullscreen">
-            <div
-              class="preview-modal-resize-handle top-left"
-              @pointerdown="handleResizePointerDown($event, 'top-left')"
-            ></div>
-            <div
-              class="preview-modal-resize-handle top-right"
-              @pointerdown="handleResizePointerDown($event, 'top-right')"
-            ></div>
             <div
               class="preview-modal-resize-handle bottom-left"
               @pointerdown="handleResizePointerDown($event, 'bottom-left')"
@@ -632,18 +612,6 @@ const showIframe = computed(() => !slots.default && Boolean(props.url))
 
 .preview-modal-resize-handle:hover::after {
   background: rgb(59 130 246 / 22%);
-}
-
-.preview-modal-resize-handle.top-left {
-  top: 0;
-  left: 0;
-  cursor: nwse-resize;
-}
-
-.preview-modal-resize-handle.top-right {
-  top: 0;
-  right: 0;
-  cursor: nesw-resize;
 }
 
 .preview-modal-resize-handle.bottom-left {

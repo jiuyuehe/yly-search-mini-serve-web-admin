@@ -130,6 +130,7 @@
             preview: isGridSelectionDragging && gridSelectionPreviewIdSet.has(String(row.id))
           }"
           @click="handleCardClick(String(row.id), $event)"
+          @dblclick.stop="openFileviewPreview(row)"
           @contextmenu="handleCardContextMenu(String(row.id), $event)"
         >
           <transition name="doc-card-checkbox-transition">
@@ -187,6 +188,7 @@
           :row-class-name="getListRowClassName"
           @selection-change="handleListSelectionChange"
           @row-click="handleListRowClick"
+          @row-dblclick="handleListRowDblClick"
           @row-contextmenu="handleListRowContextMenu"
         >
           <el-table-column type="selection" width="52" />
@@ -259,6 +261,13 @@
       @batch-delete="handleContextBatchDelete"
       @change-view="handleContextChangeView"
     />
+
+    <PreviewModal
+      :open="previewVisible"
+      :title="previewTitle"
+      :url="previewUrl"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -286,7 +295,11 @@ import {
   stopParsingDocuments,
   uploadDocument
 } from '@/api/rag-aichat/document'
+import { getConfigKey } from '@/api/rag-aichat/system'
+import { config } from '@/config/axios/config'
+import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
 import { getFileIconByExt } from '@/utils/fileIconMap'
+import { PreviewModal } from '@/components/PreviewModal'
 import DocChunkList from './DocChunkList.vue'
 import KnowledgeBaseDocContextMenu from './KnowledgeBaseDocContextMenu.vue'
 import KnowledgeBaseUploadTaskPopup from './KnowledgeBaseUploadTaskPopup.vue'
@@ -317,6 +330,10 @@ const contextMenuX = ref(0)
 const contextMenuY = ref(0)
 const chunkDrawerVisible = ref(false)
 const activeChunkDocument = ref({ id: '', name: '' })
+const fileviewBaseUrl = ref('')
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('文件预览')
 const gridWrapRef = ref<HTMLElement | null>(null)
 const listTableRef = ref<any>(null)
 const syncingListSelection = ref(false)
@@ -393,6 +410,67 @@ const normalizeList = (res: any) => {
   if (Array.isArray(res?.data?.list)) return res.data.list
   if (Array.isArray(res?.data)) return res.data
   return []
+}
+
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
+
+const buildApiUrl = (path: string) => {
+  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!baseUrl) return normalizedPath
+  return `${baseUrl}${normalizedPath}`
+}
+
+const getDocumentDisplayName = (row: any) => {
+  return String(row?.name || row?.title || row?.document_name || row?.thumbnail || 'document').trim()
+}
+
+const buildDownloadViewUrl = (row: any) => {
+  const datasetId = String(props.datasetId || '').trim()
+  const documentId = String(row?.id || '').trim()
+  const fileName = String(row?.name || row?.document_name || row?.title || '').trim()
+  if (!datasetId || !documentId || !fileName) return ''
+  return buildApiUrl(
+    `ragflow/documents/downloadView/${datasetId}/${documentId}/${encodeURIComponent(fileName)}`
+  )
+}
+
+const openFileviewPreview = async (row: any) => {
+  const fileUrl = buildDownloadViewUrl(row)
+  if (!fileUrl) {
+    ElMessage.warning('未获取到可预览的文件地址')
+    return
+  }
+
+  const displayName = getDocumentDisplayName(row)
+  const previewUrlValue = buildBaseMetasPreviewUrl(
+    fileviewBaseUrl.value,
+    fileUrl,
+    String(row?.name || row?.document_name || row?.title || ''),
+    displayName
+  )
+  if (!previewUrlValue) {
+    ElMessage.warning('文件预览服务未配置')
+    return
+  }
+
+  previewTitle.value = displayName || '文件预览'
+  previewUrl.value = previewUrlValue
+  previewVisible.value = true
+}
+
+const closePreview = () => {
+  previewVisible.value = false
+}
+
+const loadPreviewServiceConfig = async () => {
+  try {
+    const data = await getConfigKey('ragflow_basemetas')
+    fileviewBaseUrl.value = String(data || '').trim()
+  } catch (error) {
+    console.error('获取文件预览服务配置失败:', error)
+    fileviewBaseUrl.value = ''
+  }
 }
 
 const normalizeSelectedIds = (ids: string[]) => Array.from(new Set(ids.map((id) => String(id))))
@@ -737,6 +815,19 @@ const handleListRowClick = (row: any, _column: any, event: MouseEvent) => {
     return
   }
   applyDocSelection(String(row.id), event)
+}
+
+const handleListRowDblClick = (row: any, _column: any, event: MouseEvent) => {
+  const target = event.target as HTMLElement | null
+  if (
+    target?.closest('.el-table-column--selection') ||
+    target?.closest('.el-checkbox') ||
+    target?.closest('.el-button') ||
+    target?.closest('.el-popconfirm')
+  ) {
+    return
+  }
+  void openFileviewPreview(row)
 }
 
 const handleListRowContextMenu = (row: any, _column: any, event: MouseEvent) => {
@@ -1111,6 +1202,7 @@ watch(
 
 onMounted(() => {
   window.addEventListener('keydown', handleDocShortcutKeydown)
+  void loadPreviewServiceConfig()
 })
 
 onBeforeUnmount(() => {

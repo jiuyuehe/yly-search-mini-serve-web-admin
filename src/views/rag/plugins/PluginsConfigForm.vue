@@ -28,7 +28,7 @@
         </el-form-item>
       </template>
       
-      <!-- KKFile 特有配置 -->
+      <!-- 预览文件特有配置 -->
       <template v-else-if="formData.code === 'kkfile'">
         <el-form-item label="预览路径" prop="path">
           <el-input 

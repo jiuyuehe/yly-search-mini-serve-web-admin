@@ -45,7 +45,7 @@
         :page="page"
         :page-size="filters.limit || 20"
         :search-time="result.searchTime"
-        @kk-preview="openKkPreview"
+        @basemetas-preview="openBaseMetasPreview"
         @preview="openViewer"
         @download="downloadOne"
         @batch-download="downloadBatch"
@@ -55,6 +55,12 @@
     </main>
 
     <SearchFileViewer ref="viewerRef" />
+    <PreviewModal
+      :open="previewVisible"
+      :title="previewTitle"
+      :url="previewUrl"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -76,14 +82,20 @@ import SearchResultList from './SearchResultList.vue'
 import {
   batchDownloadBlob,
   downloadFileBlob,
-  getKkPreviewUrl,
+  downloadNasFileBlob,
+  getBaseMetasPreview,
   getNasFilePermissions,
+  getNasFileViewUrl,
   searchDocuments,
   type CommonFile,
   type FilterResult,
   type SearchParam,
   type SearchResult
 } from '@/api/rag/search'
+import { getConfigKey } from '@/api/rag-aichat/system'
+import { config } from '@/config/axios/config'
+import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
+import { PreviewModal } from '@/components/PreviewModal'
 
 const defaultFilters = (): SearchParam => ({
   keyword: '',
@@ -122,6 +134,10 @@ const selectedIds = ref<string[]>([])
 const loading = ref(false)
 const currentAgg = ref('')
 const viewerRef = ref<InstanceType<typeof SearchFileViewer>>()
+const fileviewBaseUrl = ref('')
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('文件预览')
 
 const page = computed(() => Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1)
 
@@ -212,23 +228,144 @@ const saveBlob = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url)
 }
 
-const getNasPath = (file: CommonFile) => file.subPath || file.filePath || ''
+type SearchFileRecord = CommonFile & Record<string, any>
+
+const getStringValue = (source: SearchFileRecord, keys: string[]) => {
+  for (const key of keys) {
+    const value = source[key]
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim()
+    }
+  }
+  return ''
+}
+
+const getNestedStringValue = (source: any, keys: string[]) => {
+  if (!source) return ''
+  if (typeof source === 'string') return source.trim()
+  if (typeof source !== 'object') return ''
+  for (const key of keys) {
+    const value = source[key]
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim()
+    }
+  }
+  return ''
+}
+
+const getNasId = (file: CommonFile) =>
+  getStringValue(file as SearchFileRecord, ['nasId', 'nas_id', 'nasID', 'storageId', 'storage_id'])
+
+const getNasPath = (file: CommonFile) =>
+  getStringValue(file as SearchFileRecord, [
+    'subPath',
+    'filePath',
+    'nasFilePath',
+    'nas_file_path',
+    'path',
+    'relativePath',
+    'relative_path',
+    'fullPath',
+    'full_path'
+  ])
+
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
+
+const buildApiUrl = (path: string) => {
+  const baseUrl = trimTrailingSlash(String(config.base_url || ''))
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!baseUrl) return normalizedPath
+  return `${baseUrl}${normalizedPath}`
+}
+
+const getFileDisplayName = (file: CommonFile) => {
+  return (
+    getStringValue(file as SearchFileRecord, ['fileName', 'name', 'documentName', 'document_name']) ||
+    getNasPath(file) ||
+    '文件预览'
+  )
+}
+
+const normalizeFileUrl = (url: string) => {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  if (url.startsWith('/')) return buildApiUrl(url)
+  return url
+}
+
+const getDirectPreviewFileUrl = (file: CommonFile) => {
+  const url = getStringValue(file as SearchFileRecord, [
+    'baseMetasUrl',
+    'basemetasUrl',
+    'previewUrl',
+    'preview_url',
+    'viewUrl',
+    'view_url',
+    'fileUrl',
+    'file_url',
+    'downloadViewUrl',
+    'download_view_url'
+  ])
+  return normalizeFileUrl(url)
+}
+
+const getFileViewResponseUrl = (response: unknown) => {
+  const url = getNestedStringValue(response, [
+    'sourceUrl',
+    'source_url',
+    'rawUrl',
+    'raw_url',
+    'url',
+    'fileUrl',
+    'file_url',
+    'viewUrl',
+    'view_url'
+  ])
+  if (url) return normalizeFileUrl(url)
+  const dataUrl = getNestedStringValue((response as any)?.data, [
+    'sourceUrl',
+    'source_url',
+    'rawUrl',
+    'raw_url',
+    'url',
+    'fileUrl',
+    'file_url',
+    'viewUrl',
+    'view_url'
+  ])
+  return normalizeFileUrl(dataUrl)
+}
 
 const hasNasPermission = async (file: CommonFile, bits: number[]) => {
-  if (!file.nasId || !getNasPath(file)) return true
-  const data = await getNasFilePermissions(file.nasId, getNasPath(file))
+  const nasId = getNasId(file)
+  const nasPath = getNasPath(file)
+  if (!nasId || !nasPath) return true
+  const data = await getNasFilePermissions(nasId, nasPath)
   const permissions = data?.permissions || 0
   return bits.some((bit) => (permissions & bit) === bit)
 }
 
 const downloadOne = async (file: CommonFile) => {
-  if (!file.esId) return
+  if (file.esId) {
+    const blob = await downloadFileBlob(file.esId)
+    saveBlob(blob, getFileDisplayName(file) || 'download')
+    ElMessage.success('已开始下载')
+    return
+  }
+
+  const nasId = getNasId(file)
+  const nasPath = getNasPath(file)
+  if (!nasId || !nasPath) {
+    ElMessage.warning('未获取到 NAS 文件地址，无法下载')
+    return
+  }
   if (!(await hasNasPermission(file, [NAS_PERMISSION.DOWN]))) {
     ElMessage.warning('无下载权限')
     return
   }
-  const blob = await downloadFileBlob(file.esId)
-  saveBlob(blob, file.fileName || 'download')
+  const blob = await downloadNasFileBlob(nasId, nasPath)
+  saveBlob(blob, getFileDisplayName(file) || 'download')
+  ElMessage.success('已开始下载')
 }
 
 const downloadBatch = async () => {
@@ -238,21 +375,62 @@ const downloadBatch = async () => {
   ElMessage.success('批量下载已开始')
 }
 
-const openKkPreview = async (file: CommonFile) => {
-  if (!file.esId) {
-    ElMessage.warning('文件缺少 esId，无法打开 KK 预览')
-    return
-  }
+const openBaseMetasPreview = async (file: CommonFile) => {
   if (!(await hasNasPermission(file, [NAS_PERMISSION.VIEW, NAS_PERMISSION.VIEW_ONLINE]))) {
     ElMessage.warning('无预览或在线查看权限')
     return
   }
-  const url = await getKkPreviewUrl(file.esId)
-  if (!url) {
-    ElMessage.warning('未获取到 KK 预览地址')
+
+  let responseFileName = ''
+  let fileUrl = ''
+  if (file.esId) {
+    try {
+      const response = await getBaseMetasPreview(file.esId)
+      fileUrl = getFileViewResponseUrl(response)
+      responseFileName = getNestedStringValue(response, ['fileName', 'file_name'])
+    } catch (error) {
+      console.error('获取 BaseMetas 预览源地址失败:', error)
+    }
+  }
+
+  if (!fileUrl) {
+    fileUrl = getDirectPreviewFileUrl(file)
+  }
+  const nasPath = getNasPath(file)
+  const nasId = getNasId(file)
+  if (!fileUrl && nasId && nasPath) {
+    const response = await getNasFileViewUrl(nasId, nasPath)
+    fileUrl = getFileViewResponseUrl(response)
+  }
+  if (!fileUrl) {
+    ElMessage.warning('未获取到 NAS 在线查看地址，无法进行 BaseMetas 预览')
     return
   }
-  window.open(url, '_blank')
+
+  const displayName = responseFileName || getFileDisplayName(file)
+  const baseMetasUrl = buildBaseMetasPreviewUrl(fileviewBaseUrl.value, fileUrl, displayName, displayName)
+  if (!baseMetasUrl) {
+    ElMessage.warning('文件预览服务未配置')
+    return
+  }
+
+  previewTitle.value = displayName || '文件预览'
+  previewUrl.value = baseMetasUrl
+  previewVisible.value = true
+}
+
+const closePreview = () => {
+  previewVisible.value = false
+}
+
+const loadPreviewServiceConfig = async () => {
+  try {
+    const data = await getConfigKey('ragflow_basemetas')
+    fileviewBaseUrl.value = String(data || '').trim()
+  } catch (error) {
+    console.error('获取 BaseMetas 预览服务配置失败:', error)
+    fileviewBaseUrl.value = ''
+  }
 }
 
 const openViewer = async (file: CommonFile) => {
@@ -266,7 +444,10 @@ const openViewer = async (file: CommonFile) => {
   viewerRef.value?.open(file)
 }
 
-onMounted(handleSearch)
+onMounted(() => {
+  void handleSearch()
+  void loadPreviewServiceConfig()
+})
 </script>
 
 <style scoped lang="scss">
