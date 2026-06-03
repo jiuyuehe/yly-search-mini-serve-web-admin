@@ -210,8 +210,8 @@ onBeforeUnmount(() => {
 }
 
 .kb-sidebar.collapsed .kb-sidebar-header-copy {
-  opacity: 0;
   pointer-events: none;
+  opacity: 0;
 }
 
 .kb-collapse-btn {
@@ -244,9 +244,9 @@ onBeforeUnmount(() => {
 }
 
 .kb-sidebar-body.is-collapsed {
+  pointer-events: none;
   opacity: 0;
   transform: translateX(-12px);
-  pointer-events: none;
 }
 
 .kb-sidebar-actions {
@@ -267,10 +267,10 @@ onBeforeUnmount(() => {
 .kb-list-empty {
   display: flex;
   height: 120px;
+  font-size: 14px;
   color: var(--app-text-secondary);
   align-items: center;
   justify-content: center;
-  font-size: 14px;
 }
 
 .kb-group + .kb-group {
@@ -279,12 +279,12 @@ onBeforeUnmount(() => {
 
 .kb-group-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
   padding: 0 4px;
+  margin-bottom: 6px;
   font-size: 13px;
   color: var(--app-text-secondary);
+  align-items: center;
+  justify-content: space-between;
 }
 
 .kb-item {
@@ -340,8 +340,8 @@ onBeforeUnmount(() => {
 }
 
 .kb-item-name {
-  font-size: 13px;
   overflow: hidden;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

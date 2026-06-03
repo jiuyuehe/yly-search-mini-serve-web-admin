@@ -1,0 +1,735 @@
+Codex 执行方案：将新页面预览改为弹窗预览
+
+目标
+
+把当前的文件 / 页面 / 内容预览逻辑从“打开新页面”改为“在当前页面打开弹窗预览”。
+
+弹窗需要支持：
+
+1. 右上角图标按钮：
+   - 放大 / 全屏按钮
+   - 缩小 / 还原按钮
+   - 关闭按钮
+
+2. 弹窗交互：
+   - 按住顶部标题栏可以拖拽窗口
+   - 四个角可以拖拽缩放窗口
+   - 全屏状态覆盖整个屏幕
+   - 全屏后禁止拖拽和角落缩放
+   - 退出全屏后恢复原来的窗口位置和尺寸
+
+3. 视觉效果：
+   - 现代化弹窗样式
+   - 半透明遮罩层
+   - 圆角、阴影、边框
+   - 顶部工具栏清晰
+   - 内容区域自适应
+
+------------------------------------------------------------
+推荐组件结构
+------------------------------------------------------------
+
+请新建一个通用组件，例如：
+
+components/PreviewModal.tsx
+
+组件暴露如下 props：
+
+type PreviewModalProps = {
+  open: boolean
+  title?: string
+  url?: string
+  children?: React.ReactNode
+  onClose: () => void
+}
+
+使用逻辑：
+
+<PreviewModal
+  open={previewOpen}
+  title="文件预览"
+  url={previewUrl}
+  onClose={() => setPreviewOpen(false)}
+/>
+
+如果当前预览内容不是 iframe，也可以通过 children 传入。
+
+------------------------------------------------------------
+交互设计细节
+------------------------------------------------------------
+
+1. 弹窗初始尺寸
+
+默认居中显示：
+
+width: 80vw
+height: 80vh
+left: 10vw
+top: 10vh
+
+建议最小尺寸：
+
+minWidth: 520
+minHeight: 360
+
+2. 顶部拖拽
+
+只允许拖动标题栏区域，例如：
+
+<div className="preview-modal-header">
+  ...
+</div>
+
+拖拽时监听：
+
+pointerdown
+pointermove
+pointerup
+
+逻辑：
+
+- 鼠标按下时记录初始鼠标位置和窗口位置
+- 移动时更新 left 和 top
+- 限制窗口不要完全拖出屏幕
+- 全屏状态下不允许拖拽
+
+3. 四角缩放
+
+四个角分别放置透明 resize handle：
+
+<div data-resize="top-left" />
+<div data-resize="top-right" />
+<div data-resize="bottom-left" />
+<div data-resize="bottom-right" />
+
+每个角的 cursor：
+
+top-left: nwse-resize
+top-right: nesw-resize
+bottom-left: nesw-resize
+bottom-right: nwse-resize
+
+缩放逻辑：
+
+- 记录开始缩放时的鼠标坐标和窗口矩形
+- 根据不同角调整 width / height / left / top
+- 限制最小宽高
+- 限制不要超出屏幕
+- 全屏状态下隐藏或禁用 resize handle
+
+4. 全屏逻辑
+
+不要使用浏览器原生 fullscreen API，直接用 CSS 状态控制。
+
+全屏时：
+
+left: 0
+top: 0
+width: window.innerWidth
+height: window.innerHeight
+borderRadius: 0
+
+同时遮罩层覆盖全屏。
+
+退出全屏时，恢复进入全屏前保存的尺寸和位置：
+
+const beforeFullscreenRect = useRef(rect)
+
+------------------------------------------------------------
+推荐实现代码：PreviewModal.tsx
+------------------------------------------------------------
+
+import React, { useEffect, useRef, useState } from "react"
+import {
+  Maximize2,
+  Minimize2,
+  X,
+} from "lucide-react"
+
+type RectState = {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+type PreviewModalProps = {
+  open: boolean
+  title?: string
+  url?: string
+  children?: React.ReactNode
+  onClose: () => void
+}
+
+const MIN_WIDTH = 520
+const MIN_HEIGHT = 360
+
+export function PreviewModal({
+  open,
+  title = "预览",
+  url,
+  children,
+  onClose,
+}: PreviewModalProps) {
+  const [rect, setRect] = useState<RectState>(() => getDefaultRect())
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const beforeFullscreenRect = useRef<RectState | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return
+
+    const handleResize = () => {
+      if (isFullscreen) {
+        setRect({
+          left: 0,
+          top: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        })
+      } else {
+        setRect((prev) => clampRect(prev))
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [open, isFullscreen])
+
+  useEffect(() => {
+    if (open) {
+      setRect(getDefaultRect())
+      setIsFullscreen(false)
+      beforeFullscreenRect.current = null
+    }
+  }, [open])
+
+  if (!open) return null
+
+  const enterFullscreen = () => {
+    beforeFullscreenRect.current = rect
+    setIsFullscreen(true)
+    setRect({
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    })
+  }
+
+  const exitFullscreen = () => {
+    setIsFullscreen(false)
+    setRect(beforeFullscreenRect.current ?? getDefaultRect())
+  }
+
+  const handleHeaderPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (isFullscreen) return
+
+    const target = event.target as HTMLElement
+    if (target.closest("button")) return
+
+    event.currentTarget.setPointerCapture(event.pointerId)
+
+    const startX = event.clientX
+    const startY = event.clientY
+    const startRect = { ...rect }
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const nextRect = clampRect({
+        ...startRect,
+        left: startRect.left + moveEvent.clientX - startX,
+        top: startRect.top + moveEvent.clientY - startY,
+      })
+
+      setRect(nextRect)
+    }
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove)
+      window.removeEventListener("pointerup", handlePointerUp)
+    }
+
+    window.addEventListener("pointermove", handlePointerMove)
+    window.addEventListener("pointerup", handlePointerUp)
+  }
+
+  const handleResizePointerDown = (
+    event: React.PointerEvent<HTMLDivElement>,
+    direction: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+  ) => {
+    if (isFullscreen) return
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    event.currentTarget.setPointerCapture(event.pointerId)
+
+    const startX = event.clientX
+    const startY = event.clientY
+    const startRect = { ...rect }
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX
+      const deltaY = moveEvent.clientY - startY
+
+      let nextRect: RectState = { ...startRect }
+
+      if (direction.includes("right")) {
+        nextRect.width = startRect.width + deltaX
+      }
+
+      if (direction.includes("left")) {
+        nextRect.left = startRect.left + deltaX
+        nextRect.width = startRect.width - deltaX
+      }
+
+      if (direction.includes("bottom")) {
+        nextRect.height = startRect.height + deltaY
+      }
+
+      if (direction.includes("top")) {
+        nextRect.top = startRect.top + deltaY
+        nextRect.height = startRect.height - deltaY
+      }
+
+      nextRect = normalizeResizeRect(nextRect, startRect, direction)
+      setRect(clampRect(nextRect))
+    }
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove)
+      window.removeEventListener("pointerup", handlePointerUp)
+    }
+
+    window.addEventListener("pointermove", handlePointerMove)
+    window.addEventListener("pointerup", handlePointerUp)
+  }
+
+  return (
+    <div className="preview-modal-root">
+      <div className="preview-modal-backdrop" />
+
+      <div
+        className={`preview-modal-window ${
+          isFullscreen ? "is-fullscreen" : ""
+        }`}
+        style={{
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        }}
+      >
+        <div
+          className="preview-modal-header"
+          onPointerDown={handleHeaderPointerDown}
+        >
+          <div className="preview-modal-title" title={title}>
+            {title}
+          </div>
+
+          <div className="preview-modal-actions">
+            {isFullscreen ? (
+              <button
+                type="button"
+                className="preview-modal-icon-button"
+                onClick={exitFullscreen}
+                aria-label="退出全屏"
+                title="退出全屏"
+              >
+                <Minimize2 size={18} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="preview-modal-icon-button"
+                onClick={enterFullscreen}
+                aria-label="全屏"
+                title="全屏"
+              >
+                <Maximize2 size={18} />
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="preview-modal-icon-button danger"
+              onClick={onClose}
+              aria-label="关闭"
+              title="关闭"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="preview-modal-body">
+          {children ? (
+            children
+          ) : url ? (
+            <iframe
+              src={url}
+              className="preview-modal-iframe"
+              title={title}
+            />
+          ) : (
+            <div className="preview-modal-empty">暂无可预览内容</div>
+          )}
+        </div>
+
+        {!isFullscreen && (
+          <>
+            <div
+              className="preview-modal-resize-handle top-left"
+              onPointerDown={(event) =>
+                handleResizePointerDown(event, "top-left")
+              }
+            />
+            <div
+              className="preview-modal-resize-handle top-right"
+              onPointerDown={(event) =>
+                handleResizePointerDown(event, "top-right")
+              }
+            />
+            <div
+              className="preview-modal-resize-handle bottom-left"
+              onPointerDown={(event) =>
+                handleResizePointerDown(event, "bottom-left")
+              }
+            />
+            <div
+              className="preview-modal-resize-handle bottom-right"
+              onPointerDown={(event) =>
+                handleResizePointerDown(event, "bottom-right")
+              }
+            />
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function getDefaultRect(): RectState {
+  if (typeof window === "undefined") {
+    return {
+      left: 120,
+      top: 80,
+      width: 960,
+      height: 640,
+    }
+  }
+
+  const width = Math.max(MIN_WIDTH, Math.floor(window.innerWidth * 0.8))
+  const height = Math.max(MIN_HEIGHT, Math.floor(window.innerHeight * 0.8))
+
+  return {
+    width,
+    height,
+    left: Math.floor((window.innerWidth - width) / 2),
+    top: Math.floor((window.innerHeight - height) / 2),
+  }
+}
+
+function clampRect(rect: RectState): RectState {
+  const maxWidth = window.innerWidth
+  const maxHeight = window.innerHeight
+
+  const width = Math.min(Math.max(rect.width, MIN_WIDTH), maxWidth)
+  const height = Math.min(Math.max(rect.height, MIN_HEIGHT), maxHeight)
+
+  const left = Math.min(Math.max(rect.left, 0), Math.max(0, maxWidth - width))
+  const top = Math.min(Math.max(rect.top, 0), Math.max(0, maxHeight - height))
+
+  return {
+    left,
+    top,
+    width,
+    height,
+  }
+}
+
+function normalizeResizeRect(
+  nextRect: RectState,
+  startRect: RectState,
+  direction: "top-left" | "top-right" | "bottom-left" | "bottom-right"
+): RectState {
+  let rect = { ...nextRect }
+
+  if (rect.width < MIN_WIDTH) {
+    if (direction.includes("left")) {
+      rect.left = startRect.left + startRect.width - MIN_WIDTH
+    }
+    rect.width = MIN_WIDTH
+  }
+
+  if (rect.height < MIN_HEIGHT) {
+    if (direction.includes("top")) {
+      rect.top = startRect.top + startRect.height - MIN_HEIGHT
+    }
+    rect.height = MIN_HEIGHT
+  }
+
+  return rect
+}
+
+------------------------------------------------------------
+CSS 样式：PreviewModal.css
+------------------------------------------------------------
+
+.preview-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.preview-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.preview-modal-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 18px;
+  box-shadow:
+    0 24px 80px rgba(15, 23, 42, 0.28),
+    0 8px 24px rgba(15, 23, 42, 0.16);
+  pointer-events: auto;
+  transition:
+    border-radius 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.preview-modal-window.is-fullscreen {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.preview-modal-header {
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 16px;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.96));
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  cursor: move;
+  user-select: none;
+}
+
+.preview-modal-window.is-fullscreen .preview-modal-header {
+  cursor: default;
+}
+
+.preview-modal-title {
+  min-width: 0;
+  flex: 1;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.preview-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+.preview-modal-icon-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.12s ease;
+}
+
+.preview-modal-icon-button:hover {
+  color: #0f172a;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.preview-modal-icon-button:active {
+  transform: scale(0.94);
+}
+
+.preview-modal-icon-button.danger:hover {
+  color: #dc2626;
+  background: rgba(248, 113, 113, 0.14);
+}
+
+.preview-modal-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #f8fafc;
+}
+
+.preview-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+.preview-modal-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.preview-modal-resize-handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  z-index: 2;
+}
+
+.preview-modal-resize-handle.top-left {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.preview-modal-resize-handle.top-right {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.preview-modal-resize-handle.bottom-left {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.preview-modal-resize-handle.bottom-right {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}
+
+.preview-modal-resize-handle::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.preview-modal-resize-handle:hover::after {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+------------------------------------------------------------
+替换当前“打开新页面”的逻辑
+------------------------------------------------------------
+
+找到类似代码：
+
+window.open(previewUrl, "_blank")
+
+或者：
+
+<a href={previewUrl} target="_blank">
+  预览
+</a>
+
+改成状态控制：
+
+const [previewOpen, setPreviewOpen] = useState(false)
+const [previewUrl, setPreviewUrl] = useState("")
+const [previewTitle, setPreviewTitle] = useState("预览")
+
+const openPreview = (url: string, title?: string) => {
+  setPreviewUrl(url)
+  setPreviewTitle(title || "预览")
+  setPreviewOpen(true)
+}
+
+原来的点击事件改成：
+
+onClick={() => openPreview(file.previewUrl, file.name)}
+
+页面底部挂载组件：
+
+<PreviewModal
+  open={previewOpen}
+  title={previewTitle}
+  url={previewUrl}
+  onClose={() => setPreviewOpen(false)}
+/>
+
+------------------------------------------------------------
+Codex 任务描述，可直接复制
+------------------------------------------------------------
+
+请把当前预览功能从 window.open / 新页面打开，改成当前页面弹窗预览。
+
+要求：
+1. 新增一个通用 PreviewModal 组件。
+2. PreviewModal 支持 open、title、url、children、onClose 参数。
+3. 弹窗默认居中，尺寸约为 80vw * 80vh，最小尺寸 520 * 360。
+4. 右上角放图标按钮：全屏 / 还原、关闭。可以使用 lucide-react 的 Maximize2、Minimize2、X 图标；如果项目没有 lucide-react，就使用项目现有图标库。
+5. 顶部标题栏支持拖拽移动窗口。
+6. 四个角支持拖拽缩放窗口。
+7. 全屏时弹窗覆盖整个屏幕，left/top 为 0，宽高为 window.innerWidth/window.innerHeight，border-radius 为 0。
+8. 全屏状态下禁用拖拽和角落缩放。
+9. 退出全屏时恢复进入全屏前的位置和尺寸。
+10. 按 Esc 关闭弹窗。
+11. 添加半透明遮罩和现代化弹窗样式，包含圆角、阴影、顶部工具栏、内容区域自适应。
+12. 替换当前所有 window.open(previewUrl, "_blank") 或 target="_blank" 的预览行为，统一改成打开 PreviewModal。
+13. iframe 用于加载 url 预览，children 用于支持自定义预览内容。
+14. 注意组件卸载时清理 pointermove、pointerup、keydown、resize 事件，避免内存泄漏。
+15. 保持 TypeScript 类型安全，不要引入不必要的第三方拖拽库。
+
+额外优化：
+1. 点击遮罩不关闭，避免用户误触导致预览关闭；只通过右上角关闭按钮或 Esc 关闭。
+2. 拖拽时限制弹窗不要完全移出屏幕。
+3. 缩放时限制最小宽高，避免内容区域被压坏。
+4. 在移动端或小屏幕下默认直接全屏显示。
+5. iframe 区域加 loading 状态，如果项目已有 Skeleton / Spin 组件，可以接入。
+6. 如果 url 为空，显示“暂无可预览内容”。
+7. 如果当前项目使用 Tailwind，请将 CSS 转成 Tailwind class；否则使用独立 CSS 文件。
+
+实现重点：
+不要用浏览器原生新窗口，也不要依赖复杂第三方库。直接用 React 状态管理弹窗位置、尺寸和全屏状态，稳定、可控、容易维护。

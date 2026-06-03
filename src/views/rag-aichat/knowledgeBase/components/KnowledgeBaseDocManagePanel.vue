@@ -131,6 +131,13 @@
       :document-id="activeChunkDocument.id"
       :document-name="activeChunkDocument.name"
     />
+
+    <PreviewModal
+      :open="previewVisible"
+      :title="previewTitle"
+      :url="previewUrl"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -157,6 +164,7 @@ import {
   isDocumentParsing
 } from '../../utils/documentParse'
 import { getFileIconByExt } from '@/utils/fileIconMap'
+import { PreviewModal } from '@/components/PreviewModal'
 import DocChunkList from './DocChunkList.vue'
 
 defineOptions({ name: 'RagAiKnowledgeBaseDocManagePanel' })
@@ -176,6 +184,9 @@ const chunkDrawerVisible = ref(false)
 const activeChunkDocument = ref({ id: '', name: '' })
 const docPreviewUrlMap = reactive<Record<string, string>>({})
 const fileviewBaseUrl = ref('')
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('文件预览')
 
 const normalizeList = (res: any) => {
   if (Array.isArray(res)) return res
@@ -253,17 +264,23 @@ const openFileviewPreview = async (row: any) => {
     return
   }
 
-  const previewUrl = buildFileviewPreviewUrl(
+  const previewUrlValue = buildFileviewPreviewUrl(
     fileUrl,
     String(row?.name || ''),
     getDocumentDisplayName(row)
   )
-  if (!previewUrl) {
+  if (!previewUrlValue) {
     ElMessage.warning('文件预览服务未配置')
     return
   }
 
-  window.open(previewUrl, '_blank')
+  previewTitle.value = getDocumentDisplayName(row) || '文件预览'
+  previewUrl.value = previewUrlValue
+  previewVisible.value = true
+}
+
+const closePreview = () => {
+  previewVisible.value = false
 }
 
 const syncDocPreviews = async (docs: any[]) => {
