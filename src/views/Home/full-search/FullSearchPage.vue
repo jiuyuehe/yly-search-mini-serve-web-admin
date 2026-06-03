@@ -51,8 +51,7 @@
             <SearchResultList
               v-model:selected-ids="selectedIds"
               :files="result.fileList"
-              :total="result.total"
-              :summary-total="currentSummaryTotal"
+              :total="currentResultTotal"
               :loading="loading"
               :keyword="filters.keyword"
               :show-score="hasSearchCondition"
@@ -165,11 +164,6 @@ const filterPanelWidth = computed(() => (filterCollapsed.value ? '56px' : '300px
 
 const page = computed(() => Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1)
 
-const formatSearchTime = (ms: number) => {
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(2)}s`
-}
-
 const docTypeMap = [
   { label: '全部', value: '', keys: [], icon: Files },
   { label: '文档', value: '2', keys: ['2', 'doc', 'document'], icon: Document },
@@ -199,11 +193,10 @@ const aggregationTabs = computed(() => {
   }))
 })
 
-const currentAggLabel = computed(() => {
-  return aggregationTabs.value.find((item) => item.value === activeAggregation.value)?.label || '全部'
-})
+const hasAggregationStats = computed(() => (aggregations.value.docType || []).length > 0)
 
-const currentSummaryTotal = computed(() => {
+const currentResultTotal = computed(() => {
+  if (!hasAggregationStats.value) return result.total
   const activeTab = aggregationTabs.value.find((item) => item.value === activeAggregation.value)
   return activeTab?.count ?? result.total
 })

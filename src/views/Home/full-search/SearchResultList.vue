@@ -11,7 +11,7 @@
         </el-checkbox>
 
         <div class="toolbar-meta">
-          <span class="result-count">共 {{ displayTotal }} 条</span>
+          <span class="result-count">共 {{ total }} 条</span>
           <span v-if="searchTime !== undefined && searchTime !== null" class="search-time">
             耗时 {{ formatSearchTime(searchTime) }}
           </span>
@@ -100,9 +100,14 @@
             :show-after="300"
             popper-class="result-table-tooltip"
           >
-            <div v-if="row.fileContents" class="snippet" v-dompurify-html="row.fileContents"></div>
+            <div
+              v-if="row.fileContents"
+              class="snippet snippet-clickable"
+              v-dompurify-html="row.fileContents"
+              @click="openSnippetDialog(row)"
+            ></div>
 
-            <div v-else class="snippet plain">
+            <div v-else class="snippet plain snippet-clickable" @click="openSnippetDialog(row)">
               {{ row.enrichSummary || row.fileSummary }}
             </div>
           </el-tooltip>
@@ -238,6 +243,19 @@
       v-model:page="currentPage"
       v-model:limit="currentPageSize"
     />
+
+    <Dialog
+      :modal="false"
+      v-model="snippetDialogVisible"
+      :title="snippetDialogTitle"
+      width="760px"
+      :scroll="true"
+    >
+      <div v-if="snippetDialogHtml" class="snippet-dialog-content snippet-dialog-html">
+        <div v-dompurify-html="snippetDialogHtml"></div>
+      </div>
+      <pre v-else class="snippet-dialog-content snippet-dialog-plain">{{ snippetDialogText }}</pre>
+    </Dialog>
   </section>
 </template>
 
@@ -252,7 +270,6 @@ defineOptions({ name: 'HomeSearchResultList' })
 const props = defineProps<{
   files: CommonFile[]
   total: number
-  summaryTotal?: number
   loading: boolean
   keyword?: string
   showScore?: boolean
@@ -261,8 +278,6 @@ const props = defineProps<{
   selectedIds: string[]
   searchTime?: number
 }>()
-
-const displayTotal = computed(() => props.summaryTotal ?? props.total)
 
 const emit = defineEmits<{
   'basemetas-preview': [file: CommonFile]
@@ -277,6 +292,10 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLElement>()
 const toolbarRef = ref<HTMLElement>()
 const tableMaxHeight = ref(360)
+const snippetDialogVisible = ref(false)
+const snippetDialogTitle = ref('命中内容')
+const snippetDialogHtml = ref('')
+const snippetDialogText = ref('')
 let resizeObserver: ResizeObserver | undefined
 
 const getEsId = (file: CommonFile) => file.esId || ''
@@ -342,6 +361,16 @@ const handleFileNameClick = (file: CommonFile) => {
   }
 
   emit('basemetas-preview', file)
+}
+
+const openSnippetDialog = (file: CommonFile) => {
+  const htmlContent = String(file.fileContents || '').trim()
+  const plainContent = String(file.enrichSummary || file.fileSummary || '').trim()
+
+  snippetDialogTitle.value = `${file.fileName || '命中内容'}`
+  snippetDialogHtml.value = htmlContent
+  snippetDialogText.value = htmlContent ? stripHtml(htmlContent) || plainContent : plainContent
+  snippetDialogVisible.value = true
 }
 
 const escapeHtml = (value: string) =>
@@ -612,6 +641,14 @@ onBeforeUnmount(() => {
   border-radius: 0;
 }
 
+.snippet-clickable {
+  cursor: pointer;
+}
+
+.snippet-clickable:hover {
+  color: var(--el-color-primary);
+}
+
 .plain {
   color: rgb(71 85 105);
 }
@@ -681,6 +718,29 @@ onBeforeUnmount(() => {
 .empty-text {
   font-size: 13px;
   color: rgb(148 163 184);
+}
+
+.snippet-dialog-content {
+  max-height: min(60vh, 520px);
+  overflow: auto;
+  padding: 4px 2px;
+  line-height: 1.75;
+  color: rgb(51 65 85);
+  word-break: break-word;
+}
+
+.snippet-dialog-html {
+  white-space: normal;
+}
+
+.snippet-dialog-html :deep(*) {
+  max-width: 100%;
+}
+
+.snippet-dialog-plain {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
 }
 
 .pagination {
