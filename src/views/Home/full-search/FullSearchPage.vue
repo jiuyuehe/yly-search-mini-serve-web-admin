@@ -55,6 +55,7 @@
               :summary-total="currentSummaryTotal"
               :loading="loading"
               :keyword="filters.keyword"
+              :show-score="hasSearchCondition"
               :page="page"
               :page-size="filters.limit || 20"
               :search-time="result.searchTime"
@@ -224,6 +225,8 @@ const activeFilterCount = computed(() => {
   ]
   return entries.reduce((count, [, active]) => count + Number(active), 0)
 })
+
+const hasSearchCondition = computed(() => activeFilterCount.value > 0)
 
 const buildSearchParams = (): SearchParam => ({
   ...filters,

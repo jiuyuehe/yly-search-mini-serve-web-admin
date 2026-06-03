@@ -48,7 +48,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="文件" min-width="300" fixed="left">
+      <el-table-column label="文件" min-width="360" fixed="left">
         <template #default="{ row }">
           <div class="file-cell">
             <div class="file-icon" :class="`type-${getDocGroup(row)}`">
@@ -76,7 +76,7 @@
                 </el-tooltip>
 
                 <el-tooltip
-                  v-if="row.score !== undefined"
+                  v-if="showScore && row.score !== undefined"
                   effect="dark"
                   placement="top"
                   :content="formatScore(row.score)"
@@ -257,6 +257,7 @@ const props = defineProps<{
   summaryTotal?: number
   loading: boolean
   keyword?: string
+  showScore?: boolean
   page: number
   pageSize: number
   selectedIds: string[]
@@ -426,7 +427,13 @@ const formatTimeText = (file: CommonFile) => {
   )
 }
 
-const formatScore = (score: number) => `相关度 ${Math.round(score * 100)}%`
+const normalizeScore = (score?: number) => {
+  if (score === undefined || score === null || Number.isNaN(score)) return 0
+  if (score <= 0) return 0
+  return Math.min(1, score)
+}
+
+const formatScore = (score: number) => `相关度 ${(normalizeScore(score) * 100).toFixed(1)}%`
 
 const formatSearchTime = (ms: number) => {
   if (ms < 1000) return `${ms}ms`
@@ -523,8 +530,8 @@ onBeforeUnmount(() => {
 }
 
 .file-icon-image {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
 }
 
@@ -559,6 +566,7 @@ onBeforeUnmount(() => {
 }
 
 .file-title {
+  flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
   padding: 0;
@@ -579,13 +587,11 @@ onBeforeUnmount(() => {
 .score {
   display: inline-block;
   flex: 0 0 auto;
-  max-width: 96px;
+  min-width: fit-content;
   padding: 2px 6px;
-  overflow: hidden;
   font-size: 12px;
   line-height: 18px;
   color: rgb(37 99 235);
-  text-overflow: ellipsis;
   white-space: nowrap;
   background: rgb(239 246 255);
   border: 1px solid rgb(191 219 254);
