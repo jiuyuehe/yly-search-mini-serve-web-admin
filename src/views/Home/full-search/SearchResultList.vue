@@ -20,7 +20,7 @@
 
       <div class="toolbar-actions">
         <el-button v-if="selectedIds.length" type="primary" plain @click="$emit('batch-download')">
-          <el-icon><Download /></el-icon>
+          <Icon icon="ep:download" />
           批量下载
         </el-button>
       </div>
@@ -122,13 +122,13 @@
               popper-class="result-table-tooltip"
             >
               <div class="path-main">
-                <el-icon><Location /></el-icon>
+                <Icon icon="ep:location" />
                 <span class="path-text ellipsis">{{ row.filePath || '-' }}</span>
               </div>
             </el-tooltip>
 
             <el-button v-if="row.filePath" link type="primary" @click="copyPath(row.filePath)">
-              <el-icon><CopyDocument /></el-icon>
+              <Icon icon="ep:copy-document" />
               复制
             </el-button>
           </div>
@@ -214,17 +214,16 @@
               type="primary"
               @click="$emit('basemetas-preview', row)"
             >
-              <el-icon><Monitor /></el-icon>
               预览
             </el-button>
 
             <el-button v-if="row.folder" link type="primary" @click="$emit('preview', row)">
-              <el-icon><View /></el-icon>
+              <Icon icon="ep:view" />
               打开
             </el-button>
 
             <el-button v-if="!row.folder" link type="primary" @click="$emit('download', row)">
-              <el-icon><Download /></el-icon>
+              <Icon icon="ep:download" />
               下载
             </el-button>
           </div>
@@ -244,7 +243,6 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { CopyDocument, Download, Location, Monitor, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CommonFile } from '@/api/rag/search'
 import { getFileIconByExt } from '@/utils/fileIconMap'
