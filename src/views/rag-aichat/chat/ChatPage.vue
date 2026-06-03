@@ -705,9 +705,10 @@ const resetAllSessions = async () => {
   resettingSession.value = true
   loading.value = true
   try {
+    const currentSeq = ++initSeq.value
     await deleteAllChatAssistants(resetChatAssistantParams.value)
     resetChatState()
-    await initChatByKnowledgeBase(nextKnowledgeBaseIds)
+    await initChatByKnowledgeBase(nextKnowledgeBaseIds, currentSeq)
     ElMessage.success('会话已重置')
     if (isMobile.value) showSessionDrawer.value = false
   } catch (error) {
@@ -762,7 +763,7 @@ const resolveListResponse = (response: any) => {
   return data?.list || data?.items || data || []
 }
 
-const initChatByKnowledgeBase = async (knowledgeBaseIds: string[]) => {
+const initChatByKnowledgeBase = async (knowledgeBaseIds: string[], seq: number) => {
   const normalizedIds = normalizeKnowledgeBaseIds(knowledgeBaseIds)
   selectedKnowledgeBaseIds.value = normalizedIds
   if (!resolvedDatasetId.value) persistKnowledgeBaseIds(normalizedIds)
@@ -774,18 +775,24 @@ const initChatByKnowledgeBase = async (knowledgeBaseIds: string[]) => {
   if (normalizedIds.length) createPayload.dataset_ids = normalizedIds
 
   const chatResponse = await createChatAssistant(createPayload)
-  chatAssistantId.value = String(
+  if (seq !== initSeq.value) return
+
+  const assistantId = String(
     chatResponse?.data?.id ||
       chatResponse?.data?.chatId ||
       chatResponse?.id ||
       chatResponse?.chatId ||
       ''
   )
-  if (!chatAssistantId.value) return
-  await fetchSessions(chatAssistantId.value)
+  if (!assistantId) return
+
+  chatAssistantId.value = assistantId
+  await fetchSessions(assistantId)
+  if (seq !== initSeq.value) return
   if (sessionList.value.length === 0) {
-    await createSession(chatAssistantId.value, { name: DEFAULT_SESSION_NAME })
-    await fetchSessions(chatAssistantId.value)
+    await createSession(assistantId, { name: DEFAULT_SESSION_NAME })
+    if (seq !== initSeq.value) return
+    await fetchSessions(assistantId)
   }
 }
 
@@ -861,7 +868,7 @@ const initializeChat = async () => {
       ]
       canCreateSession.value = true
       selectedKnowledgeBaseIds.value = [String(datasetId)]
-      await initChatByKnowledgeBase(selectedKnowledgeBaseIds.value)
+      await initChatByKnowledgeBase(selectedKnowledgeBaseIds.value, currentSeq)
       return
     }
 
@@ -871,13 +878,13 @@ const initializeChat = async () => {
       selectedKnowledgeBaseIds.value = []
       localStorage.removeItem(knowledgeBaseStorageKey)
       localStorage.removeItem(legacyKnowledgeBaseStorageKey)
-      await initChatByKnowledgeBase([])
+      await initChatByKnowledgeBase([], currentSeq)
       return
     }
 
     selectedKnowledgeBaseIds.value = resolveInitialKnowledgeBaseIds(knowledgeBases)
     persistKnowledgeBaseIds(selectedKnowledgeBaseIds.value)
-    await initChatByKnowledgeBase(selectedKnowledgeBaseIds.value)
+    await initChatByKnowledgeBase(selectedKnowledgeBaseIds.value, currentSeq)
   } catch (error) {
     canCreateSession.value = false
     showRequestError(error, '初始化失败')

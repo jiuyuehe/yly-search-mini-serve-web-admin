@@ -1283,12 +1283,15 @@ onUnmounted(() => {
   opacity: 0;
   visibility: hidden;
   transform: translateX(-50%) translateY(4px);
-  box-shadow: var(--app-shadow-sm);
+  box-shadow:
+    0 18px 48px rgb(15 23 42 / 16%),
+    0 2px 6px rgb(15 23 42 / 8%);
   box-sizing: border-box;
   transition:
     opacity 0.16s ease,
     visibility 0.16s ease,
-    transform 0.16s ease;
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
   align-items: stretch;
   gap: 12px;
 }
@@ -1297,7 +1300,10 @@ onUnmounted(() => {
 .rag-markdown :deep(.ref-tooltip:focus-within .tooltip-content) {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow:
+    0 22px 56px rgb(15 23 42 / 18%),
+    0 6px 16px rgb(15 23 42 / 10%);
 }
 
 .rag-markdown :deep(.ref-tooltip .tooltip-content .chunk-img) {

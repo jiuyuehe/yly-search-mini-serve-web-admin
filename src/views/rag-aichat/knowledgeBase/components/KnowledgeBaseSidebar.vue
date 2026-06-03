@@ -274,55 +274,63 @@ onBeforeUnmount(() => {
 }
 
 .kb-group + .kb-group {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .kb-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-weight: 600;
+  margin-bottom: 6px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--app-text-secondary);
 }
 
 .kb-item {
   display: flex;
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   text-align: left;
   cursor: pointer;
-  background: #fff;
-  border: 1px solid transparent;
-  border-radius: var(--app-radius-md);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.kb-item:hover {
+  background: rgb(0 0 0 / 4%);
 }
 
 .kb-item + .kb-item {
-  margin-top: 8px;
+  margin-top: 2px;
 }
 
 .kb-item.active {
-  background: rgb(0 82 217 / 6%);
-  border-color: rgb(0 82 217 / 20%);
+  background: rgb(0 82 217 / 8%);
 }
 
 .kb-item-main {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .kb-item-avatar {
   display: flex;
-  width: 36px;
-  height: 36px;
-  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--td-brand-color);
-  background: rgb(0 82 217 / 10%);
-  border-radius: 10px;
+  background: rgb(0 82 217 / 8%);
+  border-radius: 6px;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
 }
@@ -332,13 +340,14 @@ onBeforeUnmount(() => {
 }
 
 .kb-item-name {
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .kb-item-desc {
-  margin-top: 2px;
+  margin-top: 1px;
   overflow: hidden;
   font-size: 12px;
   color: var(--app-text-secondary);

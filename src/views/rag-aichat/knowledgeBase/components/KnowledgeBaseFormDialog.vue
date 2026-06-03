@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <Dialog
     v-model="dialogVisible"
     :title="dialogTitle"
     width="540px"
@@ -31,7 +31,7 @@
         </el-button>
       </div>
     </el-form>
-  </el-dialog>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
