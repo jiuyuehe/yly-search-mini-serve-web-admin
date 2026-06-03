@@ -71,6 +71,8 @@ export interface FilterResult {
   count: number
 }
 
+export type SearchAggregationStatsResp = Record<string, FilterResult[]>
+
 export interface FilePreviewMeta {
   esId: string
   fileName: string
@@ -139,6 +141,14 @@ export const buildSearchFormData = (params: SearchParam) => {
 export const searchDocuments = (params: SearchParam) => {
   return request.post<SearchResult>({
     url: '/rag/documents/search',
+    headersType: 'multipart/form-data',
+    data: buildSearchFormData(params)
+  })
+}
+
+export const getDocumentAggregationStats = (params: SearchParam) => {
+  return request.post<SearchAggregationStatsResp>({
+    url: '/rag/documents/aggregations/stats',
     headersType: 'multipart/form-data',
     data: buildSearchFormData(params)
   })

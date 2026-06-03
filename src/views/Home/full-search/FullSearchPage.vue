@@ -37,8 +37,8 @@
                 v-for="item in aggregationTabs"
                 :key="item.value"
                 size="small"
-                :type="currentAgg === item.value ? 'primary' : 'default'"
-                :plain="currentAgg !== item.value"
+                :type="activeAggregation === item.value ? 'primary' : 'default'"
+                :plain="activeAggregation !== item.value"
                 @click="selectAggregation(item.value)"
               >
                 <el-icon><component :is="item.icon" /></el-icon>
@@ -52,6 +52,7 @@
               v-model:selected-ids="selectedIds"
               :files="result.fileList"
               :total="result.total"
+              :summary-total="currentSummaryTotal"
               :loading="loading"
               :keyword="filters.keyword"
               :page="page"
@@ -98,12 +99,13 @@ import {
   batchDownloadBlob,
   downloadFileBlob,
   downloadNasFileBlob,
+  getDocumentAggregationStats,
   getBaseMetasPreview,
   getNasFilePermissions,
   getNasFileViewUrl,
   searchDocuments,
   type CommonFile,
-  type FilterResult,
+  type SearchAggregationStatsResp,
   type SearchParam,
   type SearchResult
 } from '@/api/rag/search'
@@ -146,16 +148,17 @@ const defaultFilters = (): SearchParam => ({
 
 const filters = reactive<SearchParam>(defaultFilters())
 const result = reactive<SearchResult>({ total: 0, fileList: [] })
-const aggregations = ref<Record<string, FilterResult[]>>({})
+const aggregations = ref<SearchAggregationStatsResp>({})
 const selectedIds = ref<string[]>([])
 const loading = ref(false)
 const filterCollapsed = ref(false)
-const currentAgg = ref('')
 const viewerRef = ref<InstanceType<typeof SearchFileViewer>>()
 const fileviewBaseUrl = ref('')
 const previewVisible = ref(false)
 const previewUrl = ref('')
 const previewTitle = ref('文件预览')
+
+const activeAggregation = computed(() => filters.docType || '')
 
 const filterPanelWidth = computed(() => (filterCollapsed.value ? '56px' : '300px'))
 
@@ -188,14 +191,20 @@ const aggregationTabs = computed(() => {
     docStats
       .filter((item) => keys.includes(String(item.key)))
       .reduce((sum, item) => sum + Number(item.count || 0), 0)
+  const totalCount = docStats.reduce((sum, item) => sum + Number(item.count || 0), 0)
   return docTypeMap.map((item) => ({
     ...item,
-    count: item.value === '' ? result.total : getCount(item.keys)
+    count: item.value === '' ? totalCount : getCount(item.keys)
   }))
 })
 
 const currentAggLabel = computed(() => {
-  return aggregationTabs.value.find((item) => item.value === currentAgg.value)?.label || '全部'
+  return aggregationTabs.value.find((item) => item.value === activeAggregation.value)?.label || '全部'
+})
+
+const currentSummaryTotal = computed(() => {
+  const activeTab = aggregationTabs.value.find((item) => item.value === activeAggregation.value)
+  return activeTab?.count ?? result.total
 })
 
 const activeFilterCount = computed(() => {
@@ -216,7 +225,7 @@ const activeFilterCount = computed(() => {
   return entries.reduce((count, [, active]) => count + Number(active), 0)
 })
 
-const buildQueryParams = () => ({
+const buildSearchParams = (): SearchParam => ({
   ...filters,
   searchType: 'keyword' as const,
   offset: filters.offset || 0,
@@ -224,19 +233,42 @@ const buildQueryParams = () => ({
   fileCategory: 'nas' as const
 })
 
+const buildAggregationParams = (): SearchParam => ({
+  ...filters,
+  docType: '',
+  searchType: 'keyword' as const,
+  offset: 0,
+  limit: 0,
+  fileCategory: 'nas' as const
+})
+
 const handleSearch = async () => {
   loading.value = true
   selectedIds.value = []
   try {
-    const params = buildQueryParams()
-    const searchRes = await searchDocuments(params)
-    Object.assign(result, {
-      total: searchRes?.total || 0,
-      fileList: searchRes?.fileList || [],
-      types: searchRes?.types,
-      searchTime: searchRes?.searchTime
-    })
-    aggregations.value = searchRes?.filters || {}
+    const [searchRes, aggregationRes] = await Promise.allSettled([
+      searchDocuments(buildSearchParams()),
+      getDocumentAggregationStats(buildAggregationParams())
+    ])
+
+    if (searchRes.status === 'fulfilled') {
+      const data = searchRes.value
+      Object.assign(result, {
+        total: data?.total || 0,
+        fileList: data?.fileList || [],
+        types: data?.types,
+        searchTime: data?.searchTime
+      })
+    } else {
+      throw searchRes.reason
+    }
+
+    if (aggregationRes.status === 'fulfilled') {
+      aggregations.value = aggregationRes.value || {}
+    } else {
+      console.error('获取全文搜索聚合统计失败:', aggregationRes.reason)
+      aggregations.value = {}
+    }
   } finally {
     loading.value = false
   }
@@ -249,12 +281,10 @@ const handleFilterSearch = () => {
 
 const resetFilters = () => {
   Object.assign(filters, defaultFilters())
-  currentAgg.value = ''
   void handleSearch()
 }
 
 const selectAggregation = (docType: string) => {
-  currentAgg.value = docType
   filters.docType = docType
   filters.offset = 0
   void handleSearch()

@@ -41,7 +41,12 @@
       <el-row>
         <el-col :span="12">
           <el-form-item v-if="formData.id === undefined" label="用户名称" prop="username">
-            <el-input v-model="formData.username" placeholder="请输入用户名称" />
+            <el-input
+              v-model="formData.username"
+              maxlength="30"
+              placeholder="请输入用户名称（支持中文）"
+              show-word-limit
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -128,7 +133,14 @@ const formData = ref({
   roleIds: []
 })
 const formRules = reactive<FormRules>({
-  username: [{ required: true, message: '用户名称不能为空', trigger: 'blur' }],
+  username: [
+    { required: true, message: '用户名称不能为空', trigger: 'blur' },
+    {
+      pattern: /^[\u4e00-\u9fa5a-zA-Z0-9]{2,30}$/,
+      message: '用户名称支持中文、数字、字母，长度为 2-30 个字符',
+      trigger: 'blur'
+    }
+  ],
   nickname: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
   password: [{ required: true, message: '用户密码不能为空', trigger: 'blur' }],
   email: [

@@ -11,7 +11,7 @@
         </el-checkbox>
 
         <div class="toolbar-meta">
-          <span class="result-count">共 {{ total }} 条</span>
+          <span class="result-count">共 {{ displayTotal }} 条</span>
           <span v-if="searchTime !== undefined && searchTime !== null" class="search-time">
             耗时 {{ formatSearchTime(searchTime) }}
           </span>
@@ -254,6 +254,7 @@ defineOptions({ name: 'HomeSearchResultList' })
 const props = defineProps<{
   files: CommonFile[]
   total: number
+  summaryTotal?: number
   loading: boolean
   keyword?: string
   page: number
@@ -261,6 +262,8 @@ const props = defineProps<{
   selectedIds: string[]
   searchTime?: number
 }>()
+
+const displayTotal = computed(() => props.summaryTotal ?? props.total)
 
 const emit = defineEmits<{
   'basemetas-preview': [file: CommonFile]

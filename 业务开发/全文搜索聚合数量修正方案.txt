@@ -1,0 +1,54 @@
+# 全文搜索聚合数量修正方案
+
+## Summary
+修正 [FullSearchPage.vue](/Library/project/yly-search-mini-serve-web-admin/src/views/Home/full-search/FullSearchPage.vue) 顶部分类按钮的数量口径，避免“全部永远 1000、切换后其他分类变 0”的错误感知。核心做法是把“搜索结果列表”和“文件类型聚合统计”拆成两次请求，分类数量始终基于“当前关键词和其它筛选条件，但不带 `docType`”的独立聚合结果来展示。
+
+## Key Changes
+- 在 [src/api/rag/search/index.ts](/Library/project/yly-search-mini-serve-web-admin/src/api/rag/search/index.ts) 增加聚合统计接口封装，对接 README 已声明的 `POST /rag/documents/aggregations/stats`。
+- 为聚合接口补充返回类型，至少覆盖 `docType` 维度；如果后端返回结构与 `searchRes.filters` 一致，直接复用 `FilterResult` 和 `Record<string, FilterResult[]>`。
+- 在 [FullSearchPage.vue](/Library/project/yly-search-mini-serve-web-admin/src/views/Home/full-search/FullSearchPage.vue) 拆分查询参数构造：
+  - `buildSearchParams()`：保留当前 `filters.docType`，用于结果列表。
+  - `buildAggregationParams()`：复制当前筛选条件，但强制清空 `docType`、`offset`、`limit`，用于顶部数量统计。
+- 调整 `handleSearch` 为并行获取两份数据：
+  - 搜索接口返回当前选中分类下的 `result.total` 和 `fileList`
+  - 聚合接口返回当前筛选条件下所有分类的 `docType` 数量
+  - 两者都走 `try/finally`，并保证失败时不会留下旧 loading 状态
+- 调整 `aggregationTabs` 计算逻辑：
+  - “全部”数量不再直接取 `result.total`，改为聚合结果所有 `docType` 求和
+  - 各分类数量统一取聚合结果
+  - 若聚合接口失败或缺失某类数据，显示 `0` 或 `-`，不要继续混用旧 `result.total`
+- 保持按钮切换逻辑不变，但点击分类时只改变列表筛选条件，不再影响顶部分类统计口径。
+- 数量显示策略采用“精确数值优先”：
+  - 正常情况下显示接口返回的真实数量
+  - 如果后端该接口本身存在上限截断，再在前端加一个统一展示方法，例如显示 `1000+`，并给“全部/分类数量”同样处理，避免一部分精确一部分截断
+  - 若目前无法从接口判断是否截断，先不做前端猜测性封顶，避免再次制造错觉
+- 如有必要，在顶部分类区域补一条轻量提示文案，例如“数量按当前筛选条件统计”，仅在设计上确有需要时添加；默认先不加，优先靠正确口径解决问题。
+
+## Public Interfaces / Types
+- 新增聚合统计 API 方法，命名建议沿用仓库风格，例如 `getDocumentAggregationStats`
+- 新增聚合返回类型，建议：
+  - `SearchAggregationStatsResp = Record<string, FilterResult[]>`
+  - 如果后端还有总数或截断标记，再补对应字段并在页面消费
+
+## Test Plan
+- 初始进入页面：
+  - 未点分类时，“全部”应等于各分类数量之和
+  - 各分类按钮应立即显示数量，不需要点击后才出现
+- 输入关键词搜索：
+  - 顶部所有分类数量同步变化
+  - “全部”显示当前关键词下的总命中数，而不是固定 1000
+- 点击任一分类：
+  - 列表只显示该分类结果
+  - 顶部其他分类数量保持同一关键词/筛选条件下的统计，不应全部变 0
+- 联合其它筛选项：
+  - 文件类型、时间、大小、标签等变化后，顶部数量与列表总数口径一致
+- 异常场景：
+  - 聚合接口失败时，列表仍可搜索；顶部数量降级但不显示明显错误状态
+- 验证命令：
+  - `pnpm ts:check`
+  - `pnpm lint:eslint`
+
+## Assumptions
+- `POST /rag/documents/aggregations/stats` 已可用，且支持复用当前 `SearchParam` 的大部分筛选条件。
+- 聚合统计应按“当前条件但不带 `docType`”计算，这是解决交叉置零问题的正确口径。
+- 大数量展示采用“精确数值优先”；只有在后端明确返回截断结果时，前端才显示 `1000+` 或类似提示。
