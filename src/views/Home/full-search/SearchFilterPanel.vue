@@ -1,11 +1,18 @@
 <template>
-  <aside class="search-filter-panel">
+  <aside class="search-filter-panel" :class="{ collapsed }">
     <div class="filter-head">
-      <h2>筛选</h2>
-      <el-button link type="primary" @click="$emit('reset')">重置</el-button>
+      <div v-if="!collapsed" class="filter-head-text">
+        <p class="filter-kicker">筛选条件</p>
+      </div>
+      <div class="filter-actions">
+        <el-button v-if="!collapsed" link type="primary" @click="$emit('reset')">重置</el-button>
+        <el-button link type="primary" class="collapse-btn" @click="$emit('toggle-collapse')">
+          {{ collapsed ? '展开' : '收起' }}
+        </el-button>
+      </div>
     </div>
 
-    <el-scrollbar class="filter-scroll">
+    <el-scrollbar v-if="!collapsed" class="filter-scroll">
       <el-collapse v-model="activeNames">
         <el-collapse-item title="范围" name="basic">
           <el-form label-position="top" class="filter-form">
@@ -65,7 +72,15 @@
 <script lang="ts" setup>
 import type { SearchParam } from '@/api/rag/search'
 
-defineEmits<{ reset: [] }>()
+defineProps<{
+  collapsed: boolean
+}>()
+
+defineEmits<{
+  reset: []
+  'toggle-collapse': []
+}>()
+defineOptions({ name: 'HomeSearchFilterPanel' })
 
 const model = defineModel<SearchParam>({ required: true })
 const activeNames = ref(['basic', 'time', 'quality'])
@@ -154,32 +169,52 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
   height: calc(100vh - 84px);
   min-width: 300px;
   overflow: hidden;
-  background: var(--el-bg-color);
-  border-right: 1px solid var(--el-border-color-light);
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid rgb(226 232 240 / 85%);
+  backdrop-filter: blur(8px);
+}
+
+.search-filter-panel.collapsed {
+  width: 56px;
+  min-width: 56px;
 }
 
 .filter-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 18px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgb(226 232 240);
 
-  h2 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
+  .filter-head-text {
+    min-width: 0;
   }
 }
 
+.search-filter-panel.collapsed .filter-head {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 8px;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.collapse-btn {
+  padding: 0;
+}
+
 .filter-scroll {
-  height: calc(100% - 56px);
+  height: calc(100% - 73px);
 }
 
 .filter-form {
-  padding: 8px 18px 4px;
+  padding: 10px 18px 4px;
 }
 
 .switch-line {
@@ -189,8 +224,9 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
   min-height: 36px;
   padding: 0 12px;
   margin-bottom: 12px;
-  background: var(--el-fill-color-light);
-  border-radius: var(--el-border-radius-base);
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 14px;
 
   span {
     font-size: 13px;
@@ -220,13 +256,13 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: transparent;
+  border-bottom: 1px solid rgb(226 232 240);
 }
 
 :deep(.el-collapse-item__wrap) {
-  background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: transparent;
+  border-bottom: 1px solid rgb(226 232 240);
 }
 
 :deep(.el-collapse-item__content) {
@@ -246,11 +282,36 @@ watch(() => [model.value.minSize, model.value.maxSize, model.value.startDate, mo
 
 :deep(.el-segmented) {
   width: 100%;
+  --el-segmented-item-selected-color: var(--el-color-primary);
+  --el-segmented-bg-color: rgb(248 250 252);
+  --el-segmented-item-selected-bg-color: rgb(239 246 255);
 }
 
 :deep(.el-slider__marks-text) {
   margin-top: 10px;
   font-size: 11px;
   color: var(--el-text-color-secondary);
+}
+
+@media (width <= 980px) {
+  .search-filter-panel {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+  }
+
+  .search-filter-panel.collapsed {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filter-scroll {
+    height: auto;
+    max-height: 420px;
+  }
+
+  .search-filter-panel.collapsed .filter-scroll {
+    display: none;
+  }
 }
 </style>

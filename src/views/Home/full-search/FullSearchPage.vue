@@ -1,58 +1,72 @@
 <template>
   <div class="full-search-page">
-    <SearchFilterPanel v-model="filters" @reset="resetFilters" />
+    <div class="search-shell">
+      <div
+        class="search-layout"
+        :style="{ gridTemplateColumns: `${filterPanelWidth} minmax(0, 1fr)` }"
+      >
+        <SearchFilterPanel
+          v-model="filters"
+          :collapsed="filterCollapsed"
+          @reset="resetFilters"
+          @toggle-collapse="filterCollapsed = !filterCollapsed"
+        />
 
-    <main class="search-main">
-      <section class="search-head">
-        <div class="search-box">
-          <el-input
-            v-model="filters.keyword"
-            size="large"
-            placeholder="搜索文件名、正文、标签或路径"
-            clearable
-            @keyup.enter="handleSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-          <el-button size="large" type="primary" circle @click="handleSearch">
-            <el-icon><Search /></el-icon>
-          </el-button>
-        </div>
-      </section>
+        <main class="search-main">
+          <section class="search-card search-head">
+            <div class="search-box">
+              <el-input
+                v-model="filters.keyword"
+                size="large"
+                placeholder="输入关键词后按回车或点击搜索"
+                clearable
+                @keyup.enter="handleSearch"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+              <el-button class="search-btn" size="large" type="primary" @click="handleSearch">
+                <el-icon><Search /></el-icon>
+              </el-button>
+            </div>
 
-      <section class="aggregation-row">
-        <button
-          v-for="item in aggregationTabs"
-          :key="item.value"
-          type="button"
-          class="agg-tab"
-          :class="{ active: currentAgg === item.value }"
-          @click="selectAggregation(item.value)"
-        >
-          <el-icon><component :is="item.icon" /></el-icon>
-          {{ item.label }} <span>{{ item.count }}</span>
-        </button>
-      </section>
-
-      <SearchResultList
-        v-model:selected-ids="selectedIds"
-        :files="result.fileList"
-        :total="result.total"
-        :loading="loading"
-        :keyword="filters.keyword"
-        :page="page"
-        :page-size="filters.limit || 20"
-        :search-time="result.searchTime"
-        @basemetas-preview="openBaseMetasPreview"
-        @preview="openViewer"
-        @download="downloadOne"
-        @batch-download="downloadBatch"
-        @page-change="changePage"
-        @size-change="changeSize"
-      />
-    </main>
+            <el-button-group class="aggregation-group">
+              <el-button
+                v-for="item in aggregationTabs"
+                :key="item.value"
+                size="small"
+                :type="currentAgg === item.value ? 'primary' : 'default'"
+                :plain="currentAgg !== item.value"
+                @click="selectAggregation(item.value)"
+              >
+                <el-icon><component :is="item.icon" /></el-icon>
+                <span class="agg-label">{{ item.label }}</span>
+                <span class="agg-count">{{ item.count }}</span>
+              </el-button>
+            </el-button-group>
+          </section>
+          <section class="search-card result-card">
+            <SearchResultList
+              v-model:selected-ids="selectedIds"
+              :files="result.fileList"
+              :total="result.total"
+              :loading="loading"
+              :keyword="filters.keyword"
+              :page="page"
+              :page-size="filters.limit || 20"
+              :search-time="result.searchTime"
+              @basemetas-preview="openBaseMetasPreview"
+              @preview="openViewer"
+              @download="downloadOne"
+              @batch-download="downloadBatch"
+              @page-change="changePage"
+              @size-change="changeSize"
+            />
+          </section>
+        </main>
+      </div>
+    </div>
 
     <SearchFileViewer ref="viewerRef" />
     <PreviewModal
@@ -97,6 +111,8 @@ import { config } from '@/config/axios/config'
 import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
 import { PreviewModal } from '@/components/PreviewModal'
 
+defineOptions({ name: 'HomeFullSearchPage' })
+
 const defaultFilters = (): SearchParam => ({
   keyword: '',
   searchType: 'keyword',
@@ -132,6 +148,7 @@ const result = reactive<SearchResult>({ total: 0, fileList: [] })
 const aggregations = ref<Record<string, FilterResult[]>>({})
 const selectedIds = ref<string[]>([])
 const loading = ref(false)
+const filterCollapsed = ref(false)
 const currentAgg = ref('')
 const viewerRef = ref<InstanceType<typeof SearchFileViewer>>()
 const fileviewBaseUrl = ref('')
@@ -139,7 +156,14 @@ const previewVisible = ref(false)
 const previewUrl = ref('')
 const previewTitle = ref('文件预览')
 
+const filterPanelWidth = computed(() => (filterCollapsed.value ? '56px' : '300px'))
+
 const page = computed(() => Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1)
+
+const formatSearchTime = (ms: number) => {
+  if (ms < 1000) return `${ms}ms`
+  return `${(ms / 1000).toFixed(2)}s`
+}
 
 const docTypeMap = [
   { label: '全部', value: '', keys: [], icon: Files },
@@ -167,6 +191,28 @@ const aggregationTabs = computed(() => {
     ...item,
     count: item.value === '' ? result.total : getCount(item.keys)
   }))
+})
+
+const currentAggLabel = computed(() => {
+  return aggregationTabs.value.find((item) => item.value === currentAgg.value)?.label || '全部'
+})
+
+const activeFilterCount = computed(() => {
+  const entries: Array<[unknown, boolean]> = [
+    [filters.keyword, Boolean(filters.keyword?.trim())],
+    [filters.docType, Boolean(filters.docType)],
+    [filters.extname, Boolean(filters.extname?.trim())],
+    [filters.fileAiTag, Boolean(filters.fileAiTag?.trim())],
+    [filters.fileSysTag, Boolean(filters.fileSysTag?.trim())],
+    [filters.tag, Boolean(filters.tag?.trim())],
+    [filters.folder, Boolean(filters.folder)],
+    [filters.hasHistory, Boolean(filters.hasHistory)],
+    [filters.startDate, Boolean(filters.startDate)],
+    [filters.endDate, Boolean(filters.endDate)],
+    [filters.minSize, filters.minSize !== undefined],
+    [filters.maxSize, filters.maxSize !== undefined]
+  ]
+  return entries.reduce((count, [, active]) => count + Number(active), 0)
 })
 
 const buildQueryParams = () => ({
@@ -280,7 +326,12 @@ const buildApiUrl = (path: string) => {
 
 const getFileDisplayName = (file: CommonFile) => {
   return (
-    getStringValue(file as SearchFileRecord, ['fileName', 'name', 'documentName', 'document_name']) ||
+    getStringValue(file as SearchFileRecord, [
+      'fileName',
+      'name',
+      'documentName',
+      'document_name'
+    ]) ||
     getNasPath(file) ||
     '文件预览'
   )
@@ -408,7 +459,12 @@ const openBaseMetasPreview = async (file: CommonFile) => {
   }
 
   const displayName = responseFileName || getFileDisplayName(file)
-  const baseMetasUrl = buildBaseMetasPreviewUrl(fileviewBaseUrl.value, fileUrl, displayName, displayName)
+  const baseMetasUrl = buildBaseMetasPreviewUrl(
+    fileviewBaseUrl.value,
+    fileUrl,
+    displayName,
+    displayName
+  )
   if (!baseMetasUrl) {
     ElMessage.warning('文件预览服务未配置')
     return
@@ -452,121 +508,278 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .full-search-page {
-  display: flex;
+  width: 100%;
   min-height: calc(100vh - 84px);
-  margin: -20px;
+  margin: 0;
   overflow: hidden;
-  background: var(--el-bg-color-page);
+}
+
+.search-shell {
+  width: 100%;
+  height: calc(100vh - 84px);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.search-hero {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 22px 24px;
+  background: rgb(255 255 255 / 82%);
+  border: 1px solid rgb(226 232 240 / 90%);
+  box-shadow: 0 18px 45px rgb(15 23 42 / 6%);
+  backdrop-filter: blur(10px);
+}
+
+.hero-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hero-kicker,
+.search-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--el-color-primary);
+  text-transform: uppercase;
+}
+
+.hero-copy h1,
+.search-head h2,
+.aggregation-head h3 {
+  margin: 0;
+  color: var(--el-text-color-primary);
+}
+
+.hero-copy h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hero-desc {
+  max-width: 760px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--el-text-color-secondary);
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 12px;
+  align-self: center;
+  min-width: 360px;
+}
+
+.hero-stat {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 18px;
+
+  span {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  strong {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--el-text-color-primary);
+  }
+}
+
+.search-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0;
+  height: 100%;
+  align-items: stretch;
 }
 
 .search-main {
-  height: calc(100vh - 84px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   min-width: 0;
-  padding: 24px 32px;
-  overflow: auto;
-  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.search-card {
+  padding: 0px 10px;
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: blur(8px);
 }
 
 .search-head {
-  max-width: 1180px;
-  margin: 0 auto 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.search-head-top,
+.aggregation-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.search-head h2 {
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .search-box {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 8px;
   align-items: center;
-}
-
-.search-box :deep(.el-input__wrapper) {
-  height: 48px;
-  padding: 0 16px;
-  border-radius: var(--el-border-radius-base);
-}
-
-.search-box :deep(.el-input__inner) {
-  font-size: 14px;
-}
-
-.search-box :deep(.el-input__prefix) {
-  color: var(--el-text-color-secondary);
 }
 
 .search-box :deep(.el-button) {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--el-border-radius-base);
+  min-width: 52px;
+  padding: 0;
 }
 
-.aggregation-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-width: 1180px;
-  padding: 12px 0;
-  margin: 0 auto 16px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+.search-btn {
+  width: 52px;
+  min-width: 52px;
+  padding: 0;
 }
 
-.agg-tab {
-  display: inline-flex;
+.search-meta {
+  display: grid;
+  justify-items: end;
   gap: 6px;
-  align-items: center;
-  height: 32px;
-  padding: 0 12px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color);
-  border-radius: var(--el-border-radius-base);
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+  white-space: nowrap;
+
+  span {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
 }
 
-.agg-tab:hover {
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary-light-5);
+.aggregation-card {
+  display: grid;
+  gap: 14px;
 }
 
-.agg-tab span {
+.aggregation-head h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.aggregation-note {
+  padding: 6px 10px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+  background: rgb(248 250 252);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 999px;
 }
 
-.agg-tab.active {
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary);
+.aggregation-group {
+  width: fit-content;
 }
 
-.agg-tab.active span {
+.aggregation-group :deep(.el-button) {
+  gap: 4px;
+  padding: 0 10px;
+}
+
+.agg-label {
+  font-size: 13px;
+}
+
+.agg-count {
+  min-width: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+  background: rgb(255 255 255 / 75%);
+  border-radius: 999px;
+}
+
+.aggregation-group :deep(.el-button.is-plain:not(.is-disabled)) .agg-count {
+  background: rgb(241 245 249);
+}
+
+.aggregation-group :deep(.el-button--primary .agg-count) {
   color: var(--el-color-primary);
+  background: rgb(255 255 255 / 90%);
 }
 
 .search-main > :deep(.result-list) {
-  max-width: 1180px;
-  margin: 0 auto;
+  min-height: 0;
+}
+
+.result-card {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.result-card > :deep(.result-list) {
+  width: 100%;
 }
 
 @media (width <= 980px) {
-  .full-search-page {
+  .search-shell {
+    padding: 16px;
+  }
+
+  .search-hero {
     flex-direction: column;
   }
 
-  .search-main {
-    height: auto;
-    padding: 20px;
+  .hero-stats {
+    width: 100%;
+    min-width: 0;
   }
 
-  :deep(.search-filter-panel) {
+  .search-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .search-filter-panel {
     width: 100%;
     height: auto;
+    min-width: 0;
+  }
+
+  .search-box {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box :deep(.el-button) {
+    width: 100%;
+  }
+
+  .search-btn {
+    width: 100%;
     min-width: 0;
   }
 }

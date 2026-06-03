@@ -1,16 +1,24 @@
 <template>
-  <section class="result-list">
-    <div class="result-toolbar">
-      <el-checkbox
-        :model-value="isAllSelected"
-        :indeterminate="isIndeterminate"
-        @change="toggleAll"
-      >
-        已选 {{ selectedIds.length }}
-      </el-checkbox>
+  <section ref="rootRef" class="result-list">
+    <div ref="toolbarRef" class="result-toolbar">
+      <div class="toolbar-summary">
+        <el-checkbox
+          :model-value="isAllSelected"
+          :indeterminate="isIndeterminate"
+          @change="toggleAll"
+        >
+          已选 {{ selectedIds.length }}
+        </el-checkbox>
+
+        <div class="toolbar-meta">
+          <span class="result-count">共 {{ total }} 条</span>
+          <span v-if="searchTime !== undefined && searchTime !== null" class="search-time">
+            耗时 {{ formatSearchTime(searchTime) }}
+          </span>
+        </div>
+      </div>
+
       <div class="toolbar-actions">
-        <span class="result-count">共 {{ total }} 条</span>
-        <span v-if="searchTime !== undefined && searchTime !== null" class="search-time">耗时 {{ formatSearchTime(searchTime) }}</span>
         <el-button v-if="selectedIds.length" type="primary" plain @click="$emit('batch-download')">
           <el-icon><Download /></el-icon>
           批量下载
@@ -21,85 +29,228 @@
     <el-skeleton v-if="loading" :rows="6" animated />
     <el-empty v-else-if="!files.length" description="暂无搜索结果" />
 
-    <div v-else class="result-items">
-      <article v-for="file in files" :key="getEsId(file)" class="result-item">
-        <el-checkbox
-          class="item-check"
-          :model-value="selectedIds.includes(getEsId(file))"
-          @change="(checked: boolean) => toggleOne(file, checked)"
-        />
-        <div class="file-icon" :class="`type-${getDocGroup(file)}`">
-          <img class="file-icon-image" :src="getFileIcon(file)" :alt="file.folder ? '文件夹' : '文件'" />
-        </div>
-        <div class="file-body">
-          <div class="file-title-row">
-            <button
-              class="file-title"
-              type="button"
-              v-dompurify-html="highlightName(file.fileName || '')"
-              @click="$emit('preview', file)"
-            ></button>
-            <span v-if="file.score !== undefined" class="score">{{ formatScore(file.score) }}</span>
+    <el-table
+      v-else
+      :header-cell-style="{ background: '#f5f7fa', color: '#333333', fontWeight: 'bold' }"
+      class="result-table"
+      :max-height="tableMaxHeight"
+      :data="files"
+      row-key="esId"
+      stripe
+      :show-overflow-tooltip="false"
+    >
+      <el-table-column width="48" align="center" fixed="left">
+        <template #default="{ row }">
+          <el-checkbox
+            :model-value="selectedIds.includes(getEsId(row))"
+            @change="(checked: boolean) => toggleOne(row, checked)"
+          />
+        </template>
+      </el-table-column>
+
+      <el-table-column label="文件" min-width="300" fixed="left">
+        <template #default="{ row }">
+          <div class="file-cell">
+            <div class="file-icon" :class="`type-${getDocGroup(row)}`">
+              <img
+                class="file-icon-image"
+                :src="getFileIcon(row)"
+                :alt="row.folder ? '文件夹' : '文件'"
+              />
+            </div>
+
+            <div class="file-info">
+              <div class="file-title-row">
+                <el-tooltip
+                  effect="dark"
+                  placement="top"
+                  :content="row.fileName || '-'"
+                  :show-after="300"
+                >
+                  <button
+                    class="file-title"
+                    type="button"
+                    v-dompurify-html="highlightName(row.fileName || '')"
+                    @click="handleFileNameClick(row)"
+                  ></button>
+                </el-tooltip>
+
+                <el-tooltip
+                  v-if="row.score !== undefined"
+                  effect="dark"
+                  placement="top"
+                  :content="formatScore(row.score)"
+                  :show-after="300"
+                >
+                  <span class="score">{{ formatScore(row.score) }}</span>
+                </el-tooltip>
+              </div>
+            </div>
           </div>
-          <div v-if="file.fileContents" class="snippet" v-dompurify-html="file.fileContents"></div>
-          <div v-else-if="file.enrichSummary || file.fileSummary" class="snippet plain">
-            {{ file.enrichSummary || file.fileSummary }}
-          </div>
-          <div class="meta-row">
-            <span>{{ formatTimeText(file) }}</span>
-            <span>{{ formatSize(file.fileSize) }}</span>
-            <span>{{ file.matchSource || 'NAS空间' }}</span>
-          </div>
-          <div class="path-row">
-            <el-icon><Location /></el-icon>
-            <span class="path-text">{{ file.filePath || '-' }}</span>
-            <el-button link type="primary" @click="copyPath(file.filePath)">
+        </template>
+      </el-table-column>
+
+      <el-table-column label="摘要 / 命中内容" min-width="360">
+        <template #default="{ row }">
+          <el-tooltip
+            v-if="getSnippetText(row)"
+            effect="dark"
+            placement="top"
+            :content="getSnippetText(row)"
+            :show-after="300"
+            popper-class="result-table-tooltip"
+          >
+            <div v-if="row.fileContents" class="snippet" v-dompurify-html="row.fileContents"></div>
+
+            <div v-else class="snippet plain">
+              {{ row.enrichSummary || row.fileSummary }}
+            </div>
+          </el-tooltip>
+
+          <span v-else class="empty-text">-</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="路径" min-width="320">
+        <template #default="{ row }">
+          <div class="path-cell">
+            <el-tooltip
+              effect="dark"
+              placement="top"
+              :content="row.filePath || '-'"
+              :show-after="300"
+              popper-class="result-table-tooltip"
+            >
+              <div class="path-main">
+                <el-icon><Location /></el-icon>
+                <span class="path-text ellipsis">{{ row.filePath || '-' }}</span>
+              </div>
+            </el-tooltip>
+
+            <el-button v-if="row.filePath" link type="primary" @click="copyPath(row.filePath)">
               <el-icon><CopyDocument /></el-icon>
               复制
             </el-button>
           </div>
-          <div v-if="file.fileAiTag || file.fileSysTag" class="tag-row">
-            <el-tag v-if="file.fileAiTag" size="small" effect="plain">{{ file.fileAiTag }}</el-tag>
-            <el-tag v-if="file.fileSysTag" size="small" type="info" effect="plain">{{ file.fileSysTag }}</el-tag>
-          </div>
-        </div>
-        <div class="item-actions">
-          <el-button v-if="!file.folder" link type="primary" @click="$emit('basemetas-preview', file)">
-            <el-icon><Monitor /></el-icon>
-            BaseMetas预览
-          </el-button>
-          <el-button v-if="file.folder" link type="primary" @click="$emit('preview', file)">
-            <el-icon><View /></el-icon>
-            打开
-          </el-button>
-          <el-button v-if="!file.folder" link type="primary" @click="$emit('download', file)">
-            <el-icon><Download /></el-icon>
-            下载
-          </el-button>
-        </div>
-      </article>
-    </div>
+        </template>
+      </el-table-column>
 
-    <el-pagination
+      <el-table-column label="来源" width="110">
+        <template #default="{ row }">
+          <el-tooltip
+            effect="dark"
+            placement="top"
+            :content="row.matchSource || 'NAS空间'"
+            :show-after="300"
+          >
+            <span>{{ row.matchSource || 'NAS空间' }}</span>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="类型" width="90">
+        <template #default="{ row }">
+          <span>{{ row.folder ? '文件夹' : '文件' }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="大小" width="110">
+        <template #default="{ row }">
+          <span>{{ formatSize(row.fileSize) }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="时间" min-width="170">
+        <template #default="{ row }">
+          <el-tooltip
+            effect="dark"
+            placement="top"
+            :content="formatTimeText(row)"
+            :show-after="300"
+          >
+            <span class="ellipsis table-text">{{ formatTimeText(row) }}</span>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="标签" min-width="160">
+        <template #default="{ row }">
+          <div v-if="row.fileAiTag || row.fileSysTag" class="tag-row">
+            <el-tooltip
+              v-if="row.fileAiTag"
+              effect="dark"
+              placement="top"
+              :content="row.fileAiTag"
+              :show-after="300"
+            >
+              <el-tag size="small" effect="plain" class="tag-item">
+                {{ row.fileAiTag }}
+              </el-tag>
+            </el-tooltip>
+
+            <el-tooltip
+              v-if="row.fileSysTag"
+              effect="dark"
+              placement="top"
+              :content="row.fileSysTag"
+              :show-after="300"
+            >
+              <el-tag size="small" type="info" effect="plain" class="tag-item">
+                {{ row.fileSysTag }}
+              </el-tag>
+            </el-tooltip>
+          </div>
+
+          <span v-else class="empty-text">-</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="操作" width="120" align="right" fixed="right">
+        <template #default="{ row }">
+          <div class="item-actions">
+            <el-button
+              v-if="!row.folder"
+              link
+              type="primary"
+              @click="$emit('basemetas-preview', row)"
+            >
+              <el-icon><Monitor /></el-icon>
+              预览
+            </el-button>
+
+            <el-button v-if="row.folder" link type="primary" @click="$emit('preview', row)">
+              <el-icon><View /></el-icon>
+              打开
+            </el-button>
+
+            <el-button v-if="!row.folder" link type="primary" @click="$emit('download', row)">
+              <el-icon><Download /></el-icon>
+              下载
+            </el-button>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <Pagination
       v-if="total > pageSize"
       class="pagination"
-      background
-      layout="prev, pager, next, sizes, total"
-      :page-size="pageSize"
-      :current-page="page"
       :total="total"
-      :page-sizes="[10, 20, 50, 100]"
-      @current-change="$emit('page-change', $event)"
-      @size-change="$emit('size-change', $event)"
+      v-model:page="currentPage"
+      v-model:limit="currentPageSize"
+      @pagination="handlePagination"
     />
   </section>
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { CopyDocument, Download, Location, Monitor, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CommonFile } from '@/api/rag/search'
 import { getFileIconByExt } from '@/utils/fileIconMap'
+
+defineOptions({ name: 'HomeSearchResultList' })
 
 const props = defineProps<{
   files: CommonFile[]
@@ -122,51 +273,138 @@ const emit = defineEmits<{
   'size-change': [size: number]
 }>()
 
+const rootRef = ref<HTMLElement>()
+const toolbarRef = ref<HTMLElement>()
+const tableMaxHeight = ref(360)
+let resizeObserver: ResizeObserver | undefined
+
 const getEsId = (file: CommonFile) => file.esId || ''
 
-const isAllSelected = computed(() => props.files.length > 0 && props.files.every((file) => props.selectedIds.includes(getEsId(file))))
-const isIndeterminate = computed(() => props.selectedIds.length > 0 && !isAllSelected.value)
+const pageIds = computed(() => props.files.map(getEsId).filter(Boolean))
+
+const isAllSelected = computed(() => {
+  return pageIds.value.length > 0 && pageIds.value.every((id) => props.selectedIds.includes(id))
+})
+
+const isIndeterminate = computed(() => {
+  const selectedCount = pageIds.value.filter((id) => props.selectedIds.includes(id)).length
+  return selectedCount > 0 && selectedCount < pageIds.value.length
+})
+
+const currentPage = computed({
+  get: () => props.page,
+  set: (value: number) => emit('page-change', value)
+})
+
+const currentPageSize = computed({
+  get: () => props.pageSize,
+  set: (value: number) => emit('size-change', value)
+})
+
+const paginationHeight = computed(() => {
+  if (!props.total || props.total <= props.pageSize) return 0
+  return 56
+})
+
+const updateTableMaxHeight = () => {
+  const rootHeight = rootRef.value?.clientHeight || 0
+  const toolbarHeight = toolbarRef.value?.clientHeight || 0
+  const next = Math.max(320, rootHeight - toolbarHeight - paginationHeight.value - 12)
+  tableMaxHeight.value = next
+}
 
 const toggleOne = (file: CommonFile, checked: boolean) => {
   const esId = getEsId(file)
   if (!esId) return
-  const next = checked ? [...new Set([...props.selectedIds, esId])] : props.selectedIds.filter((id) => id !== esId)
+
+  const next = checked
+    ? [...new Set([...props.selectedIds, esId])]
+    : props.selectedIds.filter((id) => id !== esId)
+
   emit('update:selectedIds', next)
 }
 
 const toggleAll = (checked: boolean) => {
-  const pageIds = props.files.map(getEsId).filter(Boolean)
-  const next = checked ? [...new Set([...props.selectedIds, ...pageIds])] : props.selectedIds.filter((id) => !pageIds.includes(id))
+  const ids = pageIds.value
+
+  const next = checked
+    ? [...new Set([...props.selectedIds, ...ids])]
+    : props.selectedIds.filter((id) => !ids.includes(id))
+
   emit('update:selectedIds', next)
 }
 
+const handleFileNameClick = (file: CommonFile) => {
+  if (file.folder) {
+    emit('preview', file)
+    return
+  }
+
+  emit('basemetas-preview', file)
+}
+
 const escapeHtml = (value: string) =>
-  value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] || char)
+  value.replace(/[&<>"']/g, (char) => {
+    return (
+      {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char] || char
+    )
+  })
+
+const stripHtml = (value?: string) => {
+  if (!value) return ''
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim()
+}
 
 const highlightName = (fileName: string) => {
   const safeName = escapeHtml(fileName)
   const keyword = props.keyword?.trim()
+
   if (!keyword) return safeName
+
   const safeKeyword = escapeHtml(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
   return safeName.replace(new RegExp(safeKeyword, 'gi'), (match) => `<em>${match}</em>`)
+}
+
+const getSnippetText = (file: CommonFile) => {
+  return stripHtml(file.fileContents || file.enrichSummary || file.fileSummary || '')
 }
 
 const getDocGroup = (file: CommonFile) => {
   if (file.folder) return 'folder'
+
   const docType = String(file.docType || '')
+
   if (docType === '1') return 'image'
   if (docType === '2') return 'doc'
   if (docType === '3') return 'audio'
   if (docType === '4') return 'video'
   if (docType === '6') return 'zip'
+
   return 'other'
 }
 
 const getFileIcon = (file: CommonFile) => {
   if (file.folder) return getFileIconByExt('dept-folder')
+
   const fileName = String(file.fileName || file.filePath || '')
   const fileExt = String(file.fileExt || '').replace(/^\./, '')
   const inferredExt = fileName.split('?')[0].match(/\.([^.\\/:]+)$/)?.[1] || ''
+
   return getFileIconByExt(fileExt || inferredExt)
 }
 
@@ -178,8 +416,16 @@ const formatSize = (size?: number) => {
   return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`
 }
 
-const formatTimeText = (file: CommonFile) => file.updateTime || file.createTime || (file.lastModified ? new Date(file.lastModified).toLocaleString() : '-')
+const formatTimeText = (file: CommonFile) => {
+  return (
+    file.updateTime ||
+    file.createTime ||
+    (file.lastModified ? new Date(file.lastModified).toLocaleString() : '-')
+  )
+}
+
 const formatScore = (score: number) => `相关度 ${Math.round(score * 100)}%`
+
 const formatSearchTime = (ms: number) => {
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(2)}s`
@@ -187,26 +433,57 @@ const formatSearchTime = (ms: number) => {
 
 const copyPath = async (path?: string) => {
   if (!path) return
+
   await navigator.clipboard?.writeText(path)
   ElMessage.success('路径已复制')
 }
+
+const handlePagination = () => {
+  emit('page-change', currentPage.value)
+  emit('size-change', currentPageSize.value)
+}
+
+onMounted(() => {
+  updateTableMaxHeight()
+  resizeObserver = new ResizeObserver(() => {
+    updateTableMaxHeight()
+  })
+
+  if (rootRef.value) {
+    resizeObserver.observe(rootRef.value)
+  }
+
+  window.addEventListener('resize', updateTableMaxHeight)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  window.removeEventListener('resize', updateTableMaxHeight)
+})
 </script>
 
 <style scoped lang="scss">
 .result-list {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  padding: 10px;
+  height: 100%;
+  overflow: hidden;
 }
 
 .result-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0 14px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  gap: 12px;
+  padding: 0 0 12px;
 }
 
-.toolbar-actions {
+.toolbar-summary,
+.toolbar-actions,
+.toolbar-meta {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -215,94 +492,84 @@ const copyPath = async (path?: string) => {
 .result-count,
 .search-time {
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  color: rgb(71 85 105);
 }
 
 .search-time {
   padding-left: 8px;
-  border-left: 1px solid var(--el-border-color-lighter);
+  border-left: 1px solid rgb(15 23 42 / 8%);
 }
 
-.result-items {
-  display: grid;
-  border-top: 1px solid var(--el-border-color-lighter);
+.result-table {
+  width: 100%;
 }
 
-.result-item {
-  display: grid;
-  grid-template-columns: 24px 44px minmax(0, 1fr) 104px;
-  gap: 14px;
-  align-items: start;
-  padding: 16px 4px;
-  background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+.result-table :deep(.el-table__body-wrapper) {
+  overflow-y: auto;
 }
 
-.result-item:hover {
-  background: var(--el-fill-color-lighter);
-}
-
-.item-check {
-  padding-top: 10px;
+.file-cell {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .file-icon {
   display: grid;
+  flex: 0 0 auto;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--el-border-radius-base);
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 0;
 }
 
 .file-icon-image {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
 .type-folder {
   color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
 }
 
 .type-image {
   color: var(--el-color-success);
-  background: var(--el-color-success-light-9);
 }
 
 .type-video {
   color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
 }
 
 .type-zip {
   color: var(--el-color-info);
-  background: var(--el-color-info-light-9);
 }
 
-.file-body {
+.file-info {
+  display: grid;
+  gap: 4px;
+  flex: 1;
   min-width: 0;
 }
 
-.file-title-row,
-.meta-row,
-.path-row,
-.tag-row {
+.file-title-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
 }
 
 .file-title {
   min-width: 0;
+  max-width: 100%;
   padding: 0;
-  overflow: hidden;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.45;
   color: var(--el-text-color-primary);
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   cursor: pointer;
   background: transparent;
   border: 0;
@@ -313,72 +580,111 @@ const copyPath = async (path?: string) => {
 }
 
 .score {
-  flex-shrink: 0;
-  padding: 2px 8px;
+  display: inline-block;
+  flex: 0 0 auto;
+  max-width: 96px;
+  padding: 2px 6px;
+  overflow: hidden;
   font-size: 12px;
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-  border: 1px solid var(--el-color-primary-light-7);
+  line-height: 18px;
+  color: rgb(37 99 235);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgb(239 246 255);
+  border: 1px solid rgb(191 219 254);
   border-radius: 999px;
 }
 
 .snippet {
-  display: -webkit-box;
-  margin-top: 8px;
+  width: 100%;
+  max-height: 40px;
+  padding: 0;
   overflow: hidden;
   font-size: 13px;
-  line-height: 1.7;
-  color: var(--el-text-color-regular);
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  line-height: 1.45;
+  color: rgb(71 85 105);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: normal;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }
 
 .plain {
-  color: var(--el-text-color-secondary);
+  color: rgb(71 85 105);
 }
 
-.meta-row {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.path-row {
+.path-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  margin-top: 8px;
-  color: var(--el-color-primary);
+}
+
+.path-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: rgb(37 99 235);
+}
+
+.path-main .el-icon {
+  flex: 0 0 auto;
 }
 
 .path-text {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
   font-size: 13px;
-  color: var(--el-text-color-secondary);
+  line-height: 1.45;
+  color: rgb(100 116 139);
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tag-row {
-  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.tag-item {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .item-actions :deep(.el-button),
-.path-row :deep(.el-button) {
-  gap: 4px;
-  padding: 2px 4px;
+.path-cell :deep(.el-button) {
+  gap: 3px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 3px;
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.empty-text {
+  font-size: 13px;
+  color: rgb(148 163 184);
 }
 
 .pagination {
   justify-content: flex-end;
-  margin-top: 18px;
+  margin-top: 4px;
 }
 
 :deep(em) {

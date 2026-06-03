@@ -90,6 +90,8 @@ import { config } from '@/config/axios/config'
 import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
 import { getFileIconByExt } from '@/utils/fileIconMap'
 
+defineOptions({ name: 'HomeSearchFileViewer' })
+
 const visible = ref(false)
 const loading = ref(false)
 const error = ref('')
@@ -359,12 +361,18 @@ defineExpose({ open })
 </script>
 
 <style scoped lang="scss">
+.search-file-viewer {
+  --el-drawer-padding-primary: 0;
+  --el-drawer-bg-color: rgb(246 248 251);
+}
+
 .viewer-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   width: 100%;
+  padding: 4px 2px;
 
   h3 {
     max-width: 720px;
@@ -390,6 +398,7 @@ defineExpose({ open })
 
 .viewer-content {
   height: calc(100vh - 118px);
+  padding: 18px;
   overflow: auto;
 }
 
@@ -401,12 +410,13 @@ defineExpose({ open })
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   margin-bottom: 12px;
   color: var(--el-text-color-regular);
-  background: var(--el-fill-color-lighter);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: var(--el-border-radius-base);
+  background: rgb(255 255 255);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgb(15 23 42 / 4%);
 
   strong {
     color: var(--el-color-primary);
@@ -415,7 +425,10 @@ defineExpose({ open })
 
 .folder-list {
   display: grid;
-  border-top: 1px solid var(--el-border-color-lighter);
+  overflow: hidden;
+  background: rgb(255 255 255);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 18px;
 }
 
 .folder-item {
@@ -424,12 +437,13 @@ defineExpose({ open })
   gap: 12px;
   align-items: center;
   padding: 12px 4px;
-  background: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  margin: 0 12px;
+  background: transparent;
+  border-bottom: 1px solid rgb(226 232 240);
 }
 
 .folder-item:hover {
-  background: var(--el-fill-color-lighter);
+  background: rgb(248 250 252);
 }
 
 .folder-item-icon {
@@ -522,26 +536,40 @@ defineExpose({ open })
 
 .pdf-preview,
 .video-preview {
+  display: block;
   width: 100%;
-  height: calc(100vh - 150px);
-  background: var(--el-fill-color-darker);
+  min-height: 72vh;
+  background: rgb(15 23 42);
   border: 0;
-  border-radius: var(--el-border-radius-base);
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 8%);
 }
 
-:global(.search-file-viewer.el-drawer) {
-  overflow: hidden;
-  background: var(--el-bg-color);
-  border-left: 1px solid var(--el-border-color-light);
+:deep(.el-drawer__header) {
+  padding: 18px 20px 12px;
+  margin: 0;
+  border-bottom: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255 / 96%);
 }
 
-:global(.search-file-viewer .el-drawer__header) {
-  padding-bottom: 16px;
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+:deep(.el-drawer__body) {
+  padding: 0;
 }
 
-:global(.search-file-viewer .el-drawer__body) {
-  background: var(--el-bg-color);
+@media (width <= 980px) {
+  .viewer-content {
+    height: calc(100vh - 104px);
+    padding: 12px;
+  }
+
+  .folder-item {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .folder-item-meta,
+  .folder-item-actions {
+    grid-column: 2;
+    align-items: flex-start;
+  }
 }
 </style>
