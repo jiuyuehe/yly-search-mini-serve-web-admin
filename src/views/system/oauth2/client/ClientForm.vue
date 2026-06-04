@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="160px"
+      label-width="auto"
     >
       <el-form-item label="客户端编号" prop="secret">
         <el-input v-model="formData.clientId" placeholder="请输入客户端编号" />

@@ -3,7 +3,7 @@
     <el-form
       ref="formRef"
       :model="formData"
-      label-width="120px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <!-- 通用配置 -->

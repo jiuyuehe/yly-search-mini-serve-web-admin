@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="130px"
+      label-width="auto"
     >
       <el-form-item label="配置名" prop="name">
         <el-input v-model="formData.name" placeholder="请输入配置名" />

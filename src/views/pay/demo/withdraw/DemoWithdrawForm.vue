@@ -4,7 +4,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="120px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <el-form-item label="提现标题" prop="subject">

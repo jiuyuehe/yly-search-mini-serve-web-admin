@@ -59,7 +59,7 @@
 
 
     <Dialog v-model="permissionFormVisible" :title="permissionFormTitle" width="720px" append-to-body destroy-on-close>
-      <el-form ref="permissionFormRef" :model="permissionFormModel" :rules="permissionFormRules" label-width="110px">
+      <el-form ref="permissionFormRef" :model="permissionFormModel" :rules="permissionFormRules" label-width="auto">
         <el-form-item label="选择文件夹" prop="filePath">
           <div class="permission-path-picker">
             <el-input v-model="permissionFormModel.filePath" readonly placeholder="请选择挂载目录下的文件夹">

@@ -4,7 +4,7 @@
     :model="formData"
     :rules="formRules"
     v-loading="formLoading"
-    label-width="0px"
+    label-width="auto"
     :inline-message="true"
   >
     <el-table :data="formData" class="-mt-10px">

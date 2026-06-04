@@ -5,7 +5,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="68px"
+      label-width="auto"
     >
       <el-form-item label="字典名称" prop="dictType">
         <el-select v-model="queryParams.dictType" class="!w-240px" @change="dictChange">

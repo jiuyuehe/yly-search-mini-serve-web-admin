@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="85px" :model="formData" :rules="rules">
+    <el-form label-width="auto" :model="formData" :rules="rules">
       <el-card header="风格" class="property-group" shadow="never">
         <el-form-item label="背景图片" prop="bgImgUrl">
           <UploadImg v-model="formData.bgImgUrl" width="100%" height="40px">

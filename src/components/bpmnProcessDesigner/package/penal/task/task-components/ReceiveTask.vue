@@ -33,7 +33,7 @@
       append-to-body
       destroy-on-close
     >
-      <el-form :model="newMessageForm" size="small" label-width="90px">
+      <el-form :model="newMessageForm" size="small" label-width="auto">
         <el-form-item label="消息ID">
           <el-input v-model="newMessageForm.id" clearable />
         </el-form-item>

@@ -4,7 +4,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="140px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <el-form-item label="模版编码" prop="code">

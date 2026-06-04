@@ -11,7 +11,7 @@
       :inline="true"
       :model="queryParams"
       class="-mb-15px"
-      label-width="90px"
+      label-width="auto"
     >
       <el-form-item label="配置代码" prop="configCode">
         <el-input
@@ -150,7 +150,7 @@
     width="720px"
     destroy-on-close
   >
-    <el-form ref="formRef" :model="formModel" label-width="110px">
+    <el-form ref="formRef" :model="formModel" label-width="auto">
       <!-- 创建时需要选择模板；编辑时仅展示模板代码 -->
       <el-form-item label="配置模板" v-if="formMode === 'create'">
         <el-select

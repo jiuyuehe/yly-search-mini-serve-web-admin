@@ -10,7 +10,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="120px"
+      label-width="auto"
     >
       <el-form-item label="处理器的名字" prop="handlerName">
         <el-input

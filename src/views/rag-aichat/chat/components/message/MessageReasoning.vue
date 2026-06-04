@@ -60,8 +60,8 @@ const toggleExpanded = () => {
   display: flex;
   padding: 8px;
   cursor: pointer;
-  background: linear-gradient(90deg, rgb(239 246 255), rgb(245 243 255));
-  border: 1px solid rgb(229 231 235 / 70%);
+  background: linear-gradient(90deg, var(--app-color-brand-light), var(--app-bg-subtle));
+  border: 1px solid var(--app-border-color);
   border-bottom: 0;
   border-radius: 8px 8px 0 0;
   align-items: center;
@@ -72,13 +72,13 @@ const toggleExpanded = () => {
   display: flex;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--app-text-primary);
   align-items: center;
   gap: 6px;
 }
 
 .message-reasoning-arrow {
-  color: #6b7280;
+  color: var(--app-text-secondary);
   transition: transform 0.2s ease;
 }
 
@@ -90,8 +90,8 @@ const toggleExpanded = () => {
   max-height: 300px;
   padding: 12px;
   overflow-y: auto;
-  background: rgb(255 255 255 / 70%);
-  border: 1px solid rgb(229 231 235 / 70%);
+  background: var(--app-bg-card);
+  border: 1px solid var(--app-border-color);
   border-radius: 0 0 8px 8px;
 }
 </style>

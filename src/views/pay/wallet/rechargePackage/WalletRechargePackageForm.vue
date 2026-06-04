@@ -4,7 +4,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="150px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <el-form-item label="套餐名" prop="name">

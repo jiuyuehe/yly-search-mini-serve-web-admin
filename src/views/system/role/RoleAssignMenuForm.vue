@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model="dialogVisible" title="菜单权限">
-    <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="80px">
+    <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="auto">
       <el-form-item label="角色名称">
         <el-tag>{{ formData.name }}</el-tag>
       </el-form-item>

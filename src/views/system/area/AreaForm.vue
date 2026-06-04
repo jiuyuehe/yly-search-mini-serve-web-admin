@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="80px"
+      label-width="auto"
     >
       <el-form-item label="IP" prop="ip">
         <el-input v-model="formData.ip" placeholder="请输入 IP 地址" />

@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="formRef" :model="modelData" :rules="rules" label-width="120px" class="mt-20px">
+  <el-form ref="formRef" :model="modelData" :rules="rules" label-width="auto" class="mt-20px">
     <el-form-item label="表单类型" prop="formType" class="mb-20px">
       <el-radio-group v-model="modelData.formType">
         <el-radio

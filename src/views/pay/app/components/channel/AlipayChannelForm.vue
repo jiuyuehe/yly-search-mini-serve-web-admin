@@ -6,7 +6,7 @@
         v-loading="formLoading"
         :model="formData"
         :rules="formRules"
-        label-width="100px"
+        label-width="auto"
       >
         <el-form-item label="渠道费率" label-width="180px" prop="feeRate">
           <el-input v-model="formData.feeRate" clearable placeholder="请输入渠道费率">

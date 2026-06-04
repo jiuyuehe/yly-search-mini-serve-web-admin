@@ -1,7 +1,7 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
     <!-- 表单 -->
-    <el-form label-width="80px" :model="formData" class="m-t-8px">
+    <el-form label-width="auto" :model="formData" class="m-t-8px">
       <el-form-item label="上传图片" prop="imgUrl">
         <UploadImg v-model="formData.imgUrl" height="50px" width="auto" class="min-w-80px">
           <template #tip>

@@ -8,7 +8,7 @@
       :inline="true"
       :model="queryParams"
       class="-mb-15px"
-      label-width="68px"
+      label-width="auto"
     >
       <el-form-item label="请假类型" prop="type">
         <el-select

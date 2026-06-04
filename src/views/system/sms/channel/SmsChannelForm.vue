@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="130px"
+      label-width="auto"
     >
       <el-form-item label="短信签名" prop="signature">
         <el-input v-model="formData.signature" placeholder="请输入短信签名" />

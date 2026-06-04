@@ -1,6 +1,6 @@
 <template>
   <div class="panel-tab__content">
-    <el-form label-width="90px" :model="needProps" :rules="rules">
+    <el-form label-width="auto" :model="needProps" :rules="rules">
       <div v-if="needProps.type == 'bpmn:Process'">
         <!-- 如果是 Process 信息的时候，使用自定义表单 -->
         <el-form-item label="流程标识" prop="id">

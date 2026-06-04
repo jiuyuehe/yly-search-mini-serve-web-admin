@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="dialogVisible" :title="dialogTitle" width="620px" destroy-on-close>
-    <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="110px">
+    <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="auto">
       <el-form-item prop="nasCode">
         <template #label>
           <span class="label-with-help">

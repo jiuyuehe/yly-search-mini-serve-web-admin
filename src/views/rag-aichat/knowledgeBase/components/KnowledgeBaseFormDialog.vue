@@ -10,7 +10,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="90px"
+      label-width="auto"
       @submit.prevent="submitForm"
     >
       <el-form-item label="名称" prop="name">

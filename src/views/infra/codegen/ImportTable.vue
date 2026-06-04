@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model="dialogVisible" title="导入表" width="800px">
     <!-- 搜索栏 -->
-    <el-form ref="queryFormRef" :inline="true" :model="queryParams" label-width="68px">
+    <el-form ref="queryFormRef" :inline="true" :model="queryParams" label-width="auto">
       <el-form-item label="数据源" prop="dataSourceConfigId">
         <el-select
           v-model="queryParams.dataSourceConfigId"

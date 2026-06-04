@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="100px"
+      label-width="auto"
     >
       <el-form-item label="上级菜单">
         <el-tree-select

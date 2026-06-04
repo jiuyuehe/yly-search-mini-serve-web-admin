@@ -378,7 +378,7 @@ onUnmounted(() => {
   display: flex;
   height: 100%;
   min-width: 320px;
-  background: #fff;
+  background: var(--app-bg-card);
   flex: 1;
   flex-direction: column;
 }
@@ -406,7 +406,7 @@ onUnmounted(() => {
   position: relative;
   padding: 12px 14px 18px;
   overflow-y: auto;
-  background: #fff;
+  background: var(--app-bg-card);
   flex: 1;
 }
 
@@ -428,7 +428,7 @@ onUnmounted(() => {
 .message-card {
   max-width: min(820px, calc(100% - 60px));
   padding: 12px 14px;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
   box-shadow: var(--app-shadow-xs);
@@ -460,7 +460,7 @@ onUnmounted(() => {
 
 .chat-footer {
   padding: 12px 14px 14px;
-  background: #fff;
+  background: var(--app-bg-card);
   border-top: 1px solid var(--app-border-color);
 }
 

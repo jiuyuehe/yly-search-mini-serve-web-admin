@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="80px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-form-item label="上传图片" prop="imgUrl">
         <UploadImg
           v-model="formData.imgUrl"

@@ -9,7 +9,7 @@
         :model="queryParams"
         ref="queryFormRef"
         :inline="true"
-        label-width="68px"
+        label-width="auto"
         @submit.prevent
       >
         <el-form-item prop="name" class="ml-auto">

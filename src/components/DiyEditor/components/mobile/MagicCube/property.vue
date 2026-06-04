@@ -1,7 +1,7 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
     <!-- 表单 -->
-    <el-form label-width="80px" :model="formData" class="m-t-8px">
+    <el-form label-width="auto" :model="formData" class="m-t-8px">
       <el-text tag="p"> 魔方设置 </el-text>
       <el-text type="info" size="small"> 每格尺寸187 * 187 </el-text>
       <MagicCubeEditor

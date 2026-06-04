@@ -1067,7 +1067,7 @@ defineExpose({
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #fff;
+  background: var(--app-bg-card);
   flex-direction: row;
 }
 
@@ -1079,6 +1079,6 @@ defineExpose({
 
 :deep(.el-drawer__body) {
   padding: 0;
-  background: #fff;
+  background: var(--app-bg-card);
 }
 </style>

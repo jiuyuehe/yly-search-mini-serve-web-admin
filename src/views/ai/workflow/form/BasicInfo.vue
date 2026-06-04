@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="formRef" :model="modelData" :rules="formRules" label-width="120px">
+  <el-form ref="formRef" :model="modelData" :rules="formRules" label-width="auto">
     <el-row>
       <el-col :span="24">
         <el-form-item label="流程标识" prop="code">

@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="80px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-card header="样式设置" class="property-group" shadow="never">
         <el-form-item label="样式" prop="type">
           <el-radio-group v-model="formData.type">

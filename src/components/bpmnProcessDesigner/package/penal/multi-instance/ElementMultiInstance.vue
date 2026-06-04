@@ -31,7 +31,7 @@
       除了UserTask以外节点的多实例待实现
     </div>
     <!-- 与Simple设计器配置合并，保留以前的代码 -->
-    <el-form label-width="90px" style="display: none">
+    <el-form label-width="auto" style="display: none">
       <el-form-item label="快捷配置">
         <el-button size="small" @click="changeConfig('依次审批')">依次审批</el-button>
         <el-button size="small" @click="changeConfig('会签')">会签</el-button>

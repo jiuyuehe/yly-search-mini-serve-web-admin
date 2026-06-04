@@ -52,7 +52,7 @@
   </ContentWrap>
 
   <ContentWrap>
-    <el-form ref="queryFormRef" :inline="true" :model="queryParams" class="-mb-15px" label-width="82px">
+    <el-form ref="queryFormRef" :inline="true" :model="queryParams" class="-mb-15px" label-width="auto">
       <el-form-item label="任务类型" prop="taskType">
         <el-select v-model="queryParams.taskType" class="!w-200px" clearable placeholder="请选择任务类型">
           <el-option v-for="item in taskTypeOptions" :key="item.value" :label="item.label" :value="item.value" />

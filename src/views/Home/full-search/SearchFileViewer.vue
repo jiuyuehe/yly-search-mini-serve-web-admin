@@ -354,7 +354,7 @@ defineExpose({ open })
 <style scoped lang="scss">
 .search-file-viewer {
   --el-drawer-padding-primary: 0;
-  --el-drawer-bg-color: rgb(246 248 251);
+  --el-drawer-bg-color: var(--el-bg-color-page);
 }
 
 .viewer-head {
@@ -404,10 +404,10 @@ defineExpose({ open })
   padding: 12px 14px;
   margin-bottom: 12px;
   color: var(--el-text-color-regular);
-  background: rgb(255 255 255);
-  border: 1px solid rgb(226 232 240);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 16px;
-  box-shadow: 0 10px 28px rgb(15 23 42 / 4%);
+  box-shadow: var(--app-shadow-xs);
 
   strong {
     color: var(--el-color-primary);
@@ -417,8 +417,8 @@ defineExpose({ open })
 .folder-list {
   display: grid;
   overflow: hidden;
-  background: rgb(255 255 255);
-  border: 1px solid rgb(226 232 240);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 18px;
 }
 
@@ -430,11 +430,11 @@ defineExpose({ open })
   padding: 12px 4px;
   margin: 0 12px;
   background: transparent;
-  border-bottom: 1px solid rgb(226 232 240);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .folder-item:hover {
-  background: rgb(248 250 252);
+  background: var(--el-fill-color-lighter);
 }
 
 .folder-item-icon {
@@ -539,8 +539,8 @@ defineExpose({ open })
 :deep(.el-drawer__header) {
   padding: 18px 20px 12px;
   margin: 0;
-  border-bottom: 1px solid rgb(226 232 240);
-  background: rgb(255 255 255 / 96%);
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 :deep(.el-drawer__body) {

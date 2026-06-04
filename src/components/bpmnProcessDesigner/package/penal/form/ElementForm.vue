@@ -1,6 +1,6 @@
 <template>
   <div class="panel-tab__content">
-    <el-form label-width="80px">
+    <el-form label-width="auto">
       <el-form-item label="流程表单">
         <!--        <el-input v-model="formKey" clearable @change="updateElementFormKey" />-->
         <el-select v-model="formKey" clearable @change="updateElementFormKey">
@@ -63,7 +63,7 @@
     <!--      append-to-body-->
     <!--      destroy-on-close-->
     <!--    >-->
-    <!--      <el-form :model="formFieldForm" label-width="90px">-->
+    <!--      <el-form :model="formFieldForm" label-width="auto">-->
     <!--        <el-form-item label="字段ID">-->
     <!--          <el-input v-model="formFieldForm.id" clearable />-->
     <!--        </el-form-item>-->
@@ -203,7 +203,7 @@
     <!--      append-to-body-->
     <!--      destroy-on-close-->
     <!--    >-->
-    <!--      <el-form :model="fieldOptionForm" label-width="96px">-->
+    <!--      <el-form :model="fieldOptionForm" label-width="auto">-->
     <!--        <el-form-item label="编号/ID" v-if="fieldOptionType !== 'constraint'" key="option-id">-->
     <!--          <el-input v-model="fieldOptionForm.id" clearable />-->
     <!--        </el-form-item>-->

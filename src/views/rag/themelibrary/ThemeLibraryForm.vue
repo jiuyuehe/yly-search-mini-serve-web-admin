@@ -4,7 +4,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="100px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <el-form-item label="名称" prop="themeName">
@@ -105,7 +105,7 @@
       ref="datasetFormRef"
       :model="datasetForm"
       :rules="datasetFormRules"
-      label-width="80px"
+      label-width="auto"
       v-loading="datasetFormLoading"
     >
     <el-form-item label="名称" prop="name">

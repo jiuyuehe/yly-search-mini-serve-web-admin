@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="80px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-card header="拼团活动" class="property-group" shadow="never">
         <CombinationShowcase v-model="formData.activityIds" />
       </el-card>

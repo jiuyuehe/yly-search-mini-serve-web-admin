@@ -6,7 +6,7 @@
     :rules="rules"
     class="login-form"
     label-position="top"
-    label-width="120px"
+    label-width="auto"
     size="large"
   >
     <el-row class="mx-[-10px]">

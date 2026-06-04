@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="140px"
+      label-width="auto"
     >
       <el-form-item label="邮箱账号" prop="accountId">
         <el-select v-model="formData.accountId" placeholder="请选择邮箱账号">

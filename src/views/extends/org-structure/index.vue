@@ -74,7 +74,7 @@
     <el-col :xs="24" :lg="16" :xl="18">
       <ContentWrap>
         <div class="flex flex-col gap-12px">
-          <el-form :model="userQuery" :inline="true" label-width="70px" class="org-structure-query">
+          <el-form :model="userQuery" :inline="true" label-width="auto" class="org-structure-query">
             <el-form-item label="用户名">
               <el-input
                 v-model="userQuery.username"
@@ -174,7 +174,7 @@
 
   <!-- 部门新增/编辑 -->
   <el-dialog v-model="deptDialog.visible" :title="deptDialog.title" width="460px" destroy-on-close>
-    <el-form :model="deptForm" :rules="deptRules" ref="deptFormRef" label-width="90px">
+    <el-form :model="deptForm" :rules="deptRules" ref="deptFormRef" label-width="auto">
       <el-form-item label="部门名称" prop="name">
         <el-input v-model="deptForm.name" placeholder="请输入部门名称" />
       </el-form-item>
@@ -220,7 +220,7 @@
 
   <!-- 用户编辑 -->
   <el-dialog v-model="userDialog.visible" title="编辑用户" width="480px" destroy-on-close>
-    <el-form :model="userForm" :rules="userRules" ref="userFormRef" label-width="90px">
+    <el-form :model="userForm" :rules="userRules" ref="userFormRef" label-width="auto">
       <el-form-item label="用户名">
         <el-input v-model="userForm.username" disabled />
       </el-form-item>
@@ -299,7 +299,7 @@
     width="420px"
     destroy-on-close
   >
-    <el-form label-width="80px" autocomplete="off">
+    <el-form label-width="auto" autocomplete="off">
       <el-form-item label="新密码">
         <InputPassword
           v-model="passwordDialog.password"

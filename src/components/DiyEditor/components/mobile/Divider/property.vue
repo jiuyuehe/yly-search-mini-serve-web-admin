@@ -1,5 +1,5 @@
 <template>
-  <el-form label-width="80px" :model="formData">
+  <el-form label-width="auto" :model="formData">
     <el-form-item label="高度" prop="height">
       <el-slider v-model="formData.height" :min="1" :max="100" show-input input-size="small" />
     </el-form-item>

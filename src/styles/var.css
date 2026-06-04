@@ -50,13 +50,57 @@
 
   --app-content-bg-color: #ffffff;
 
+  --app-bg-page: var(--el-bg-color-page);
+
+  --app-bg-card: var(--el-bg-color);
+
+  --app-bg-overlay: var(--el-bg-color-overlay);
+
+  --app-bg-subtle: var(--el-fill-color-lighter);
+
+  --app-fill-color-light: var(--el-fill-color-light);
+
+  --app-border-color: var(--el-border-color-light);
+
+  --app-text-primary: var(--el-text-color-primary);
+
+  --app-text-secondary: var(--el-text-color-secondary);
+
+  --app-text-tertiary: var(--el-text-color-placeholder);
+
+  --app-text-placeholder: var(--el-text-color-placeholder);
+
+  --app-text-disabled: var(--el-text-color-disabled);
+
+  --app-color-brand: var(--el-color-primary);
+
+  --app-color-brand-light: var(--el-color-primary-light-9);
+
+  --app-color-brand-border: var(--el-color-primary-light-7);
+
+  --app-radius-sm: var(--el-border-radius-base);
+
+  --app-radius-md: 8px;
+
+  --app-radius-lg: 12px;
+
+  --app-shadow-xs: 0 2px 8px rgb(15 23 42 / 8%);
+
+  --app-shadow-md: 0 12px 30px rgb(15 23 42 / 12%);
+
+  --app-font-weight-medium: 500;
+
+  --app-font-weight-semibold: 600;
+
   --app-footer-height: 50px;
 
   --transition-time-02: 0.2s;
 }
 
 .dark {
-  --app-content-bg-color: #ffffff;
+  --app-content-bg-color: var(--el-bg-color);
+  --app-shadow-xs: 0 2px 10px rgb(0 0 0 / 24%);
+  --app-shadow-md: 0 14px 34px rgb(0 0 0 / 34%);
 }
 
 html,

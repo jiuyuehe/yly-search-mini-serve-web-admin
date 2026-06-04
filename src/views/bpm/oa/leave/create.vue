@@ -7,7 +7,7 @@
           v-loading="formLoading"
           :model="formData"
           :rules="formRules"
-          label-width="80px"
+          label-width="auto"
         >
           <el-form-item label="请假类型" prop="type">
             <el-select v-model="formData.type" clearable placeholder="请选择请假类型">

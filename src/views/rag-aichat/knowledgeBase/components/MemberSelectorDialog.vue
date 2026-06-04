@@ -269,7 +269,7 @@ const handleClosed = () => {
   min-width: 0;
   min-height: 0;
   padding: 16px;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
   flex-direction: column;
@@ -330,7 +330,7 @@ const handleClosed = () => {
   overflow: hidden;
   font-size: 12px;
   font-weight: 500;
-  color: #0052d9;
+  color: var(--app-color-brand);
   text-overflow: ellipsis;
   white-space: nowrap;
   background: rgb(0 82 217 / 6%);

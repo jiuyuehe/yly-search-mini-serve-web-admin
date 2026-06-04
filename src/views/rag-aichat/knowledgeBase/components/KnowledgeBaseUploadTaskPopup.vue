@@ -158,8 +158,8 @@ const getProgressColor = (status: UploadTaskStatus) => {
   width: min(320px, calc(100vw - 24px));
   max-height: min(360px, calc(100vh - 24px));
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #d9e2f2;
+  background: var(--app-bg-overlay);
+  border: 1px solid var(--app-border-color);
   border-radius: 12px;
   box-shadow: 0 12px 30px rgb(15 23 42 / 14%);
   flex-direction: column;
@@ -170,7 +170,7 @@ const getProgressColor = (status: UploadTaskStatus) => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid #e8eef8;
+  border-bottom: 1px solid var(--app-border-color);
 }
 
 .upload-task-popup__title-wrap {
@@ -185,8 +185,8 @@ const getProgressColor = (status: UploadTaskStatus) => {
   width: 32px;
   height: 32px;
   font-size: 16px;
-  color: #1d69d9;
-  background: #eef5ff;
+  color: var(--app-color-brand);
+  background: var(--app-color-brand-light);
   border-radius: 8px;
   align-items: center;
   justify-content: center;
@@ -200,13 +200,13 @@ const getProgressColor = (status: UploadTaskStatus) => {
   min-width: 0;
   font-size: 13px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--app-text-primary);
 }
 
 .upload-task-popup__count {
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--app-text-secondary);
 }
 
 .upload-task-popup__actions {
@@ -232,8 +232,8 @@ const getProgressColor = (status: UploadTaskStatus) => {
 .upload-task-item {
   display: flex;
   padding: 10px;
-  background: #fff;
-  border: 1px solid #e4eaf4;
+  background: var(--app-bg-card);
+  border: 1px solid var(--app-border-color);
   border-radius: 10px;
   gap: 10px;
 }
@@ -250,18 +250,18 @@ const getProgressColor = (status: UploadTaskStatus) => {
 }
 
 .upload-task-item__icon.is-primary {
-  color: #1d69d9;
-  background: #edf4ff;
+  color: var(--app-color-brand);
+  background: var(--app-color-brand-light);
 }
 
 .upload-task-item__icon.is-success {
-  color: #16a34a;
-  background: #e8f8ee;
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
 }
 
 .upload-task-item__icon.is-danger {
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--el-color-danger);
+  background: var(--el-color-danger-light-9);
 }
 
 .upload-task-item__content {
@@ -281,14 +281,14 @@ const getProgressColor = (status: UploadTaskStatus) => {
   overflow: hidden;
   font-size: 12px;
   font-weight: 700;
-  color: #24324b;
+  color: var(--app-text-primary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .upload-task-item__status {
   font-size: 11px;
-  color: #64748b;
+  color: var(--app-text-secondary);
   flex-shrink: 0;
 }
 
@@ -299,7 +299,7 @@ const getProgressColor = (status: UploadTaskStatus) => {
   gap: 8px;
   margin-top: 6px;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--app-text-placeholder);
 }
 
 .upload-task-item__meta-name {

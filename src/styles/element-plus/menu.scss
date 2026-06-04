@@ -11,7 +11,7 @@
     line-height: 38px;
     margin: 4px 8px;
     padding: 0 12px !important;
-    border-radius: 4px;
+    border-radius: 0px;
     font-size: 13px;
     transition:
             color 0.2s ease,
@@ -36,12 +36,12 @@
   }
 
   .el-menu-item.is-active {
-    
+
     &::before {
       content: "";
       width: 3px;
       height: 16px;
-      border-radius: 4px;
+      border-radius: 0px;
       background: #409eff;
       position: absolute;
       left: 4px;
@@ -67,9 +67,9 @@
       .el-menu-item {
         height: 34px;
         line-height: 34px;
-        margin: 3px 8px 3px 18px;
+
         font-size: 12.5px;
-        border-radius: 4px;
+        border-radius: 0px;
       }
     }
   }

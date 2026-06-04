@@ -56,7 +56,7 @@
               :rules="LoginRules"
               class="login-form"
               label-position="top"
-              label-width="120px"
+              label-width="auto"
               size="large"
             >
               <el-row style="margin-right: -10px; margin-left: -10px">

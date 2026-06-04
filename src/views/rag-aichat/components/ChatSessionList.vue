@@ -244,7 +244,7 @@ const handleSessionAction = (command: string, session: any) => {
 .session-header {
   display: flex;
   padding: 8px;
-  background: #fff;
+  background: var(--app-bg-card);
   border-radius: var(--app-radius-md);
   flex-direction: column;
   gap: 10px;
@@ -271,7 +271,7 @@ const handleSessionAction = (command: string, session: any) => {
 .session-list-wrap {
   min-height: 0;
   padding: 8px;
-  background: #fff;
+  background: var(--app-bg-card);
   border-radius: var(--app-radius-md);
   flex: 1;
 }

@@ -4,7 +4,7 @@
     <el-text type="info" size="small"> 拖动左侧的小圆点可以调整顺序 </el-text>
 
     <!-- 表单 -->
-    <el-form label-width="60px" :model="formData" class="m-t-8px">
+    <el-form label-width="auto" :model="formData" class="m-t-8px">
       <Draggable v-model="formData.list" :empty-item="EMPTY_MENU_LIST_ITEM_PROPERTY">
         <template #default="{ element }">
           <el-form-item label="图标" prop="iconUrl">

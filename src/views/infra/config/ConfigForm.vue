@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="80px"
+      label-width="auto"
     >
       <el-form-item label="参数分类" prop="category">
         <el-input v-model="formData.category" placeholder="请输入参数分类" />

@@ -114,7 +114,7 @@ watch(
 .kb-workspace-toolbar {
   display: flex;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--app-bg-card);
   border-bottom: 1px solid var(--app-border-color);
   align-items: center;
   justify-content: space-between;

@@ -181,7 +181,6 @@ onBeforeUnmount(() => {
   padding: 12px;
   overflow: hidden;
   background: var(--app-bg-subtle);
-  background-color: #fafafa;
   border-right: 1px solid var(--app-border-color);
   box-sizing: border-box;
   flex-direction: column;
@@ -303,7 +302,7 @@ onBeforeUnmount(() => {
 }
 
 .kb-item:hover {
-  background: rgb(0 0 0 / 4%);
+  background: var(--app-fill-color-light);
 }
 
 .kb-item + .kb-item {
@@ -365,7 +364,7 @@ onBeforeUnmount(() => {
   position: fixed;
   min-width: 160px;
   padding: 6px;
-  background: #fff;
+  background: var(--app-bg-overlay);
   border: 1px solid var(--app-border-color);
   border-radius: 10px;
   box-shadow: 0 10px 30px rgb(15 23 42 / 12%);

@@ -59,7 +59,7 @@ const typeLabelGetter = getFileTypeLabel
   min-height: 190px;
   padding: 12px;
   cursor: pointer;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: 10px;
   flex-direction: column;
@@ -67,17 +67,17 @@ const typeLabelGetter = getFileTypeLabel
 }
 
 .file-card:hover {
-  border-color: #6da4ff;
+  border-color: var(--app-color-brand-border);
   box-shadow: 0 2px 8px rgb(59 130 246 / 16%);
 }
 
 .file-card.selected {
-  background: #f5f9ff;
-  border-color: #4a93ff;
+  background: var(--app-color-brand-light);
+  border-color: var(--app-color-brand);
 }
 
 .file-card:focus-visible {
-  outline: 2px solid #4a93ff;
+  outline: 2px solid var(--app-color-brand);
   outline-offset: 2px;
 }
 

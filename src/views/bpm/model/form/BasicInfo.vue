@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="formRef" :model="modelData" :rules="rules" label-width="120px" class="mt-20px">
+  <el-form ref="formRef" :model="modelData" :rules="rules" label-width="auto" class="mt-20px">
     <el-form-item label="流程标识" prop="key" class="mb-20px">
       <div class="flex items-center">
         <el-input

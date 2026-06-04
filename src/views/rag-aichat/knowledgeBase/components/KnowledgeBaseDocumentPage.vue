@@ -1216,7 +1216,7 @@ onBeforeUnmount(() => {
 .doc-page-toolbar {
   display: flex;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
   align-items: center;
@@ -1277,7 +1277,7 @@ onBeforeUnmount(() => {
 .doc-view-switch-btn {
   min-width: 30px;
   padding: 4px 7px;
-  color: #64748b;
+  color: var(--app-text-secondary);
   border: 1px solid var(--app-border-color);
   border-radius: 0;
   transition:
@@ -1299,15 +1299,15 @@ onBeforeUnmount(() => {
 }
 
 .doc-view-switch-btn:hover {
-  color: #4a93ff;
+  color: var(--app-color-brand);
   background: rgb(74 147 255 / 8%);
-  border-color: rgb(74 147 255 / 28%);
+  border-color: var(--app-color-brand-border);
 }
 
 .doc-view-switch-btn.active {
-  color: #1d69d9;
+  color: var(--app-color-brand);
   background: rgb(29 105 217 / 10%);
-  border-color: rgb(29 105 217 / 32%);
+  border-color: var(--app-color-brand-border);
 }
 
 .doc-view-switch-btn:active {
@@ -1393,16 +1393,16 @@ onBeforeUnmount(() => {
 }
 
 .doc-card:hover {
-  border-color: rgb(74 147 255 / 16%);
+  border-color: var(--app-color-brand-border);
 }
 
 .doc-card.selected {
-  border-color: #4a93ff;
+  border-color: var(--app-color-brand);
   box-shadow: 0 2px 10px rgb(59 130 246 / 20%);
 }
 
 .doc-card.preview {
-  border-color: #c9d0db;
+  border-color: var(--app-border-color);
   box-shadow: none;
 }
 
@@ -1445,8 +1445,8 @@ onBeforeUnmount(() => {
 :deep(.doc-card-checkbox .el-checkbox__inner) {
   width: 24px;
   height: 24px;
-  background: #1d69d9;
-  border: 2px solid #e5edff;
+  background: var(--app-color-brand);
+  border: 2px solid var(--app-bg-card);
   border-radius: 50%;
   transition:
     transform 0.12s ease,
@@ -1466,20 +1466,20 @@ onBeforeUnmount(() => {
 }
 
 :deep(.doc-card-checkbox .el-checkbox__input.is-checked .el-checkbox__inner) {
-  background: #1d69d9;
-  border-color: #e5edff;
+  background: var(--app-color-brand);
+  border-color: var(--app-bg-card);
   box-shadow: 0 2px 8px rgb(29 105 217 / 18%);
 }
 
 :deep(.doc-card-checkbox-shell--preview .el-checkbox__inner) {
-  background: #c7cdd8;
-  border-color: #edf0f4;
+  background: var(--app-text-disabled);
+  border-color: var(--app-bg-card);
   box-shadow: none;
 }
 
 :deep(.doc-card-checkbox-shell--preview .el-checkbox__input.is-checked .el-checkbox__inner) {
-  background: #c7cdd8;
-  border-color: #edf0f4;
+  background: var(--app-text-disabled);
+  border-color: var(--app-bg-card);
   box-shadow: none;
 }
 
@@ -1524,7 +1524,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   font-size: 12px;
   line-height: 1.35;
-  color: #27364d;
+  color: var(--app-text-primary);
   text-overflow: ellipsis;
   word-break: break-word;
   -webkit-box-orient: vertical;
@@ -1539,17 +1539,17 @@ onBeforeUnmount(() => {
 .doc-list-table {
   width: 100%;
   height: 100%;
-  background: #fff;
+  background: var(--app-bg-card);
 }
 
 .doc-list-table :deep(.el-table__header-wrapper th) {
   font-weight: 600;
-  color: #334155;
-  background: linear-gradient(180deg, #f7faff 0%, #edf3ff 100%);
+  color: var(--app-text-primary);
+  background: var(--app-fill-color-light);
 }
 
 .doc-list-table :deep(.el-table__header-wrapper th.is-leaf) {
-  border-bottom: 1px solid #dbe6f7;
+  border-bottom: 1px solid var(--app-border-color);
 }
 
 .doc-list-table :deep(.el-table__body tr.is-selected-row > td) {

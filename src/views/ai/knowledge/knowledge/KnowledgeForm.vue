@@ -4,7 +4,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="130px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <el-form-item label="知识库名称" prop="name">

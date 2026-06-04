@@ -4,7 +4,7 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      label-width="130px"
+      label-width="auto"
       v-loading="formLoading"
     >
       <el-form-item label="所属平台" prop="platform">

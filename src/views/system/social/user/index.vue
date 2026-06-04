@@ -8,7 +8,7 @@
       :inline="true"
       :model="queryParams"
       class="-mb-15px"
-      label-width="120px"
+      label-width="auto"
     >
       <el-form-item label="社交平台" prop="type">
         <el-select

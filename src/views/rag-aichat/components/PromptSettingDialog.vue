@@ -78,7 +78,7 @@
       append-to-body
       @closed="handleManageEditCancel"
     >
-      <el-form :model="manageEditForm" label-width="70px">
+      <el-form :model="manageEditForm" label-width="auto">
         <el-form-item label="提示词" prop="prompt">
           <el-input
             v-model="manageEditForm.prompt"

@@ -20,7 +20,7 @@
       </div>
 
       <div class="segment-settings mb-20px">
-        <el-form label-width="120px">
+        <el-form label-width="auto">
           <el-form-item label="最大 Token 数">
             <el-input-number v-model="modelData.segmentMaxTokens" :min="1" :max="2048" />
           </el-form-item>

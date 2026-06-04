@@ -274,8 +274,8 @@ const handleSessionAction = async (command: string, session: any) => {
   height: 100%;
   padding: 16px 12px 14px;
   overflow: hidden;
-  background: #f8faff;
-  border-right: 1px solid rgb(15 23 42 / 4%);
+  background: var(--app-bg-subtle);
+  border-right: 1px solid var(--app-border-color);
   transition:
     width 0.24s ease,
     min-width 0.24s ease,
@@ -330,7 +330,7 @@ const handleSessionAction = async (command: string, session: any) => {
   display: flex;
   width: 100%;
   height: 48px;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-md);
   align-items: center;
@@ -342,7 +342,7 @@ const handleSessionAction = async (command: string, session: any) => {
   width: 38px;
   height: 38px;
   color: var(--app-text-secondary);
-  background: #f4f7fb;
+  background: var(--app-fill-color-light);
   border-radius: 10px;
 }
 
@@ -379,7 +379,7 @@ const handleSessionAction = async (command: string, session: any) => {
   min-height: 0;
   padding: 8px;
   overflow: hidden;
-  background: #fff;
+  background: var(--app-bg-card);
   border-radius: 10px;
   flex: 1;
   flex-direction: column;
@@ -486,7 +486,7 @@ const handleSessionAction = async (command: string, session: any) => {
   font-size: 13px;
   font-weight: var(--app-font-weight-medium);
   color: var(--app-text-primary);
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid rgb(0 82 217 / 24%);
   border-radius: var(--app-radius-sm);
   outline: none;
@@ -513,7 +513,7 @@ const handleSessionAction = async (command: string, session: any) => {
 .session-rename-input :deep(.el-input__wrapper) {
   padding: 0 8px;
   font-size: 14px;
-  background: #fff;
+  background: var(--app-bg-card);
   border-radius: 6px;
   box-shadow: 0 0 0 1px rgb(0 82 217 / 28%);
 }

@@ -26,12 +26,16 @@
       </div>
     </div>
 
-    <el-skeleton v-if="loading" :rows="6" animated />
+    <el-skeleton v-if="loading" :rows="12" animated />
     <el-empty v-else-if="!files.length" description="暂无搜索结果" />
 
     <el-table
       v-else
-      :header-cell-style="{ background: '#f5f7fa', color: '#333333', fontWeight: 'bold' }"
+      :header-cell-style="{
+        background: 'var(--el-fill-color-light)',
+        color: 'var(--el-text-color-primary)',
+        fontWeight: 'bold'
+      }"
       class="result-table"
       :max-height="tableMaxHeight"
       :data="files"
@@ -496,11 +500,11 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .result-list {
   display: flex;
-  flex-direction: column;
+  height: 100%;
   min-height: 0;
   padding: 10px;
-  height: 100%;
   overflow: hidden;
+  flex-direction: column;
 }
 
 .result-toolbar {
@@ -523,12 +527,12 @@ onBeforeUnmount(() => {
 .result-count,
 .search-time {
   font-size: 13px;
-  color: rgb(71 85 105);
+  color: var(--el-text-color-secondary);
 }
 
 .search-time {
   padding-left: 8px;
-  border-left: 1px solid rgb(15 23 42 / 8%);
+  border-left: 1px solid var(--el-border-color-light);
 }
 
 .result-table {
@@ -593,9 +597,8 @@ onBeforeUnmount(() => {
 }
 
 .file-title {
-  flex: 1 1 auto;
-  min-width: 0;
   max-width: 100%;
+  min-width: 0;
   padding: 0;
   font-size: 14px;
   font-weight: 600;
@@ -605,6 +608,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   background: transparent;
   border: 0;
+  flex: 1 1 auto;
 }
 
 .file-title:hover {
@@ -618,10 +622,10 @@ onBeforeUnmount(() => {
   padding: 2px 6px;
   font-size: 12px;
   line-height: 18px;
-  color: rgb(37 99 235);
+  color: var(--el-color-primary);
   white-space: nowrap;
-  background: rgb(239 246 255);
-  border: 1px solid rgb(191 219 254);
+  background: var(--el-color-primary-light-9);
+  border: 1px solid var(--el-color-primary-light-7);
   border-radius: 999px;
 }
 
@@ -632,10 +636,10 @@ onBeforeUnmount(() => {
   overflow: hidden;
   font-size: 13px;
   line-height: 1.45;
-  color: rgb(71 85 105);
+  color: var(--el-text-color-regular);
   text-overflow: ellipsis;
-  white-space: nowrap;
   word-break: normal;
+  white-space: nowrap;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -650,7 +654,7 @@ onBeforeUnmount(() => {
 }
 
 .plain {
-  color: rgb(71 85 105);
+  color: var(--el-text-color-regular);
 }
 
 .path-cell {
@@ -666,7 +670,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  color: rgb(37 99 235);
+  color: var(--el-color-primary);
 }
 
 .path-main .el-icon {
@@ -674,14 +678,14 @@ onBeforeUnmount(() => {
 }
 
 .path-text {
-  flex: 1;
   min-width: 0;
+  overflow: hidden;
   font-size: 13px;
   line-height: 1.45;
-  color: rgb(100 116 139);
-  overflow: hidden;
+  color: var(--el-text-color-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
 .tag-row {
@@ -717,15 +721,15 @@ onBeforeUnmount(() => {
 
 .empty-text {
   font-size: 13px;
-  color: rgb(148 163 184);
+  color: var(--el-text-color-placeholder);
 }
 
 .snippet-dialog-content {
   max-height: min(60vh, 520px);
-  overflow: auto;
   padding: 4px 2px;
+  overflow: auto;
   line-height: 1.75;
-  color: rgb(51 65 85);
+  color: var(--el-text-color-primary);
   word-break: break-word;
 }
 

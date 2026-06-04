@@ -8,7 +8,7 @@
   >
     <div class="w-full">
       <!-- 第一行：位置搜索 -->
-      <el-form label-width="80px">
+      <el-form label-width="auto">
         <el-form-item label="定位位置">
           <el-select
             class="w-full"

@@ -847,7 +847,7 @@ onUnmounted(() => {
   min-width: 320px;
   min-height: 0;
   overflow: hidden;
-  background: #fff;
+  background: var(--app-bg-card);
   flex: 1;
   flex-direction: column;
 }
@@ -856,8 +856,8 @@ onUnmounted(() => {
   display: flex;
   height: 56px;
   padding: 0 18px;
-  background: #fff;
-  border-bottom: 1px solid rgb(15 23 42 / 4%);
+  background: var(--app-bg-card);
+  border-bottom: 1px solid var(--app-border-color);
   align-items: center;
   flex-shrink: 0;
 }
@@ -889,7 +889,7 @@ onUnmounted(() => {
   overflow: hidden;
   flex: 1 1 auto;
   flex-direction: column;
-  background: #fff;
+  background: var(--app-bg-card);
 }
 
 .chat-scroll {
@@ -955,7 +955,7 @@ onUnmounted(() => {
 }
 
 .chat-item.is-user .chat-message-content {
-  color: #667085;
+  color: var(--app-text-secondary);
   text-align: right;
   background: transparent;
   border-color: transparent;
@@ -983,7 +983,7 @@ onUnmounted(() => {
   padding: 0 10px;
   margin-left: 0;
   color: var(--app-text-primary);
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: 8px;
   box-shadow: none;
@@ -1004,7 +1004,7 @@ onUnmounted(() => {
   bottom: 136px;
   width: 36px;
   height: 36px;
-  background: #fff;
+  background: var(--app-bg-overlay);
   border: 1px solid var(--app-border-color);
   box-shadow: var(--app-shadow-xs);
 }
@@ -1014,7 +1014,7 @@ onUnmounted(() => {
   z-index: 2;
   flex-shrink: 0;
   padding: 0 24px 18px;
-  background: #fff;
+  background: var(--app-bg-card);
   border-top: 0;
 }
 
@@ -1065,7 +1065,7 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   padding: 0 !important;
-  background: #f8fafc;
+  background: var(--app-bg-subtle);
   border: 1px solid var(--app-border-color);
   border-radius: 8px;
 }
@@ -1140,7 +1140,7 @@ onUnmounted(() => {
   position: absolute;
   z-index: 10;
   display: flex;
-  background: rgb(255 255 255 / 72%);
+  background: var(--el-mask-color-extra-light);
   inset: 0;
   align-items: center;
   justify-content: center;
@@ -1207,7 +1207,7 @@ onUnmounted(() => {
 }
 
 .rag-markdown.is-user-content {
-  color: #667085;
+  color: var(--app-text-secondary);
   white-space: pre-wrap;
 }
 
@@ -1221,7 +1221,7 @@ onUnmounted(() => {
 .rag-markdown :deep(table) {
   width: 100%;
   overflow: hidden;
-  background: #fff;
+  background: var(--app-bg-card);
 }
 
 .rag-markdown :deep(th),
@@ -1277,7 +1277,7 @@ onUnmounted(() => {
   color: var(--app-text-primary);
   text-align: left;
   cursor: auto;
-  background: #fff;
+  background: var(--app-bg-overlay);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
   opacity: 0;

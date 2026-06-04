@@ -68,7 +68,7 @@ const promptList = ['请帮我总结这个知识库的核心内容', '请列出�
   padding: 0 16px;
   color: var(--app-text-primary);
   cursor: pointer;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-md);
   transition:

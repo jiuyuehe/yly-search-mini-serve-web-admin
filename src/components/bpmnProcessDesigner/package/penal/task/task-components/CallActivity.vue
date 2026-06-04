@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form label-width="100px">
+    <el-form label-width="auto">
       <el-form-item label="实例名称" prop="processInstanceName">
         <el-input
           v-model="formData.processInstanceName"
@@ -126,7 +126,7 @@
       append-to-body
       destroy-on-close
     >
-      <el-form :model="varialbeFormData" label-width="80px" ref="varialbeFormRef">
+      <el-form :model="varialbeFormData" label-width="auto" ref="varialbeFormRef">
         <el-form-item label="源：" prop="source">
           <el-input v-model="varialbeFormData.source" clearable />
         </el-form-item>

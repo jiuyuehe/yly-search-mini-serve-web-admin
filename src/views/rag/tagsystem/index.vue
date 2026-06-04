@@ -180,7 +180,7 @@
     </div>
 
     <Dialog :title="themeDialogTitle" v-model="themeDialogVisible" width="520px">
-      <el-form ref="themeFormRef" :model="themeForm" :rules="themeRules" label-width="90px">
+      <el-form ref="themeFormRef" :model="themeForm" :rules="themeRules" label-width="auto">
         <el-form-item label="名称" prop="name">
           <el-input v-model="themeForm.name" placeholder="请输入一级标签名称" />
         </el-form-item>
@@ -207,7 +207,7 @@
     </Dialog>
 
     <Dialog :title="tagDialogTitle" v-model="tagDialogVisible" width="520px">
-      <el-form ref="tagFormRef" :model="tagForm" :rules="tagRules" label-width="90px">
+      <el-form ref="tagFormRef" :model="tagForm" :rules="tagRules" label-width="auto">
         <el-form-item label="所属一级">
           <el-input :model-value="currentTheme?.name || '-'" disabled />
         </el-form-item>

@@ -157,7 +157,7 @@ watch(
   min-height: 0;
   padding: 16px 18px;
   overflow: hidden;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
   flex-direction: column;

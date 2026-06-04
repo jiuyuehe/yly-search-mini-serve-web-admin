@@ -1,5 +1,5 @@
 <template>
-  <el-form label-width="120px">
+  <el-form label-width="auto">
     <el-form-item label="规则类型" prop="candidateStrategy">
       <el-select
         v-model="userTaskForm.candidateStrategy"

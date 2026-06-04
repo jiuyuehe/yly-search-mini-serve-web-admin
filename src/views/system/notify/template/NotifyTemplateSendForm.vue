@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="140px"
+      label-width="auto"
     >
       <el-form-item label="模板内容" prop="content">
         <el-input

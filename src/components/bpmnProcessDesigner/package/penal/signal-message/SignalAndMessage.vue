@@ -63,7 +63,7 @@
       append-to-body
       destroy-on-close
     >
-      <el-form :model="modelObjectForm" label-width="90px">
+      <el-form :model="modelObjectForm" label-width="auto">
         <el-form-item :label="modelConfig.idLabel">
           <el-input v-model="modelObjectForm.id" clearable />
         </el-form-item>

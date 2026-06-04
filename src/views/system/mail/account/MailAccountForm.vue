@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="150px"
+      label-width="auto"
     >
       <el-form-item label="邮箱" prop="mail">
         <el-input v-model="formData.mail" placeholder="请输入邮箱" />

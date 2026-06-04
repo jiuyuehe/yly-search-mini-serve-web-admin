@@ -6,7 +6,7 @@
         v-loading="formLoading"
         :model="formData"
         :rules="formRules"
-        label-width="100px"
+        label-width="auto"
       >
         <el-form-item label="渠道状态" label-width="180px" prop="status">
           <el-radio-group v-model="formData.status">

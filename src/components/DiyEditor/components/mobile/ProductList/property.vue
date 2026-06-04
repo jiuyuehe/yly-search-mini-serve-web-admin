@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="80px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-card header="商品列表" class="property-group" shadow="never">
         <SpuShowcase v-model="formData.spuIds" />
       </el-card>

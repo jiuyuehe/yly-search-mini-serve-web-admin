@@ -8,7 +8,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="100px"
+      label-width="auto"
     >
       <el-form-item label="手机号" prop="mobile">
         <el-input

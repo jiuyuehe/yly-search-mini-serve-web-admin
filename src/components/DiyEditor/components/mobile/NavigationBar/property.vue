@@ -1,5 +1,5 @@
 <template>
-  <el-form label-width="80px" :model="formData" :rules="rules">
+  <el-form label-width="auto" :model="formData" :rules="rules">
     <el-form-item label="样式" prop="styleType">
       <el-radio-group v-model="formData!.styleType">
         <el-radio value="normal">标准</el-radio>

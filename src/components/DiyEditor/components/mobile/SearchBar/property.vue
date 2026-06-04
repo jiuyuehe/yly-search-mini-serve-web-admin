@@ -1,7 +1,7 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
     <!-- 表单 -->
-    <el-form label-width="80px" :model="formData" class="m-t-8px">
+    <el-form label-width="auto" :model="formData" class="m-t-8px">
       <el-card header="搜索热词" class="property-group" shadow="never">
         <Draggable v-model="formData.hotKeywords" :empty-item="''" :min="0">
           <template #default="{ index }">

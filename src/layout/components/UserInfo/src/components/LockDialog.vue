@@ -72,7 +72,7 @@ const handleLock = async () => {
         {{ userName }}
       </span>
     </div>
-    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="80px">
+    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="auto">
       <el-form-item :label="t('lock.lockPassword')" prop="password">
         <el-input
           type="password"

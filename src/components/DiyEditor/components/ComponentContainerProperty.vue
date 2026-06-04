@@ -8,7 +8,7 @@
     <!-- 每个组件的通用内容 -->
     <el-tab-pane label="样式" lazy>
       <el-card header="组件样式" class="property-group">
-        <el-form :model="formData" label-width="80px">
+        <el-form :model="formData" label-width="auto">
           <el-form-item label="组件背景" prop="bgType">
             <el-radio-group v-model="formData.bgType">
               <el-radio value="color">纯色</el-radio>
@@ -28,7 +28,7 @@
               <el-form-item
                 :label="data.label"
                 :prop="data.prop"
-                :label-width="node.level === 1 ? '80px' : '62px'"
+                label-width="auto"
                 class="w-full m-b-0!"
               >
                 <el-slider

@@ -8,7 +8,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="95px"
+      label-width="auto"
     >
       <el-form-item label="知识库名称" prop="name">
         <el-input

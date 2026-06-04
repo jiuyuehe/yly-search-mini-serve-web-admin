@@ -17,7 +17,7 @@
 
   <!-- 表单保存的弹窗 -->
   <Dialog v-model="dialogVisible" title="保存表单" width="600">
-    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="80px">
+    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="auto">
       <el-form-item label="表单名" prop="name">
         <el-input v-model="formData.name" placeholder="请输入表单名" />
       </el-form-item>

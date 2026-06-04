@@ -166,8 +166,8 @@ onBeforeUnmount(() => {
   z-index: 3000;
   width: 176px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #dce7f5;
+  background: var(--app-bg-overlay);
+  border: 1px solid var(--app-border-color);
   border-radius: 12px;
   box-shadow: 0 16px 38px rgb(15 23 42 / 16%);
 }

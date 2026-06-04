@@ -6,7 +6,7 @@
     :close-on-click-modal="false"
     @closed="onClose"
   >
-    <el-form label-width="90px">
+    <el-form label-width="auto">
       <el-form-item label="选择模型">
         <el-select v-model="selectedModel" placeholder="请选择模型" class="w-full">
           <el-option

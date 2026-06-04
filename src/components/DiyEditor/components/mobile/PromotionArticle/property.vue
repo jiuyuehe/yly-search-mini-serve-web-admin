@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="40px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-form-item label="文章" prop="id">
         <el-select
           v-model="formData.id"

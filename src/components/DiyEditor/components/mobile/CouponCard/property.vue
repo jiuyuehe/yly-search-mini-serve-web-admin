@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="80px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-card header="优惠券列表" class="property-group" shadow="never">
         <div
           v-for="(coupon, index) in couponList"

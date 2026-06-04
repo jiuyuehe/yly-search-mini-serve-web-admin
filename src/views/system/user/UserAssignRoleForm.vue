@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model="dialogVisible" title="分配角色">
-    <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="80px">
+    <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="auto">
       <el-form-item label="用户名称">
         <el-input v-model="formData.username" :disabled="true" />
       </el-form-item>

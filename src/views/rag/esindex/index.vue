@@ -6,7 +6,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="68px"
+      label-width="auto"
     >
       <el-form-item label="索引名称" prop="indexName">
         <el-input
@@ -145,7 +145,7 @@ const queryParams = reactive({
   mappingJson: undefined,
   status: undefined,
   createTime: [],
-  updateTime: [],
+  updateTime: []
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
@@ -192,7 +192,6 @@ const handleDelete = async (id: number) => {
     await getList()
   } catch {}
 }
-
 
 /** 删除按钮操作 */
 const clearData = async (id: number) => {

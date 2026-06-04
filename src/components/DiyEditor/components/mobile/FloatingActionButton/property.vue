@@ -1,5 +1,5 @@
 <template>
-  <el-form label-width="80px" :model="formData">
+  <el-form label-width="auto" :model="formData">
     <el-card header="按钮配置" class="property-group" shadow="never">
       <el-form-item label="展开方向" prop="direction">
         <el-radio-group v-model="formData.direction">

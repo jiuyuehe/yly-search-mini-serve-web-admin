@@ -1,7 +1,7 @@
 <template>
   <div class="tab-bar">
     <!-- 表单 -->
-    <el-form :model="formData" label-width="80px">
+    <el-form :model="formData" label-width="auto">
       <el-form-item label="主题" prop="theme">
         <el-select v-model="formData!.theme" @change="handleThemeChange">
           <el-option

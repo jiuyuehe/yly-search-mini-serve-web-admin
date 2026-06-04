@@ -56,7 +56,7 @@
       append-to-body
       destroy-on-close
     >
-      <el-form size="small" :model="listenerForm" label-width="96px" ref="listenerFormRef">
+      <el-form size="small" :model="listenerForm" label-width="auto" ref="listenerFormRef">
         <el-form-item
           label="事件类型"
           prop="event"
@@ -243,7 +243,7 @@
       <el-form
         :model="listenerFieldForm"
         size="small"
-        label-width="96px"
+        label-width="auto"
         ref="listenerFieldFormRef"
         style="height: 136px"
       >

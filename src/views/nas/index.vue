@@ -7,7 +7,7 @@
   </ContentWrap>
 
   <ContentWrap>
-    <el-form ref="queryFormRef" :inline="true" :model="queryParams" class="-mb-15px" label-width="80px">
+    <el-form ref="queryFormRef" :inline="true" :model="queryParams" class="-mb-15px" label-width="auto">
       <el-form-item label="关键字" prop="keyword">
         <el-input
           v-model="queryParams.keyword"

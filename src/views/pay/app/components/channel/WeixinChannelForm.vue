@@ -6,7 +6,7 @@
         v-loading="formLoading"
         :model="formData"
         :rules="formRules"
-        label-width="120px"
+        label-width="auto"
       >
         <el-form-item label="渠道费率" label-width="180px" prop="feeRate">
           <el-input
@@ -149,7 +149,7 @@
           </el-form-item>
           <el-form-item
             label="public_key.pem 证书"
-            label-width="180px"
+            label-width="auto"
             prop="config.publicKeyContent"
           >
             <el-input

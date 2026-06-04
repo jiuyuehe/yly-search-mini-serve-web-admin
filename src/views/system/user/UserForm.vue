@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="80px"
+      label-width="auto"
     >
       <el-row>
         <el-col :span="12">

@@ -1,6 +1,6 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
-    <el-form label-width="80px" :model="formData" :rules="rules">
+    <el-form label-width="auto" :model="formData" :rules="rules">
       <el-form-item label="公告图标" prop="iconUrl">
         <UploadImg v-model="formData.iconUrl" height="48px">
           <template #tip>建议尺寸：24 * 24</template>

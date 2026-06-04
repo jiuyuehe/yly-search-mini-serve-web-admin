@@ -7,7 +7,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="68px"
+      label-width="auto"
     >
       <el-form-item label="邮箱" prop="mail">
         <el-input

@@ -14,7 +14,7 @@
           ref="formRef"
           :model="formData"
           :rules="formRules"
-          label-width="100px"
+          label-width="auto"
           v-loading="formLoading"
         >
           <el-form-item label="布控名称" prop="taskName">

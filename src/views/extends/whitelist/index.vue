@@ -11,7 +11,7 @@
       :inline="true"
       :model="queryParams"
       class="-mb-15px"
-      label-width="90px"
+      label-width="auto"
     >
       <el-form-item label="白名单类型" prop="whitelistType">
         <el-select
@@ -132,7 +132,7 @@
     width="540px"
     destroy-on-close
   >
-    <el-form ref="formRef" :model="formModel" label-width="110px">
+    <el-form ref="formRef" :model="formModel" label-width="auto">
       <el-form-item label="白名单类型" prop="whitelistType">
         <el-select v-model="formModel.whitelistType" class="!w-240px" placeholder="请选择类型">
           <el-option

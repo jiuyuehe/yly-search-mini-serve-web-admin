@@ -1,7 +1,7 @@
 <template>
   <ComponentContainerProperty v-model="formData.style">
     <!-- 表单 -->
-    <el-form label-width="80px" :model="formData" class="m-t-8px">
+    <el-form label-width="auto" :model="formData" class="m-t-8px">
       <el-form-item label="每行数量" prop="column">
         <el-radio-group v-model="formData.column">
           <el-radio :value="3">3个</el-radio>

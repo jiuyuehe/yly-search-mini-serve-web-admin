@@ -1,5 +1,5 @@
 <template>
-  <el-form ref="formRef" :model="modelData" label-width="0" class="mt-20px">
+  <el-form ref="formRef" :model="modelData" label-width="auto" class="mt-20px">
     <el-form-item class="mb-20px">
       <div class="w-full">
         <div

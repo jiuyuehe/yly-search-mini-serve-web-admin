@@ -23,7 +23,7 @@
           ref="approveFormRef"
           :model="approveReasonForm"
           :rules="approveReasonRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-card v-if="runningTask?.formId > 0" class="mb-15px !-mt-10px">
             <template #header>
@@ -108,7 +108,7 @@
           ref="rejectFormRef"
           :model="rejectReasonForm"
           :rules="rejectReasonRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="审批意见" prop="reason">
             <el-input
@@ -153,7 +153,7 @@
           ref="copyFormRef"
           :model="copyForm"
           :rules="copyFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="抄送人" prop="copyUserIds">
             <el-select
@@ -211,7 +211,7 @@
           ref="transferFormRef"
           :model="transferForm"
           :rules="transferFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="新审批人" prop="assigneeUserId">
             <el-select v-model="transferForm.assigneeUserId" clearable style="width: 100%">
@@ -263,7 +263,7 @@
           ref="delegateFormRef"
           :model="delegateForm"
           :rules="delegateFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="接收人" prop="delegateUserId">
             <el-select v-model="delegateForm.delegateUserId" clearable style="width: 100%">
@@ -315,7 +315,7 @@
           ref="addSignFormRef"
           :model="addSignForm"
           :rules="addSignFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="加签处理人" prop="addSignUserIds">
             <el-select v-model="addSignForm.addSignUserIds" multiple clearable style="width: 100%">
@@ -369,7 +369,7 @@
           ref="deleteSignFormRef"
           :model="deleteSignForm"
           :rules="deleteSignFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="减签人员" prop="deleteSignTaskId">
             <el-select v-model="deleteSignForm.deleteSignTaskId" clearable style="width: 100%">
@@ -421,7 +421,7 @@
           ref="returnFormRef"
           :model="returnForm"
           :rules="returnFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="退回节点" prop="targetTaskDefinitionKey">
             <el-select v-model="returnForm.targetTaskDefinitionKey" clearable style="width: 100%">
@@ -474,7 +474,7 @@
           ref="cancelFormRef"
           :model="cancelForm"
           :rules="cancelFormRule"
-          label-width="100px"
+          label-width="auto"
         >
           <el-form-item label="取消理由" prop="cancelReason">
             <span class="text-#878c93 text-12px">&nbsp; 取消后，该审批流程将自动结束</span>

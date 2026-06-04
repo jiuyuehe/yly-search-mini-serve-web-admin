@@ -12,7 +12,7 @@
         />
       </el-form-item>
     </template>
-    <el-form label-width="80px" :model="formData">
+    <el-form label-width="auto" :model="formData">
       <el-form-item label="上传视频" prop="videoUrl">
         <UploadFile
           v-model="formData.videoUrl"

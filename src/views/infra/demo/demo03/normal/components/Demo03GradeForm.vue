@@ -3,7 +3,7 @@
     ref="formRef"
     :model="formData"
     :rules="formRules"
-    label-width="100px"
+    label-width="auto"
     v-loading="formLoading"
   >
     <el-form-item label="名字" prop="name">

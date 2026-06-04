@@ -1,5 +1,5 @@
 <template>
-  <el-form label-width="80px" :model="formData" :rules="rules">
+  <el-form label-width="auto" :model="formData" :rules="rules">
     <el-form-item label="页面描述" prop="description">
       <el-input
         type="textarea"

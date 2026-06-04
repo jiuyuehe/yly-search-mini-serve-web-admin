@@ -1,5 +1,5 @@
 <template>
-  <el-form label-width="80px" :model="formData">
+  <el-form label-width="auto" :model="formData">
     <Draggable v-model="formData.list" :empty-item="{ showType: 'once' }">
       <template #default="{ element, index }">
         <el-form-item label="图片" :prop="`list[${index}].imgUrl`">

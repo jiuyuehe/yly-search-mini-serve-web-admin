@@ -85,7 +85,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="80px"
+      label-width="auto"
     >
       <el-form-item label="商品" prop="spuId">
         <el-select

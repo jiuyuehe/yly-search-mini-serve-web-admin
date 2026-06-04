@@ -79,7 +79,7 @@
     append-to-body
     :close-on-press-escape="false"
   >
-    <el-form ref="form" label-width="80px">
+    <el-form ref="form" label-width="auto">
       <el-row>
         <el-col :span="24">
           <el-form-item label="条形码" prop="name">

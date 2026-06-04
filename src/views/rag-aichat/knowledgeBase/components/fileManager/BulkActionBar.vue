@@ -37,7 +37,7 @@ const handleDelete = () => {
 .bulk-bar {
   display: flex;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
   align-items: center;

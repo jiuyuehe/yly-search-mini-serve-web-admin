@@ -5,7 +5,7 @@
       v-loading="formLoading"
       :model="formData"
       :rules="formRules"
-      label-width="140px"
+      label-width="auto"
     >
       <el-form-item label="短信渠道编号" prop="channelId">
         <el-select v-model="formData.channelId" placeholder="请选择短信渠道编号">

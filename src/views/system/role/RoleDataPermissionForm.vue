@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model="dialogVisible" title="数据权限" width="800">
-    <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="80px">
+    <el-form ref="formRef" v-loading="formLoading" :model="formData" label-width="auto">
       <el-form-item label="角色名称">
         <el-tag>{{ formData.name }}</el-tag>
       </el-form-item>
@@ -21,7 +21,7 @@
     <el-form-item
       v-if="formData.dataScope === SystemDataScopeEnum.DEPT_CUSTOM"
       label="部门范围"
-      label-width="80px"
+      label-width="auto"
     >
       <el-card class="w-full h-400px !overflow-y-scroll" shadow="never">
         <template #header>

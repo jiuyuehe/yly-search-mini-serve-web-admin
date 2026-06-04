@@ -8,7 +8,7 @@
       :model="queryParams"
       ref="queryFormRef"
       :inline="true"
-      label-width="68px"
+      label-width="auto"
     >
       <el-form-item label="发起人" prop="startUserId">
         <el-select v-model="queryParams.startUserId" placeholder="请选择发起人" class="!w-240px">

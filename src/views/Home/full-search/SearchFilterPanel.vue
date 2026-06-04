@@ -350,8 +350,8 @@ watch(
   height: calc(100vh - 84px);
   min-width: 300px;
   overflow: hidden;
-  background: rgb(255 255 255 / 88%);
-  border: 1px solid rgb(226 232 240 / 85%);
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
   backdrop-filter: blur(8px);
 }
 
@@ -366,7 +366,7 @@ watch(
   justify-content: space-between;
   gap: 12px;
   padding: 18px 18px 14px;
-  border-bottom: 1px solid rgb(226 232 240);
+  border-bottom: 1px solid var(--el-border-color-light);
 
   .filter-head-text {
     min-width: 0;
@@ -422,8 +422,8 @@ watch(
   min-height: 36px;
   padding: 0 12px;
   margin-bottom: 12px;
-  background: rgb(248 250 252);
-  border: 1px solid rgb(226 232 240);
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 14px;
 
   span {
@@ -459,12 +459,12 @@ watch(
   font-weight: 600;
   color: var(--el-text-color-primary);
   background: transparent;
-  border-bottom: 1px solid rgb(226 232 240);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 :deep(.el-collapse-item__wrap) {
   background: transparent;
-  border-bottom: 1px solid rgb(226 232 240);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 :deep(.el-collapse-item__content) {
@@ -483,10 +483,11 @@ watch(
 }
 
 :deep(.el-segmented) {
-  width: 100%;
   --el-segmented-item-selected-color: var(--el-color-primary);
-  --el-segmented-bg-color: rgb(248 250 252);
-  --el-segmented-item-selected-bg-color: rgb(239 246 255);
+  --el-segmented-bg-color: var(--el-fill-color-lighter);
+  --el-segmented-item-selected-bg-color: var(--el-color-primary-light-9);
+
+  width: 100%;
 }
 
 :deep(.el-slider__marks-text) {
@@ -498,8 +499,8 @@ watch(
 @media (width <= 980px) {
   .search-filter-panel {
     width: 100%;
-    min-width: 0;
     height: auto;
+    min-width: 0;
   }
 
   .search-filter-panel.collapsed {

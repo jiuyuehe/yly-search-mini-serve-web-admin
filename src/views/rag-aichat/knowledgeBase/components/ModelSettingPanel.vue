@@ -7,7 +7,7 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="180px"
+      label-width="auto"
       class="model-setting-form"
     >
       <div class="setting-layout">
@@ -532,7 +532,7 @@ const handleSubmit = async () => {
 
 .model-setting-card {
   padding: 18px;
-  background: #fff;
+  background: var(--app-bg-card);
   border: 1px solid var(--app-border-color);
   border-radius: var(--app-radius-lg);
 }
@@ -642,9 +642,6 @@ const handleSubmit = async () => {
 
 .form-grid :deep(.el-form-item) {
   margin-bottom: 0;
-}
-
-@media (width <= 1200px) {
 }
 
 @media (width <= 992px) {

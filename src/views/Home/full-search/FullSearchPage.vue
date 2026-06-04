@@ -541,8 +541,8 @@ onMounted(() => {
   width: 100%;
   height: calc(100vh - 84px);
   min-height: 0;
-  margin: 0;
   padding: 0;
+  margin: 0;
 }
 
 .search-hero {
@@ -551,9 +551,9 @@ onMounted(() => {
   justify-content: space-between;
   gap: 5px;
   padding: 22px 24px;
-  background: rgb(255 255 255 / 82%);
-  border: 1px solid rgb(226 232 240 / 90%);
-  box-shadow: 0 18px 45px rgb(15 23 42 / 6%);
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--app-shadow-xs);
   backdrop-filter: blur(10px);
 }
 
@@ -607,8 +607,8 @@ onMounted(() => {
   display: grid;
   gap: 6px;
   padding: 14px 16px;
-  background: rgb(248 250 252);
-  border: 1px solid rgb(226 232 240);
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 18px;
 
   span {
@@ -633,17 +633,17 @@ onMounted(() => {
 
 .search-main {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-width: 0;
   height: 100%;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
+  flex-direction: column;
+  gap: 0;
 }
 
 .search-card {
-  padding: 0px 10px;
-  background: rgb(255 255 255 / 88%);
+  padding: 0 10px;
+  background: var(--el-bg-color);
   backdrop-filter: blur(8px);
 }
 
@@ -715,8 +715,8 @@ onMounted(() => {
   padding: 6px 10px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-  background: rgb(248 250 252);
-  border: 1px solid rgb(226 232 240);
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 999px;
 }
 
@@ -730,6 +730,7 @@ onMounted(() => {
 }
 
 .agg-label {
+  margin-right: 3px;
   font-size: 13px;
 }
 
@@ -740,17 +741,17 @@ onMounted(() => {
   line-height: 18px;
   color: var(--el-text-color-secondary);
   text-align: center;
-  background: rgb(255 255 255 / 75%);
+  background: var(--el-fill-color-light);
   border-radius: 999px;
 }
 
 .aggregation-group :deep(.el-button.is-plain:not(.is-disabled)) .agg-count {
-  background: rgb(241 245 249);
+  background: var(--el-fill-color);
 }
 
 .aggregation-group :deep(.el-button--primary .agg-count) {
   color: var(--el-color-primary);
-  background: rgb(255 255 255 / 90%);
+  background: var(--el-color-white);
 }
 
 .search-main > :deep(.result-list) {

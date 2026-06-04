@@ -95,7 +95,7 @@
       width="640px"
       destroy-on-close
     >
-      <el-form ref="chunkFormRef" :model="chunkForm" :rules="chunkFormRules" label-width="90px">
+      <el-form ref="chunkFormRef" :model="chunkForm" :rules="chunkFormRules" label-width="auto">
         <el-form-item label="解析块" prop="content">
           <el-input
             v-model="chunkForm.content"
