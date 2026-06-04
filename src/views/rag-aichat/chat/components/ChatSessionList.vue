@@ -7,135 +7,132 @@
       'embedded-hidden': collapsed && !showToggleControls
     }"
   >
-    <div v-if="!collapsed || !showToggleControls" class="session-sidebar-body">
-      <div class="session-header">
-        <div class="session-header-top">
-          <div class="session-header-copy">
-            <div class="session-header-title">会话历史</div>
-            <div class="session-header-subtitle">{{ sessionCountText }}</div>
-          </div>
-          <el-button
-            v-if="showToggleControls"
-            class="collapse-btn"
-            text
-            @click="$emit('collapse')"
-          >
-            <el-icon><ArrowLeft /></el-icon>
-          </el-button>
-        </div>
+    <div class="session-sidebar-header">
+      <div class="session-sidebar-header-copy">
+        <div class="session-header-title">会话历史</div>
+        <div class="session-header-subtitle">{{ sessionCountText }}</div>
       </div>
-
-      <div class="session-list-wrap">
-        <el-scrollbar class="session-list">
-          <div v-if="sessionList?.length" class="session-list-inner">
-            <div
-              v-for="session in sessionList"
-              :key="session.id"
-              class="session-item"
-              :class="{ active: String(session.id) === String(activeSessionId) }"
-              @click="$emit('switch-session', session)"
-            >
-              <div class="session-item-main">
-                <div class="session-icon-wrap">
-                  <el-icon class="session-icon"><ChatLineSquare /></el-icon>
-                </div>
-                <div class="session-copy">
-                  <template v-if="editingSessionId === session.id">
-                    <div class="session-rename-row" @click.stop>
-                      <el-input
-                        ref="renameInputRef"
-                        v-model="editingName"
-                        class="session-rename-input"
-                        maxlength="60"
-                        @keydown.enter.stop.prevent="submitRename(session)"
-                        @keydown.esc.stop.prevent="cancelRename"
-                      />
-                      <el-button
-                        class="session-rename-confirm"
-                        size="small"
-                        type="primary"
-                        :disabled="!editingName.trim()"
-                        @click.stop="submitRename(session)"
-                      >
-                        <el-icon><Check /></el-icon>
-                      </el-button>
-                      <el-button
-                        class="session-rename-cancel"
-                        size="small"
-                        text
-                        @click.stop="cancelRename"
-                      >
-                        <el-icon><Close /></el-icon>
-                      </el-button>
-                    </div>
-                  </template>
-                  <span v-else class="session-title" :title="displaySessionName(session)">
-                    {{ displaySessionName(session) }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="session-item-actions" @click.stop>
-                <el-dropdown trigger="click" @command="(command) => handleSessionAction(command, session)">
-                  <el-button class="session-more-btn" text>
-                    <el-icon><MoreFilled /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="rename">重命名</el-dropdown-item>
-                      <el-dropdown-item command="delete">删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </div>
-
-            <div class="session-list-end">没有更多会话了</div>
-          </div>
-
-          <div v-else class="session-empty">
-            <el-icon class="session-empty-icon"><Clock /></el-icon>
-            <div class="session-empty-title">还没有会话</div>
-            <div class="session-empty-desc">点击下方“新的会话”开始提问</div>
-          </div>
-        </el-scrollbar>
-      </div>
-
-      <div class="session-sidebar-footer">
-        <el-button
-          type="primary"
-          :disabled="!canCreateSession"
-          @click="$emit('new-session')"
-        >
-          <el-icon><Plus /></el-icon>
-          新的会话
-        </el-button>
-        <el-popconfirm
-          width="220"
-          title="确定要重置当前会话吗？"
-          confirm-button-text="确定重置"
-          cancel-button-text="取消"
-          @confirm="$emit('reset-session')"
-        >
-          <template #reference>
-            <el-button
-              type="danger"
-              plain
-              :loading="resettingSession"
-              :disabled="!canResetSession"
-            >
-              <el-icon><Delete /></el-icon>
-              重置会话
-            </el-button>
-          </template>
-        </el-popconfirm>
-      </div>
+      <el-button
+        v-if="showToggleControls"
+        text
+        circle
+        class="collapse-btn"
+        :aria-label="collapsed ? '展开会话侧栏' : '收起会话侧栏'"
+        @click="$emit('collapse')"
+      >
+        <el-icon>
+          <ArrowRight v-if="collapsed" />
+          <ArrowLeft v-else />
+        </el-icon>
+      </el-button>
     </div>
 
-    <div v-else-if="showToggleControls" class="sidebar-collapsed-bar">
-      <el-button class="expand-btn" text @click="$emit('collapse')">
-        <el-icon><ArrowRight /></el-icon>
-      </el-button>
+    <div class="session-sidebar-body" :class="{ 'is-collapsed': collapsed }">
+        <div class="session-list-wrap">
+          <el-scrollbar class="session-list">
+            <div v-if="sessionList?.length" class="session-list-inner">
+              <div
+                v-for="session in sessionList"
+                :key="session.id"
+                class="session-item"
+                :class="{ active: String(session.id) === String(activeSessionId) }"
+                @click="$emit('switch-session', session)"
+              >
+                <div class="session-item-main">
+                  <div class="session-icon-wrap">
+                    <el-icon class="session-icon"><ChatLineSquare /></el-icon>
+                  </div>
+                  <div class="session-copy">
+                    <template v-if="editingSessionId === session.id">
+                      <div class="session-rename-row" @click.stop>
+                        <el-input
+                          ref="renameInputRef"
+                          v-model="editingName"
+                          class="session-rename-input"
+                          maxlength="60"
+                          @keydown.enter.stop.prevent="submitRename(session)"
+                          @keydown.esc.stop.prevent="cancelRename"
+                        />
+                        <el-button
+                          class="session-rename-confirm"
+                          size="small"
+                          type="primary"
+                          :disabled="!editingName.trim()"
+                          @click.stop="submitRename(session)"
+                        >
+                          <el-icon><Check /></el-icon>
+                        </el-button>
+                        <el-button
+                          class="session-rename-cancel"
+                          size="small"
+                          text
+                          @click.stop="cancelRename"
+                        >
+                          <el-icon><Close /></el-icon>
+                        </el-button>
+                      </div>
+                    </template>
+                    <span v-else class="session-title" :title="displaySessionName(session)">
+                      {{ displaySessionName(session) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="session-item-actions" @click.stop>
+                  <el-dropdown trigger="click" @command="(command) => handleSessionAction(command, session)">
+                    <el-button class="session-more-btn" text>
+                      <el-icon><MoreFilled /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="rename">重命名</el-dropdown-item>
+                        <el-dropdown-item command="delete">删除</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+              </div>
+
+              <div class="session-list-end">没有更多会话了</div>
+            </div>
+
+            <div v-else class="session-empty">
+              <el-icon class="session-empty-icon"><Clock /></el-icon>
+              <div class="session-empty-title">还没有会话</div>
+              <div class="session-empty-desc">点击下方“新的会话”开始提问</div>
+            </div>
+          </el-scrollbar>
+        </div>
+
+        <div class="session-sidebar-footer">
+          <el-button
+            type="primary"
+            :disabled="!canCreateSession"
+            @click="$emit('new-session')"
+          >
+            <el-icon><Plus /></el-icon>
+            新的会话
+          </el-button>
+          <el-popconfirm
+            width="220"
+            title="确定要重置当前会话吗？"
+            confirm-button-text="确定重置"
+            cancel-button-text="取消"
+            @confirm="$emit('reset-session')"
+          >
+            <template #reference>
+              <el-button
+                type="danger"
+                plain
+                :loading="resettingSession"
+                :disabled="!canResetSession"
+              >
+                <el-icon><Delete /></el-icon>
+                重置会话
+              </el-button>
+            </template>
+          </el-popconfirm>
+        </div>
     </div>
   </aside>
 </template>
@@ -281,7 +278,6 @@ const handleSessionAction = async (command: string, session: any) => {
     min-width 0.24s ease,
     max-width 0.24s ease,
     padding 0.24s ease,
-    opacity 0.2s ease,
     border-color 0.2s ease;
   flex-direction: column;
 }
@@ -308,58 +304,49 @@ const handleSessionAction = async (command: string, session: any) => {
   opacity: 0;
 }
 
-.session-sidebar-body {
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 12px;
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.session-sidebar.embedded-hidden .session-sidebar-body {
-  pointer-events: none;
-  opacity: 0;
-  transform: translateX(-12px);
-}
-
-.sidebar-collapsed-bar {
-  display: flex;
-  width: 100%;
-  height: 48px;
-  background: var(--app-bg-card);
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-md);
-  align-items: center;
-  justify-content: center;
-}
-
-.expand-btn,
-.collapse-btn {
-  width: 38px;
-  height: 38px;
-  color: var(--app-text-secondary);
-  background: var(--app-fill-color-light);
-  border-radius: 10px;
-}
-
-.session-header {
-  display: flex;
-  padding: 0 4px 0 6px;
-  background: transparent;
-  border-radius: 0;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.session-header-top {
+.session-sidebar-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.session-sidebar-header-copy {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition:
+    opacity 0.2s ease,
+    transform 0.24s ease;
+}
+
+.session-sidebar.collapsed .session-sidebar-header-copy {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.collapse-btn {
+  flex-shrink: 0;
+}
+
+.session-sidebar-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease;
+}
+
+.session-sidebar-body.is-collapsed {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-18px);
 }
 
 .session-header-title {

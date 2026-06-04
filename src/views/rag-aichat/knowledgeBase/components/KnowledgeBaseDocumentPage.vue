@@ -1217,8 +1217,6 @@ onBeforeUnmount(() => {
   display: flex;
   padding: 10px 12px;
   background: var(--app-bg-card);
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-lg);
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -1331,10 +1329,7 @@ onBeforeUnmount(() => {
   min-height: 0;
   padding: 16px;
   overflow: auto;
-  background: var(--app-bg-subtle);
-  border: 1px solid var(--app-border-color);
   flex-direction: column;
-  border-radius: var(--app-radius-lg);
   flex: 1;
 }
 

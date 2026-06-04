@@ -190,7 +190,6 @@ onMounted(async () => {
   min-height: 0;
   margin: calc(var(--app-content-padding) * -1);
   overflow: hidden;
-  background: var(--app-bg-page);
 }
 
 .rag-kb-main {

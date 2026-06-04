@@ -126,17 +126,17 @@
             <el-tooltip
               effect="dark"
               placement="top"
-              :content="row.filePath || '-'"
+              :content="row.subPath || '-'"
               :show-after="300"
               popper-class="result-table-tooltip"
             >
               <div class="path-main">
                 <Icon icon="ep:location" />
-                <span class="path-text ellipsis">{{ row.filePath || '-' }}</span>
+                <span class="path-text ellipsis">{{ row.subPath || '-' }}</span>
               </div>
             </el-tooltip>
 
-            <el-button v-if="row.filePath" link type="primary" @click="copyPath(row.filePath)">
+            <el-button v-if="row.subPath" link type="primary" @click="copyPath(row.subPath)">
               <Icon icon="ep:copy-document" />
               复制
             </el-button>
