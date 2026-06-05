@@ -9,12 +9,18 @@
     <el-form label-width="auto">
       <el-form-item label="选择模型">
         <el-select v-model="selectedModel" placeholder="请选择模型" class="w-full">
-          <el-option
-            v-for="item in modelOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
+          <el-option-group
+            v-for="group in groupedModelOptions"
+            :key="group.label"
+            :label="group.label"
+          >
+            <el-option
+              v-for="item in group.options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-option-group>
         </el-select>
       </el-form-item>
     </el-form>
@@ -30,8 +36,12 @@
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 
-import { getConfigKey } from '@/api/rag-aichat/system'
-import { listChatAssistants, updateChatAssistant } from '@/api/rag-aichat/chat'
+import {
+  listChatAssistantModels,
+  listChatAssistants,
+  updateChatAssistant,
+  type ChatAssistantModelOptionVO
+} from '@/api/rag-aichat/chat'
 
 defineOptions({ name: 'RagAiChatModelSettingDialog' })
 
@@ -47,7 +57,20 @@ const dialogVisible = computed({
   get: () => props.visible,
   set: (value: boolean) => emit('update:visible', value)
 })
-const modelOptions = ref<any[]>([])
+const modelOptions = ref<ChatAssistantModelOptionVO[]>([])
+const groupedModelOptions = computed(() => {
+  const groupMap = new Map<string, ChatAssistantModelOptionVO[]>()
+  modelOptions.value.forEach((item) => {
+    const groupLabel = item.providerName?.trim() || '其他'
+    const groupItems = groupMap.get(groupLabel) || []
+    groupItems.push(item)
+    groupMap.set(groupLabel, groupItems)
+  })
+  return Array.from(groupMap.entries()).map(([label, options]) => ({
+    label,
+    options
+  }))
+})
 const chatAssistant = ref<any>({})
 const selectedModel = ref('')
 const confirmLoading = ref(false)
@@ -67,7 +90,7 @@ async function loadModelData() {
   if (props.chatId) {
     try {
       const res = await listChatAssistants({ chat_id: props.chatId })
-      const detail = res.data?.[0] || {}
+      const detail = res?.[0] || res?.data?.[0] || {}
       chatAssistant.value = detail
       detailModel = detail?.llm?.model_name || ''
     } catch {
@@ -76,25 +99,19 @@ async function loadModelData() {
   }
 
   try {
-    const res = await getConfigKey('llm_model_name')
-    const value = res.data || ''
-    if (typeof value === 'string') {
-      modelOptions.value = value
-        .split(',')
-        .map((item: string) => ({ label: item.trim(), value: item.trim() }))
-        .filter((i) => i.value)
-      if (modelOptions.value.length > 0) {
-        if (detailModel && modelOptions.value.some((opt) => opt.value === detailModel)) {
-          selectedModel.value = detailModel
-        } else {
-          selectedModel.value = modelOptions.value[0].value
-        }
-      }
+    const res = await listChatAssistantModels()
+    modelOptions.value = Array.isArray(res) ? res : []
+    if (modelOptions.value.length > 0) {
+      const matchedModel = modelOptions.value.find(
+        (opt) => opt.value === detailModel || opt.modelName === detailModel
+      )
+      selectedModel.value = matchedModel?.value || modelOptions.value[0].value
     } else {
-      modelOptions.value = []
+      selectedModel.value = ''
     }
   } catch {
     modelOptions.value = []
+    selectedModel.value = ''
   }
 }
 

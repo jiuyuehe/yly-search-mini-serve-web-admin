@@ -195,10 +195,10 @@ service.interceptors.response.use(
         })
       }
     } else if (code === 500) {
-      ElMessage.error(t('sys.api.errMsg500'))
+      ElMessage.warning(t('sys.api.errMsg500'))
       return Promise.reject(new Error(msg))
     } else if (code === 901) {
-      ElMessage.error({
+      ElMessage.warning({
         offset: 300,
         dangerouslyUseHTMLString: true,
         message:
@@ -217,7 +217,7 @@ service.interceptors.response.use(
         console.log(msg)
         return handleAuthorized()
       } else {
-        ElNotification.error({ title: msg })
+        ElNotification.warning({ title: msg })
       }
       return Promise.reject('error')
     } else {
@@ -235,7 +235,7 @@ service.interceptors.response.use(
     } else if (message.includes('Request failed with status code')) {
       message = t('sys.api.apiRequestFailed') + message.substr(message.length - 3)
     }
-    ElMessage.error(message)
+    ElMessage.warning(message)
     return Promise.reject(error)
   }
 )

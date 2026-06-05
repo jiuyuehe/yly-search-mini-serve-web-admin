@@ -30,7 +30,7 @@ export const TARGET_TYPE_LABELS: Record<number, string> = {
 export const PERMISSION_BIT_OPTIONS = [
   { label: '查看目录', value: 1 },
   // { label: '重命名', value: 4 },
-  { label: '查看文件', value: 8 },
+  // { label: '查看文件', value: 8 },
   // { label: '修改', value: 16 },
   // { label: '上传', value: 32 },
   { label: '下载', value: 64 },

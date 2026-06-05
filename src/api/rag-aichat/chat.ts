@@ -26,6 +26,14 @@ export interface ChatCompletionStreamRequest {
   enableDeepThink?: boolean
 }
 
+export interface ChatAssistantModelOptionVO {
+  label: string
+  value: string
+  modelName: string
+  providerName?: string
+  instanceName?: string
+}
+
 export interface ChatStreamEventPayload {
   type: 'start' | 'delta' | 'done' | 'error'
   chatId?: string
@@ -199,6 +207,12 @@ export function listChatAssistants(
   return request.get({
     url: '/ragflow/chatAssistant/list',
     params
+  })
+}
+
+export function listChatAssistantModels() {
+  return request.get<ChatAssistantModelOptionVO[]>({
+    url: '/ragflow/chatAssistant/models'
   })
 }
 
