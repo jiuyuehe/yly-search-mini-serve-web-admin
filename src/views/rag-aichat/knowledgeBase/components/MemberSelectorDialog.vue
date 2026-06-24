@@ -301,17 +301,13 @@ const handleClosed = () => {
 }
 
 .member-tree-wrap {
-  display: flex;
   min-height: 0;
-  flex: 1;
   overflow: hidden;
 }
 
 .member-panel {
   padding: 10px 12px;
-  background: var(--app-bg-subtle);
-  border: 1px solid var(--app-border-color);
-  border-radius: var(--app-radius-md);
+
 }
 
 .member-tree-wrap :deep(.el-tree) {

@@ -181,6 +181,13 @@
       <img class="modal-content" :src="previewImageUrl" />
     </div>
 
+    <PreviewModal
+      :open="previewVisible"
+      :title="previewTitle"
+      :url="previewUrl"
+      @close="closePreview"
+    />
+
     <PromptSettingDialog
       v-model:visible="showPromptDialog"
       :knowledge-base="currentKnowledgeBases"
@@ -216,6 +223,9 @@ import {
 import { ElMessage } from 'element-plus'
 import { downloadDocument, getRagflowDomain } from '@/api/rag-aichat/document'
 import { getConfigKey } from '@/api/rag-aichat/system'
+import { PreviewModal } from '@/components/PreviewModal'
+import { buildBaseMetasPreviewUrl } from '@/utils/basemetasPreview'
+import { buildPreviewApiUrl } from '@/utils/previewApiUrl'
 import PromptSettingDialog from '@/views/rag-aichat/components/PromptSettingDialog.vue'
 import ModelSettingDialog from '@/views/rag-aichat/components/ModelSettingDialog.vue'
 import MessageListEmpty from './message/MessageListEmpty.vue'
@@ -307,6 +317,9 @@ const showPromptDialog = ref(false)
 const showModelDialog = ref(false)
 const ragflowDomain = ref('')
 const previewImageUrl = ref('')
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('文件预览')
 const windowWidth = ref(window.innerWidth)
 
 const normalizeReferenceList = (reference: any) => {
@@ -413,20 +426,6 @@ const buildApiUrl = (path: string, origin?: string) => {
   return new URL(`${normalizedBase}${normalizedPath}`, `${baseOrigin}/`).toString()
 }
 
-const resolvePreviewBaseUrl = (previewUrl?: string | null, origin?: string) => {
-  const normalizedPreviewUrl = normalizeUrlValue(previewUrl)
-  if (normalizedPreviewUrl) {
-    return new URL(normalizedPreviewUrl, `${resolveOrigin(origin)}/`).toString()
-  }
-  const previewLocation = new URL(resolveOrigin(origin))
-  previewLocation.protocol = 'http:'
-  previewLocation.port = '48018'
-  previewLocation.pathname = '/preview/onlinePrevieww'
-  previewLocation.search = ''
-  previewLocation.hash = ''
-  return previewLocation.toString()
-}
-
 function getImgPreviewUrl(imageId: string) {
   return imageId ? `${ragflowDomain.value}/v1/document/image/${imageId}` : ''
 }
@@ -452,38 +451,25 @@ const buildRagflowDocumentPreviewUrl = (
 }
 
 const buildDownloadViewPreviewUrl = async (file: FileItem) => {
-  const previewRes = await getConfigKey('online_preview_url')
-  const ragRes = await getConfigKey('online_rag_url')
-  const previewUrl = resolvePreviewBaseUrl(
-    (previewRes as any)?.data || previewRes || env.VITE_ONLINE_PREVIEW_URL
+  const previewRes = await getConfigKey('ragflow_basemetas')
+  const fileviewBaseUrl = String((previewRes as any)?.data || previewRes || '').trim()
+  const downloadViewUrl = buildPreviewApiUrl(
+    `ragflow/documents/downloadView/${file.dataset_id}/${file.document_id}/${encodeURIComponent(file.name)}`
   )
-  const ragUrl = (ragRes as any)?.data || ragRes || env.VITE_ONLINE_RAG_URL || ''
-  const downloadViewUrl = buildApiUrl(
-    `ragflow/documents/downloadView/${file.dataset_id}/${file.document_id}/${file.name}`,
-    ragUrl
-  )
-  const previewWindowUrl = new URL(previewUrl)
-  previewWindowUrl.searchParams.set('url', downloadViewUrl)
-  previewWindowUrl.searchParams.set('fullfilename', file.name)
-  return previewWindowUrl.toString()
+  return buildBaseMetasPreviewUrl(fileviewBaseUrl, downloadViewUrl, file.name, file.name)
 }
 
-const openPreviewWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
-  const previewWindow = window.open('about:blank', '_blank')
-  if (!previewWindow) {
-    window.open(fallbackUrl, '_blank')
-    return
-  }
-  previewWindow.document.write('<p style="font-family: sans-serif; padding: 16px;">正在打开文件预览...</p>')
+const resolvePreviewUrlWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
+  if (!primaryUrl) return fallbackUrl
   try {
     await fetch(primaryUrl, {
       method: 'HEAD',
       mode: 'no-cors',
       cache: 'no-store'
     })
-    previewWindow.location.href = primaryUrl
+    return primaryUrl
   } catch {
-    previewWindow.location.href = fallbackUrl
+    return fallbackUrl
   }
 }
 
@@ -725,12 +711,19 @@ const fetchRagflowDomain = async () => {
 
 const handlePreviewFile = async (file: FileItem) => {
   if (!file.document_id) return
-  const [domain, fallbackUrl] = await Promise.all([
+  const [domain, baseMetasPreviewUrl] = await Promise.all([
     fetchRagflowDomain(),
     buildDownloadViewPreviewUrl(file)
   ])
   const ragflowPreviewUrl = buildRagflowDocumentPreviewUrl(domain, file.document_id, file.name)
-  await openPreviewWithFallback(ragflowPreviewUrl, fallbackUrl)
+  const previewUrlValue = await resolvePreviewUrlWithFallback(baseMetasPreviewUrl, ragflowPreviewUrl)
+  previewTitle.value = file.name || '文件预览'
+  previewUrl.value = previewUrlValue
+  previewVisible.value = true
+}
+
+const closePreview = () => {
+  previewVisible.value = false
 }
 
 const handleDownloadFile = async (file: FileItem) => {

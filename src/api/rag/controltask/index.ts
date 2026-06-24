@@ -34,6 +34,31 @@ export interface ControlTaskVO {
   scanRules?: ScanRules // 布控规则配置
 }
 
+export interface ControlTaskScanReportVO {
+  taskId: number
+  scanBatchId?: string | null
+  totalShards?: number
+  successShards?: number
+  failedShards?: number
+  processingShards?: number
+  waitingShards?: number
+  stoppedShards?: number
+  scannedFiles?: number
+  scannedDirs?: number
+  skippedCount?: number
+  failedCount?: number
+  waitingFileJobs?: number
+  processingFileJobs?: number
+  successFileJobs?: number
+  failedFileJobs?: number
+  skippedFileJobs?: number
+  activeFileJobs?: number
+  lastVisitedPath?: string | null
+  taskName?: string
+  status?: number
+  lastExecuteTime?: string
+}
+
 // 布控任务 API
 export const ControlTaskApi = {
   // 查询布控任务分页
@@ -63,6 +88,11 @@ export const ControlTaskApi = {
   // 清空布控任务
   resetTask: async (data: any) => {
     return await request.post({ url: `/rag/control-task/re-set/`+data.id })
+  },
+
+  // 获取布控任务扫描进度
+  getScanReport: async (id: number) => {
+    return await request.get({ url: `/rag/control-task/scan-report?id=${id}` })
   },
   // 修改布控任务
   updateControlTask: async (data: ControlTaskVO) => {

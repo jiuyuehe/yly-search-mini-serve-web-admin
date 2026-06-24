@@ -15,16 +15,21 @@
           刷新成员
         </el-button>
 
-        <el-button size="small" type="primary" @click="openSelectorDialog">
-          添加成员
-        </el-button>
+        <el-button size="small" type="primary" @click="openSelectorDialog"> 添加成员 </el-button>
       </div>
 
       <div class="member-table-wrap" v-loading="memberLoading">
         <el-table :data="filteredMemberList" stripe height="500">
-          <el-table-column prop="userName" label="用户名" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="realName" label="昵称" min-width="140" show-overflow-tooltip />
-          <el-table-column prop="deptName" label="部门" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="userName" label="用户名" show-overflow-tooltip />
+          <el-table-column prop="realName" label="昵称"   show-overflow-tooltip />
+          <el-table-column label="部门"  show-overflow-tooltip>
+            <template #default="{ row }">
+              <span v-if="row.deptNames && row.deptNames.length">
+                {{ row.deptNames.join('、') }}
+              </span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="120" align="center">
             <template #default="{ row }">
               <el-popconfirm title="确定移除该成员吗？" @confirm="removeMember(row)">

@@ -7,7 +7,7 @@ const normalizeApiPath = (value: string) => {
 
 const getOriginBaseUrl = () => {
   if (typeof window === 'undefined') return ''
-  return `${window.location.protocol}//${window.location.hostname}`
+  return `${window.location.protocol}//${window.location.host}`
 }
 
 export const getPreviewApiBaseUrl = () => {

@@ -137,6 +137,14 @@
           <el-button
             link
             type="info"
+            @click="openProgress(scope.row)"
+          >
+            进度
+          </el-button>
+
+          <el-button
+            link
+            type="info"
             @click="openDetail(scope.row.id)"
             v-if="!isDatabaseStorage(scope.row.storageId)"
           >
@@ -168,6 +176,9 @@
 
   <!-- 任务详情弹窗 -->
   <TaskDetailModal ref="detailRef"/>
+
+  <!-- 任务进度抽屉 -->
+  <TaskProgressDrawer ref="progressRef"/>
 </template>
 
 <script setup lang="ts">
@@ -178,13 +189,14 @@ import download from '@/utils/download'
 import {dateFormatter} from '@/utils/formatTime'
 import ControlTaskForm from './ControlTaskForm.vue'
 import TaskDetailModal from './TaskDetailModal.vue'
+import TaskProgressDrawer from './TaskProgressDrawer.vue'
 
 /** 布控任务 列表 */
 defineOptions({name: 'ControlTask'})
 
 const message = useMessage() // 消息弹窗
 const {t} = useI18n() // 国际化
-const {getStorageName, getStorageList} = useStorageMediumCache() // 存储介质缓存
+const {getStorageName} = useStorageMediumCache() // 存储介质缓存
 
 const loading = ref(true) // 列表的加载中
 const list = ref<ControlTaskVO[]>([]) // 列表的数据
@@ -251,6 +263,12 @@ const openForm = (type: string, id?: number) => {
 const detailRef = ref()
 const openDetail = (id: number) => {
   detailRef.value.open(id)
+}
+
+/** 进度抽屉 */
+const progressRef = ref()
+const openProgress = (row: ControlTaskVO) => {
+  progressRef.value?.open(row)
 }
 
 /** 启动任务 */
