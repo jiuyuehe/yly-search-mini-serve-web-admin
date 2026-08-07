@@ -1,0 +1,10 @@
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  core-js: true
+  core-js-pure: true
+  cpu-features: true
+  es5-ext: true
+  esbuild: true
+  ssh2: true
+  vue-demi: true

@@ -107,38 +107,6 @@
             </el-form-item>
           </el-form>
         </el-collapse-item>
-
-        <el-collapse-item title="标签" name="advanced">
-          <el-form label-position="top" class="filter-form" @submit.prevent>
-            <el-form-item label="AI 标签">
-              <el-input
-                v-model="model.fileAiTag"
-                clearable
-                @change="emitSearch"
-                @clear="emitSearch"
-                @keydown.enter.prevent="emitSearch"
-              />
-            </el-form-item>
-            <el-form-item label="系统标签">
-              <el-input
-                v-model="model.fileSysTag"
-                clearable
-                @change="emitSearch"
-                @clear="emitSearch"
-                @keydown.enter.prevent="emitSearch"
-              />
-            </el-form-item>
-            <el-form-item label="标签">
-              <el-input
-                v-model="model.tag"
-                clearable
-                @change="emitSearch"
-                @clear="emitSearch"
-                @keydown.enter.prevent="emitSearch"
-              />
-            </el-form-item>
-          </el-form>
-        </el-collapse-item>
       </el-collapse>
     </el-scrollbar>
   </aside>

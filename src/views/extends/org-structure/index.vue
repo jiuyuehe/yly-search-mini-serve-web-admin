@@ -7,32 +7,29 @@
           通过左侧部门树 + 右侧用户列表，完成部门结构维护、用户多部门展示及一键增删操作。
         </p>
       </div>
-      <el-button type="primary" @click="openCreateDept()">
-        <Icon icon="ep:plus" class="mr-4px" />
-        新增根部门
-      </el-button>
     </div>
   </ContentWrap>
 
-  <el-row :gutter="16">
-    <el-col :xs="24" :lg="8" :xl="6">
-      <ContentWrap class="org-structure-left h-600px">
+  <div class="split-panel">
+    <ContentWrap class="org-structure-left" :style="{ width: leftPanelWidth + 'px' }">
         <div class="flex items-center gap-8px mb-12px">
-          <el-input
-            v-model="deptKeyword"
-            placeholder="搜索部门"
-            clearable
-            @clear="handleFilterDept"
-            @input="handleFilterDept"
-          >
-            <template #prefix>
-              <Icon icon="ep:search" />
-            </template>
-          </el-input>
-          <el-button text type="primary" @click="handleRefreshTree">刷新</el-button>
-          <el-button text type="primary" @click="toggleExpandAll">
-            {{ treeExpandedAll ? '折叠' : '展开' }}
-          </el-button>
+          <div style="flex: 1; min-width: 0;">
+            <el-input
+             v-model="deptKeyword"
+             style="width: 100%"
+             placeholder="搜索部门"
+              clearable
+              @clear="handleFilterDept"
+              @input="handleFilterDept"
+            >
+              <template #prefix>
+                <Icon icon="ep:search" />
+              </template>
+            </el-input>
+         </div>
+          <div class="flex items-center gap-4px" style="margin-left: auto;">
+           <el-button text type="primary" @click="handleRefreshTree">刷新</el-button>
+         </div>
         </div>
 
         <el-tree
@@ -68,11 +65,9 @@
             </div>
           </template>
         </el-tree>
-      </ContentWrap>
-    </el-col>
-
-    <el-col :xs="24" :lg="16" :xl="18">
-      <ContentWrap>
+    </ContentWrap>
+    <div class="split-handle" @mousedown.prevent="startResize"></div>
+    <ContentWrap class="flex-1">
         <div class="flex flex-col gap-12px">
           <el-form :model="userQuery" :inline="true" label-width="auto" class="org-structure-query">
             <el-form-item label="用户名">
@@ -100,11 +95,14 @@
               <el-button @click="handleReset">
                 <Icon icon="ep:refresh-right" class="mr-4px" /> 重置
               </el-button>
+              <el-button type="success" @click="openCreateUser()">
+                <Icon icon="ep:plus" class="mr-4px" /> 新增用户
+              </el-button>
             </el-form-item>
           </el-form>
 
-          <el-table v-loading="userLoading" :data="userList" border class="mt-4">
-            <el-table-column type="index" width="60" label="#" />
+          <el-table v-loading="userLoading" :data="displayUsers" border class="mt-4">
+            <el-table-column type="index" width="60" label="#" :index="(idx) => (userPage - 1) * userPageSize + idx + 1" />
             <el-table-column prop="username" label="用户名" min-width="140" />
             <el-table-column prop="nickname" label="昵称" min-width="120" />
             <el-table-column label="所属部门" min-width="260">
@@ -121,19 +119,26 @@
                 </el-space>
               </template>
             </el-table-column>
-            <el-table-column prop="mobile" label="手机号" min-width="140" />
-            <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-            <el-table-column label="来源" width="120">
+            <el-table-column label="分配角色" min-width="140">
               <template #default="{ row }">
-                <el-tag :type="getSourceTypeMeta(row.sourceType).type" effect="plain">
-                  {{ getUserSourceLabel(row) }}
-                </el-tag>
+                <el-space wrap>
+                  <el-tag
+                    v-for="roleName in (userRoleNames.get(row.id) || [])"
+                    :key="roleName"
+                    size="small"
+                    effect="plain"
+                    type="info"
+                  >
+                    {{ roleName }}
+                  </el-tag>
+                  <span v-if="!(userRoleNames.get(row.id)?.length)">-</span>
+                </el-space>
               </template>
             </el-table-column>
             <el-table-column label="状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="row.status === 0 ? 'success' : 'danger'" effect="plain">
-                  {{ row.status === 0 ? '启用' : '停用' }}
+                <el-tag :type="(row.status ?? 0) === 0 ? 'success' : 'danger'" effect="plain">
+                  {{ (row.status ?? 0) === 0 ? '启用' : '停用' }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -143,7 +148,7 @@
               width="170"
               :formatter="dateFormatter"
             />
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column label="操作" width="80" fixed="right">
               <template #default="{ row }">
                 <el-dropdown trigger="click" @command="(command) => handleUserCommand(command, row)">
                   <el-button type="primary" link size="small">
@@ -155,6 +160,7 @@
                       <el-dropdown-item command="addDept">添加到部门</el-dropdown-item>
                       <el-dropdown-item command="removeDept">从部门移除</el-dropdown-item>
                       <el-dropdown-item command="resetPwd">更改密码</el-dropdown-item>
+                      <el-dropdown-item command="assignRole">分配角色</el-dropdown-item>
                       <el-dropdown-item command="delete" divided>删除用户</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -167,10 +173,18 @@
             v-if="!userLoading && userList.length === 0"
             description="暂无用户数据，可通过“添加到部门”进行绑定。"
           />
+
+         <Pagination
+            class="justify-end"
+            v-if="userTotal > 0"
+            :total="userTotal"
+            v-model:page="userPage"
+            v-model:limit="userPageSize"
+            @pagination="fetchDeptUsers"
+          />
         </div>
-      </ContentWrap>
-    </el-col>
-  </el-row>
+    </ContentWrap>
+  </div>
 
   <!-- 部门新增/编辑 -->
   <el-dialog v-model="deptDialog.visible" :title="deptDialog.title" width="460px" destroy-on-close>
@@ -317,6 +331,55 @@
       </el-button>
     </template>
   </el-dialog>
+
+  <!-- 新增用户 -->
+  <el-dialog v-model="createDialog.visible" title="新增用户" width="520px" destroy-on-close>
+    <el-form :model="createForm" :rules="createRules" ref="createFormRef" label-width="auto">
+      <el-form-item label="用户名" prop="username">
+        <el-input v-model="createForm.username" placeholder="请输入用户名" />
+      </el-form-item>
+      <el-form-item label="密码" prop="password">
+        <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+      </el-form-item>
+      <el-form-item label="昵称" prop="nickname">
+        <el-input v-model="createForm.nickname" placeholder="请输入昵称" />
+      </el-form-item>
+      <el-form-item label="手机号" prop="mobile">
+        <el-input v-model="createForm.mobile" placeholder="请输入手机号" />
+      </el-form-item>
+      <el-form-item label="邮箱" prop="email">
+        <el-input v-model="createForm.email" placeholder="请输入邮箱" />
+      </el-form-item>
+      <el-form-item label="状态" prop="status">
+        <el-radio-group v-model="createForm.status">
+          <el-radio :value="0">启用</el-radio>
+          <el-radio :value="1">停用</el-radio>
+        </el-radio-group>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="createDialog.visible = false">取消</el-button>
+      <el-button type="primary" :loading="createDialog.loading" @click="handleCreateUser">保存</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 分配角色 -->
+  <el-dialog v-model="roleDialog.visible" title="分配角色" width="460px" destroy-on-close>
+    <el-form :model="roleForm" ref="roleFormRef" label-width="auto">
+      <el-form-item label="用户名称">
+        <el-input v-model="roleForm.username" disabled />
+      </el-form-item>
+      <el-form-item label="角色">
+        <el-select v-model="roleForm.roleIds" multiple placeholder="请选择角色" class="!w-full">
+          <el-option v-for="item in roleList" :key="item.id" :label="item.name" :value="item.id" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="roleDialog.visible = false">取消</el-button>
+      <el-button type="primary" :loading="roleDialog.loading" @click="handleAssignRole">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -325,6 +388,9 @@ import { dateFormatter } from '@/utils/formatTime'
 import { handleTree } from '@/utils/tree'
 import type { FormInstance, FormRules, ElTree } from 'element-plus'
 import * as OrgStructureApi from '@/api/extends/orgStructure'
+import * as SystemUserApi from '@/api/system/user'
+import * as RoleApi from '@/api/system/role'
+import * as PermissionApi from '@/api/system/permission'
 import InputPassword from '@/components/InputPassword/src/InputPassword.vue'
 
 defineOptions({ name: 'ExtOrgStructure' })
@@ -345,6 +411,37 @@ const deptMap = shallowRef(new Map<number, OrgStructureApi.OrgDeptVO>())
 
 const userList = ref<OrgStructureApi.OrgUserRespVO[]>([])
 const userLoading = ref(false)
+const userTotal = ref(0)
+const userPage = ref(1)
+const userPageSize = ref(10)
+const displayUsers = computed(() => {
+  const start = (userPage.value - 1) * userPageSize.value
+  const end = start + userPageSize.value
+  return userList.value.slice(start, end)
+})
+const userRoleNames = ref<Map<number, string[]>>(new Map())
+
+const loadUserRoles = async (users: OrgStructureApi.OrgUserRespVO[]) => {
+  if (!users.length) return
+  try {
+    const allRoles = await RoleApi.getSimpleRoleList()
+    const roleMap = new Map(allRoles.map((r) => [r.id, r.name]))
+    await Promise.all(
+      users.map(async (user) => {
+        try {
+          const roleIds = await PermissionApi.getUserRoleList(user.id)
+          const names = roleIds.map((id: number) => roleMap.get(id)).filter(Boolean) as string[]
+          userRoleNames.value.set(user.id, names)
+        } catch {
+          userRoleNames.value.set(user.id, [])
+        }
+      })
+    )
+    userRoleNames.value = new Map(userRoleNames.value)
+  } catch (error) {
+    console.error('加载用户角色失败:', error)
+  }
+}
 const userQuery = reactive({
   username: '',
   nickname: ''
@@ -359,7 +456,7 @@ const handleFilterDept = () => {
   deptTreeRef.value?.filter(deptKeyword.value)
 }
 
-const treeExpandedAll = ref(false)
+const treeExpandedAll = ref(true)
 
 const applyExpandState = (expand: boolean) => {
   const tree = deptTreeRef.value as any
@@ -426,6 +523,8 @@ const fetchDeptUsers = async () => {
       name: userQuery.nickname || undefined
     }
     userList.value = await OrgStructureApi.getUsersByDept(currentDeptId.value, params)
+    userTotal.value = userList.value.length
+    loadUserRoles(displayUsers.value)
   } finally {
     userLoading.value = false
   }
@@ -433,16 +532,19 @@ const fetchDeptUsers = async () => {
 
 const handleDeptClick = (dept: OrgStructureApi.OrgDeptVO) => {
   currentDeptId.value = dept.id
+  userPage.value = 1
   fetchDeptUsers()
 }
 
 const handleSearch = () => {
+  userPage.value = 1
   fetchDeptUsers()
 }
 
 const handleReset = () => {
   userQuery.username = ''
   userQuery.nickname = ''
+  userPage.value = 1
   fetchDeptUsers()
 }
 
@@ -755,6 +857,9 @@ const handleUserCommand = (command: string, row: OrgStructureApi.OrgUserRespVO) 
     case 'resetPwd':
       handleChangePassword(row)
       break
+    case 'assignRole':
+      openAssignRole(row)
+      break
     case 'delete':
       handleDeleteUser(row)
       break
@@ -793,6 +898,27 @@ const passwordDialog = reactive<{
   inputName: 'org-structure-password'
 })
 
+const leftPanelWidth = ref(280)
+
+const startResize = (e: MouseEvent) => {
+  const startX = e.clientX
+  const startWidth = leftPanelWidth.value
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  const onMouseMove = (e: MouseEvent) => {
+    const diff = e.clientX - startX
+    leftPanelWidth.value = Math.max(180, Math.min(500, startWidth + diff))
+  }
+  const onMouseUp = () => {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
+
 const handlePasswordSubmit = async () => {
   if (!passwordDialog.password.trim()) {
     message.warning('密码不能为空')
@@ -811,12 +937,142 @@ const handlePasswordSubmit = async () => {
   }
 }
 
+// 创建用户
+const createDialog = reactive({
+  visible: false,
+  loading: false
+})
+const createForm = reactive({
+  username: '',
+  password: '',
+  nickname: '',
+  mobile: '',
+  email: '',
+  status: 0,
+})
+const createFormRef = ref<FormInstance>()
+const createRules: FormRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  nickname: [{ required: true, message: '请输入用户昵称', trigger: 'blur' }]
+}
+
+const openCreateUser = () => {
+  createDialog.visible = true
+  createDialog.loading = false
+  createForm.username = ''
+  createForm.password = ''
+  createForm.nickname = ''
+  createForm.mobile = ''
+  createForm.email = ''
+  createForm.status = 0
+}
+
+const handleCreateUser = async () => {
+  if (!createFormRef.value) return
+  const valid = await createFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  createDialog.loading = true
+  try {
+    const userId = await SystemUserApi.createUser({
+      username: createForm.username,
+      password: createForm.password,
+      nickname: createForm.nickname,
+      mobile: createForm.mobile,
+      email: createForm.email,
+      status: createForm.status,
+    } as any)
+    // 将用户添加到当前选中的部门
+    if (userId && currentDeptId.value) {
+      await OrgStructureApi.addUserToDept(currentDeptId.value, userId).catch(() => {})
+    }
+    message.success('用户创建成功')
+    createDialog.visible = false
+    fetchDeptUsers()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    createDialog.loading = false
+  }
+}
+
+// 分配角色
+const roleDialog = reactive({
+  visible: false,
+  loading: false
+})
+const roleForm = reactive({
+  id: 0,
+  username: '',
+  roleIds: [] as number[]
+})
+const roleFormRef = ref<FormInstance>()
+const roleList = ref<RoleApi.RoleVO[]>([])
+
+const openAssignRole = async (user: OrgStructureApi.OrgUserRespVO) => {
+  roleDialog.visible = true
+  roleDialog.loading = true
+  roleForm.id = user.id
+  roleForm.username = user.username
+  roleForm.roleIds = []
+  try {
+    roleForm.roleIds = await PermissionApi.getUserRoleList(user.id)
+    roleList.value = await RoleApi.getSimpleRoleList()
+  } finally {
+    roleDialog.loading = false
+  }
+}
+
+const handleAssignRole = async () => {
+  roleDialog.loading = true
+  try {
+    await PermissionApi.assignUserRole({
+      userId: roleForm.id,
+      roleIds: roleForm.roleIds
+    })
+    message.success('角色分配成功')
+    // 立即更新当前用户的角色显示
+    const selectedNames = roleForm.roleIds
+      .map((id) => roleList.value.find((r) => r.id === id)?.name)
+      .filter(Boolean) as string[]
+    userRoleNames.value.set(roleForm.id, selectedNames)
+    userRoleNames.value = new Map(userRoleNames.value)
+    roleDialog.visible = false
+  } catch (error) {
+    console.error(error)
+  } finally {
+    roleDialog.loading = false
+  }
+}
+
 onMounted(() => {
   fetchDeptTree()
 })
 </script>
 
 <style scoped>
+.split-panel {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.split-handle {
+  width: 4px;
+  min-height: 400px;
+  cursor: col-resize;
+  background: var(--el-border-color-light);
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 20px;
+}
+.split-handle:hover {
+  background: var(--el-color-primary);
+}
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+
 .org-structure-left {
   min-height: 560px;
 }
@@ -849,4 +1105,3 @@ onMounted(() => {
 }
 
 </style>
-

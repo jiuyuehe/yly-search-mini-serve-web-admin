@@ -1,5 +1,24 @@
 <template>
   <Dialog title="任务执行详情" v-model="dialogVisible" width="1300px">
+    <div class="mb-4 flex items-center">
+      <el-input
+        v-model="fileName"
+        placeholder="请输入文件名"
+        clearable
+        class="!w-80"
+        @keyup.enter="handleQuery"
+        @clear="handleQuery"
+      />
+      <el-button type="primary" class="ml-3" @click="handleQuery">
+        <Icon icon="ep:search" class="mr-1" />
+        搜索
+      </el-button>
+      <el-button @click="resetQuery">
+        <Icon icon="ep:refresh" class="mr-1" />
+        重置
+      </el-button>
+    </div>
+
     <div class="task-progress-container">
       <div class="flex justify-between items-center mb-3">
         <div class="text-lg font-medium text-gray-700">任务执行进度</div>
@@ -59,7 +78,7 @@
 
     <!-- 添加分页组件，样式与截图一致 -->
     <div class="mt-3 flex justify-between items-center">
-      <div>共 {{ totalFiles }} 条</div>
+      <div>共 {{ resultTotal }} 条</div>
       <div class="flex items-center">
         <el-select v-model="pageInfo.pageSize" size="small" class="mr-2" @change="handleSizeChange">
           <el-option :value="10" label="10条/页" />
@@ -76,7 +95,6 @@
           small
           background
         />
-
       </div>
     </div>
 
@@ -94,9 +112,11 @@ defineOptions({ name: 'TaskDetailModal' })
 const dialogVisible = ref(false)
 const loading = ref(false)
 const taskId = ref()
+const fileName = ref('')
 const fileList = ref([])
 const totalFiles = ref(0)
 const completedFiles = ref(0)
+const resultTotal = ref(0)
 
 // 分页信息
 const pageInfo = reactive({
@@ -105,11 +125,11 @@ const pageInfo = reactive({
 })
 
 const cappedTotal = computed(() => {
-  const totalPages = Math.ceil(totalFiles.value / pageInfo.pageSize)
+  const totalPages = Math.ceil(resultTotal.value / pageInfo.pageSize)
   if (totalPages > 1000) {
     return 1000 * pageInfo.pageSize
   }
-  return totalFiles.value
+  return resultTotal.value
 })
 
 // 计算完成百分比
@@ -172,14 +192,19 @@ const fetchTaskDetail = async () => {
 
   loading.value = true
   try {
-    const response = await ControlTaskApi.getControlTaskDetail(
-      taskId.value,
-      pageInfo.page,
-      pageInfo.pageSize
-    )
+    const normalizedFileName = fileName.value.trim()
+    const response = await ControlTaskApi.getControlTaskDetail({
+      id: taskId.value,
+      page: pageInfo.page,
+      pageSize: pageInfo.pageSize,
+      fileName: normalizedFileName || undefined
+    })
     fileList.value = response.pageResult.list || []
-    totalFiles.value = response.pageResult.total || 0
-    completedFiles.value = response.pageResult.completedCount || 0
+    resultTotal.value = response.pageResult.total || 0
+    if (!normalizedFileName) {
+      totalFiles.value = response.pageResult.total || 0
+      completedFiles.value = response.pageResult.completedCount || 0
+    }
   } catch (error) {
     console.error('获取任务详情失败', error)
   } finally {
@@ -190,6 +215,7 @@ const fetchTaskDetail = async () => {
 // 处理分页变化
 const handleSizeChange = (size: number) => {
   pageInfo.pageSize = size
+  pageInfo.page = 1
   fetchTaskDetail()
 }
 
@@ -198,10 +224,21 @@ const handleCurrentChange = (page: number) => {
   fetchTaskDetail()
 }
 
+const handleQuery = () => {
+  pageInfo.page = 1
+  fetchTaskDetail()
+}
+
+const resetQuery = () => {
+  fileName.value = ''
+  handleQuery()
+}
+
 // 打开弹窗
 const open = (id: number) => {
   dialogVisible.value = true
   taskId.value = id
+  fileName.value = ''
   pageInfo.page = 1
   fetchTaskDetail()
 }

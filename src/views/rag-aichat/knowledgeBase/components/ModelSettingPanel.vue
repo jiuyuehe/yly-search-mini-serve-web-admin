@@ -63,9 +63,7 @@
 
                 <el-col :span="12">
                   <el-form-item label="嵌入模型" prop="embedding_model">
-                    <el-select v-model="form.embedding_model" class="w-full">
-                      <el-option label="bge-m3@Ollama" value="bge-m3@Ollama" />
-                    </el-select>
+                    <el-select v-model="form.embedding_model" class="w-full" />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -317,7 +315,7 @@ const form = reactive<Record<string, any>>({
   name: '',
   avatar: '',
   description: '',
-  embedding_model: 'bge-m3@Ollama',
+  embedding_model: '',
   permission: 'me',
   pagerank: 0,
   chunk_method: 'naive',
@@ -329,7 +327,7 @@ const rules: FormRules = {
     { required: true, message: '知识库名称不能为空', trigger: 'blur' },
     { max: 128, message: '最多 128 字符', trigger: 'blur' }
   ],
-  embedding_model: [{ required: true, message: '嵌入模型不能为空', trigger: 'change' }],
+  embedding_model: [{ required: true, message: '嵌入模型不能为空', trigger: 'blur' }],
   permission: [{ required: true, message: '权限不能为空', trigger: 'change' }],
   chunk_method: [{ required: true, message: '切片方法不能为空', trigger: 'change' }],
   'parser_config.delimiter': [
@@ -366,7 +364,7 @@ const normalizeDetail = (detail: any) => {
   form.name = detail?.name || ''
   form.avatar = detail?.avatar || ''
   form.description = detail?.description || ''
-  form.embedding_model = detail?.embedding_model || 'bge-m3@Ollama'
+  form.embedding_model = detail?.embedding_model || ''
   form.permission = detail?.permission || 'me'
   form.pagerank = detail?.pagerank || 0
   form.chunk_method = chunkMethod

@@ -953,6 +953,27 @@ const collectDocumentIdsByNames = (docs: any[], fileNames: string[]) => {
 const uploadFiles = async (files: File[]) => {
   if (!files.length || !props.datasetId) return
 
+  // 过滤掉图片和视频文件
+  const blockedExtensions = new Set([
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg',
+    'mp4', 'avi', 'mov', 'mkv', 'webm', 'flv', 'wmv', 'm4v', 'ts', 'mts', '3gp'
+  ])
+  const blockedFiles: string[] = []
+  const allowedFiles: File[] = []
+  for (const file of files) {
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    if (blockedExtensions.has(ext)) {
+      blockedFiles.push(file.name)
+    } else {
+      allowedFiles.push(file)
+    }
+  }
+  if (blockedFiles.length > 0) {
+    ElMessage.warning(`不允许上传图片和视频文件：${blockedFiles.join('、')}`)
+  }
+  if (allowedFiles.length === 0) return
+  files = allowedFiles
+
   uploadPanelVisible.value = true
   const fileItems = files.map((file) => ({
     name: file.name,

@@ -126,17 +126,17 @@
             <el-tooltip
               effect="dark"
               placement="top"
-              :content="row.subPath || '-'"
+              :content="normalizeSubPath(row.filePath || row.subPath) || '-'"
               :show-after="300"
               popper-class="result-table-tooltip"
             >
               <div class="path-main">
                 <Icon icon="ep:location" />
-                <span class="path-text ellipsis">{{ row.subPath || '-' }}</span>
+                <span class="path-text ellipsis">{{ normalizeSubPath(row.filePath || row.subPath) || '-' }}</span>
               </div>
             </el-tooltip>
 
-            <el-button v-if="row.subPath" link type="primary" @click="copyPath(row.subPath)">
+            <el-button v-if="row.filePath || row.subPath" link type="primary" @click="copyPath(normalizeSubPath(row.filePath || row.subPath))">
               <Icon icon="ep:copy-document" />
               复制
             </el-button>
@@ -179,38 +179,6 @@
           >
             <span class="ellipsis table-text">{{ formatTimeText(row) }}</span>
           </el-tooltip>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="标签" min-width="160">
-        <template #default="{ row }">
-          <div v-if="row.fileAiTag || row.fileSysTag" class="tag-row">
-            <el-tooltip
-              v-if="row.fileAiTag"
-              effect="dark"
-              placement="top"
-              :content="row.fileAiTag"
-              :show-after="300"
-            >
-              <el-tag size="small" effect="plain" class="tag-item">
-                {{ row.fileAiTag }}
-              </el-tag>
-            </el-tooltip>
-
-            <el-tooltip
-              v-if="row.fileSysTag"
-              effect="dark"
-              placement="top"
-              :content="row.fileSysTag"
-              :show-after="300"
-            >
-              <el-tag size="small" type="info" effect="plain" class="tag-item">
-                {{ row.fileSysTag }}
-              </el-tag>
-            </el-tooltip>
-          </div>
-
-          <span v-else class="empty-text">-</span>
         </template>
       </el-table-column>
 
@@ -470,11 +438,31 @@ const formatSearchTime = (ms: number) => {
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(2)}s`
 }
+const isWindows = navigator.platform.toLowerCase().includes('win')
+ 
+const normalizeSubPath = (path?: string) => {
+  if (!path) return ''
+  let normalized = path.replace(/smb:\/{3,}/g, 'smb://')
+  if (!isWindows) return normalized
+  return normalized.replace(/^smb:\/\//, '\\\\').replace(/\//g, '\\')
+}
+ 
 
 const copyPath = async (path?: string) => {
   if (!path) return
-
-  await navigator.clipboard?.writeText(path)
+  try {
+    await navigator.clipboard.writeText(path)
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = path
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    textarea.style.pointerEvents = 'none'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
   ElMessage.success('路径已复制')
 }
 
@@ -686,20 +674,6 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
-}
-
-.tag-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 24px;
-}
-
-.tag-item {
-  max-width: 72px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .item-actions {

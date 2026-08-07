@@ -73,7 +73,7 @@
           v-model:expanded-row-keys="expandedRowKeys"
           :columns="columns"
           :data="list"
-          :expand-column-key="columns[0].key"
+          :expand-column-key="expandColumnKey"
           :height="1000"
           :width="width"
           fixed
@@ -94,15 +94,17 @@ import { MenuVO } from '@/api/system/menu'
 import MenuForm from './MenuForm.vue'
 import DictTag from '@/components/DictTag/src/DictTag.vue'
 import { Icon } from '@/components/Icon'
-import { ElButton, TableV2FixedDir, ElSwitch } from 'element-plus'
+import { ElButton, TableV2FixedDir, ElSwitch, type Column } from 'element-plus'
 import { checkPermi } from '@/utils/permission'
 import { CommonStatusEnum } from '@/utils/constants'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 
 defineOptions({ name: 'SystemMenu' })
 
+const expandColumnKey = 'name'
+
 // 虚拟列表表格
-const columns = [
+const columns: Column[] = [
   {
     key: 'name',
     title: '菜单名称',
@@ -199,7 +201,7 @@ const columns = [
       }
       if (checkPermi(['system:menu:delete'])) {
         buttons.push(
-          <ElButton key="delete" link type="danger" onClick={() => handleDelete(rowData.id)}>
+          <ElButton key="delete" link type="danger" onClick={() => handleDelete(rowData)}>
             删除
           </ElButton>
         )
@@ -219,6 +221,7 @@ const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
+type MenuTree = MenuVO & { children?: MenuTree[] }
 const list = ref<any[]>([]) // 列表的数据
 const queryParams = reactive({
   name: undefined,
@@ -226,7 +229,6 @@ const queryParams = reactive({
 })
 const queryFormRef = ref() // 搜索的表单
 const isExpandAll = ref(false) // 是否展开，默认全部折叠
-const refreshTable = ref(true) // 重新渲染表格状态
 
 // 添加展开行控制
 const expandedRowKeys = ref<number[]>([])
@@ -283,13 +285,33 @@ const refreshMenu = async () => {
   } catch {}
 }
 
+/** 递归收集菜单编号，子级优先删除 */
+const collectMenuIds = (menus: MenuTree[]) => {
+  const ids: number[] = []
+  menus.forEach((menu) => {
+    if (menu.children?.length) {
+      ids.push(...collectMenuIds(menu.children))
+    }
+    ids.push(menu.id)
+  })
+  return ids
+}
+
 /** 删除按钮操作 */
-const handleDelete = async (id: number) => {
+const handleDelete = async (menu: MenuTree) => {
   try {
+    const ids = collectMenuIds([menu])
+    const childrenCount = ids.length - 1
     // 删除的二次确认
-    await message.delConfirm()
+    await message.delConfirm(
+      childrenCount > 0
+        ? `确认删除菜单「${menu.name}」及其 ${childrenCount} 个子菜单吗？`
+        : undefined
+    )
     // 发起删除
-    await MenuApi.deleteMenu(id)
+    for (const id of ids) {
+      await MenuApi.deleteMenu(id)
+    }
     message.success(t('common.delSuccess'))
     // 刷新列表
     await getList()

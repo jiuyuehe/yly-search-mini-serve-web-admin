@@ -16,17 +16,6 @@
         </el-form-item>
       </el-col>
       <el-col :span="24" class="px-10px">
-        <el-form-item v-if="loginData.tenantEnable === 'true'" prop="tenantName">
-          <el-input
-            v-model="loginData.loginForm.tenantName"
-            :placeholder="t('login.tenantNamePlaceholder')"
-            :prefix-icon="iconHouse"
-            link
-            type="primary"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" class="px-10px">
         <el-form-item prop="username">
           <el-input
             v-model="loginData.loginForm.username"
@@ -163,7 +152,6 @@ defineOptions({ name: 'LoginForm' })
 
 const { t } = useI18n()
 const message = useMessage()
-const iconHouse = useIcon({ icon: 'ep:house' })
 const iconAvatar = useIcon({ icon: 'ep:avatar' })
 const iconLock = useIcon({ icon: 'ep:lock' })
 const formLogin = ref()
@@ -179,7 +167,6 @@ const captchaType = ref('blockPuzzle') // blockPuzzle 滑块 clickWord 点击文
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
 const LoginRules = {
-  tenantName: [required],
   username: [required],
   password: [required]
 }

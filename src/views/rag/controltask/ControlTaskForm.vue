@@ -300,7 +300,7 @@ const applyScanRules = (rules?: ScanRules, defaultFolderIndexEnabled = false) =>
 const loadOptions = async () => {
   indexList.value = await getIndexList()
   // console.log('indexList.value', indexList)
-  storageList.value = await getStorageList()
+  storageList.value = await getStorageList(true)
   console.log('storageList.value', storageList.value)
 }
 

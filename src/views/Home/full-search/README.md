@@ -20,7 +20,7 @@
 
 ## 参数映射
 
-前端筛选项集中映射到 `SearchParam`，其中 `fileCategory` 固定传 `nas`，暂不展示在 UI 中。已覆盖关键词、搜索类型、`precisionMode`、向量阈值、文件类型、扩展名、文件夹、历史版本、时间、大小、创建人、用户、组、分享、AI 标签、系统标签、标签、富化信息、分页参数。`searchMode`、`precision`、`scope` 属于旧参数，首页不再展示。
+前端筛选项集中映射到 `SearchParam`，其中 `fileCategory` 固定传 `nas`，暂不展示在 UI 中。已覆盖关键词、搜索类型、`precisionMode`、向量阈值、文件类型、扩展名、文件夹、历史版本、时间、大小、创建人、用户、组、分享、富化信息、分页参数。`searchMode`、`precision`、`scope` 属于旧参数，首页不再展示。
 
 ## 预览范围
 

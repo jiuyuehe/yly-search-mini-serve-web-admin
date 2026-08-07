@@ -59,6 +59,13 @@ export interface ControlTaskScanReportVO {
   lastExecuteTime?: string
 }
 
+export interface ControlTaskDetailReqVO {
+  id: number
+  page: number
+  pageSize: number
+  fileName?: string
+}
+
 // 布控任务 API
 export const ControlTaskApi = {
   // 查询布控任务分页
@@ -71,8 +78,8 @@ export const ControlTaskApi = {
     return await request.get({ url: `/rag/control-task/get?id=` + id })
   },
 
-  getControlTaskDetail: async (id: number, page: number, pageSize: number) => {
-    return await request.get({ url: `/rag/control-task/get-task-detail?id=${id}&page=${page}&pageSize=${pageSize}` })
+  getControlTaskDetail: async (params: ControlTaskDetailReqVO) => {
+    return await request.get({ url: `/rag/control-task/get-task-detail`, params })
   },
 
   // 新增布控任务
@@ -82,12 +89,12 @@ export const ControlTaskApi = {
 
   // 启动布控任务
   startControlTask: async (data: any) => {
-    return await request.post({ url: `/rag/control-task/start/`+data.id })
+    return await request.post({ url: `/rag/control-task/start/` + data.id })
   },
 
   // 清空布控任务
   resetTask: async (data: any) => {
-    return await request.post({ url: `/rag/control-task/re-set/`+data.id })
+    return await request.post({ url: `/rag/control-task/re-set/` + data.id })
   },
 
   // 获取布控任务扫描进度
@@ -112,5 +119,5 @@ export const ControlTaskApi = {
   // 导出布控任务 Excel
   exportControlTask: async (params) => {
     return await request.download({ url: `/rag/control-task/export-excel`, params })
-  },
+  }
 }

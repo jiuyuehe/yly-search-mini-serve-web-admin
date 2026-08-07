@@ -29,12 +29,12 @@ const userStore = useUserStore()
 const cropperRef = ref()
 const handelUpload = async ({ data }) => {
   const { httpRequest } = useUpload()
-  const avatar = (
-    (await httpRequest({
-      file: data,
-      filename: 'avatar.png'
-    } as UploadRequestOptions)) as unknown as { data: string }
-  ).data
+  const result = await httpRequest({
+    file: data,
+    filename: 'avatar.png'
+  } as UploadRequestOptions)
+  const avatar = (result as any)?.url || (result as any)?.data || ''
+  if (!avatar) return
   await updateUserProfile({ avatar })
 
   // 关闭弹窗，并更新 userStore

@@ -8,8 +8,8 @@ export function useStorageMediumCache() {
   let isLoading = false
   let loadPromise: Promise<void> | null = null
 
-  async function ensureStorageData() {
-    if (storageNameCache.value.size > 0) return
+  async function ensureStorageData(force = false) {
+    if (!force && storageNameCache.value.size > 0) return
     
     if (isLoading) {
       return loadPromise 
@@ -40,9 +40,9 @@ export function useStorageMediumCache() {
     return storageTypeCache.value.get(id) || 0
   }
 
-  async function getStorageList() {
-    if (storageList.value.length === 0) {
-      await ensureStorageData()
+  async function getStorageList(refresh = false) {
+    if (refresh || storageList.value.length === 0) {
+      await ensureStorageData(refresh)
     }
     return Promise.resolve(storageList.value)
   }

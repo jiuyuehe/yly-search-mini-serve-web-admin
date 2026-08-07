@@ -1,31 +1,15 @@
 <template>
   <div
-    :class="prefixCls"
-    class="relative h-[100%] lt-md:px-10px lt-sm:px-10px lt-xl:px-10px lt-xl:px-10px"
+   :class="prefixCls"
+    class="relative h-[100%]"
   >
     <div class="relative mx-auto h-full flex">
-      <div
-        :class="`${prefixCls}__left flex-1 bg-gray-500 bg-opacity-20 relative p-30px lt-xl:hidden overflow-x-hidden overflow-y-auto`"
-      >
-        <!-- 左上角的 logo + 系统标题 -->
-        <div class="relative flex items-center text-white">
-          <img alt="" class="mr-10px h-48px w-48px" src="@/assets/imgs/logo.png" />
-          <span class="text-20px font-bold">{{ underlineToHump(appStore.getTitle) }}</span>
-        </div>
-        <!-- 左边的背景图 + 欢迎语 -->
-        <div class="h-[calc(100%-60px)] flex items-center justify-center">
-          <TransitionGroup
-            appear
-            enter-active-class="animate__animated animate__bounceInLeft"
-            tag="div"
-          >
-            <img key="1" alt="" class="w-350px" src="@/assets/svgs/login-box-bg.svg" />
-            <div key="2" class="text-3xl text-white">{{ t('login.welcome') }}</div>
-            <div key="3" class="mt-5 text-14px font-normal text-white">
-              {{ t('login.message') }}
-            </div>
-          </TransitionGroup>
-        </div>
+    <div
+       :class="`${prefixCls}__left flex-1 bg-gray-500 bg-opacity-20 relative lt-xl:hidden overflow-hidden`"
+     >
+        <Transition appear enter-active-class="animate__animated animate__bounceInLeft">
+          <img alt="login-bg" class="h-full w-full object-cover" src="@/assets/svgs/login-bg.svg" />
+        </Transition>
       </div>
       <div
         class="relative flex-1 p-30px dark:bg-[var(--login-bg-color)] lt-sm:p-10px overflow-x-hidden overflow-y-auto"
@@ -36,7 +20,7 @@
           style="color: var(--el-text-color-primary);"
         >
           <div class="flex items-center at-2xl:hidden at-xl:hidden">
-            <img alt="" class="mr-10px h-48px w-48px" src="@/assets/imgs/logo.png" />
+            <img alt="" class="mr-10px h-50px w-70px" src="../../assets/imgs/logo.png" />
             <span class="text-20px font-bold" >{{ underlineToHump(appStore.getTitle) }}</span>
           </div>
           <div class="flex items-center justify-end space-x-10px h-48px">
@@ -89,22 +73,8 @@ const prefixCls = getPrefixCls('login')
 $prefix-cls: #{$namespace}-login;
 
 .#{$prefix-cls} {
-  overflow: auto;
-
-  &__left {
-    &::before {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: -1;
-      width: 100%;
-      height: 100%;
-      background-image: url('@/assets/svgs/login-bg.svg');
-      background-position: center;
-      background-repeat: no-repeat;
-      content: '';
-    }
-  }
+ &__left {
+ }
 }
 </style>
 
