@@ -91,6 +91,7 @@
             link
             type="warning"
             @click="clearData(scope.row.id)"
+            :loading="clearLoading[scope.row.id]"
             v-hasPermi="['rag:es-index:delete']"
           >
             清空数据
@@ -149,6 +150,7 @@ const queryParams = reactive({
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
+const clearLoading = ref<Record<number, boolean>>({})
 
 /** 查询列表 */
 const getList = async () => {
@@ -195,15 +197,20 @@ const handleDelete = async (id: number) => {
 
 /** 删除按钮操作 */
 const clearData = async (id: number) => {
+  if (clearLoading.value[id]) return
   try {
     // 删除的二次确认
     await message.delConfirm()
     // 发起删除
+    clearLoading.value[id] = true
     await EsIndexApi.clearData(id)
-    message.success(t('清空索引数据成功'))
+    message.success('已提交清空，后台将在关联布控任务完全静默后删除索引数据')
     // 刷新列表
     await getList()
-  } catch {}
+  } catch {
+  } finally {
+    clearLoading.value[id] = false
+  }
 }
 
 /** 导出按钮操作 */

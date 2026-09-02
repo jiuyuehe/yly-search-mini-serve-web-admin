@@ -183,10 +183,17 @@ const aggregationTabs = computed(() => {
     docStats
       .filter((item) => keys.includes(String(item.key)))
       .reduce((sum, item) => sum + Number(item.count || 0), 0)
-  const totalCount = docStats.reduce((sum, item) => sum + Number(item.count || 0), 0)
+  const classifiedCount = docTypeMap
+    .filter((item) => item.value !== '' && item.value !== '5')
+    .reduce((sum, item) => sum + getCount(item.keys), 0)
   return docTypeMap.map((item) => ({
     ...item,
-    count: item.value === '' ? totalCount : getCount(item.keys)
+    count:
+      item.value === ''
+        ? result.total
+        : item.value === '5'
+          ? Math.max(result.total - classifiedCount, 0)
+          : getCount(item.keys)
   }))
 })
 

@@ -101,7 +101,7 @@
           <el-button
             link
             type="primary"
-            v-if="scope.row.status !== 2"
+            v-if="![2, 7, 8, 9, 10].includes(scope.row.status)"
             @click="handleStart(scope.row)"
             :loading="actionLoading[scope.row.id]"
             v-hasPermi="['rag:control-task:update']"
@@ -111,8 +111,8 @@
           <el-button
             link
             type="warning"
-            v-if="scope.row.status === 2"
-            @click="handlePause(scope.row)"
+            v-if="scope.row.status === 2 || scope.row.status === 8"
+            @click="handleStop(scope.row)"
             :loading="actionLoading[scope.row.id]"
             v-hasPermi="['rag:control-task:update']"
           >
@@ -121,6 +121,7 @@
           <el-button
             link
             type="primary"
+            v-if="![7, 8, 9, 10].includes(scope.row.status)"
             @click="openForm('update', scope.row.id)"
             v-hasPermi="['rag:control-task:update']"
           >
@@ -129,6 +130,7 @@
           <el-button
             link
             type="danger"
+            v-if="canDeleteTask(scope.row.status)"
             @click="handleDelete(scope.row.id)"
             v-hasPermi="['rag:control-task:delete']"
           >
@@ -155,7 +157,7 @@
             link
             type="info"
             @click="handlereset(scope.row)"
-            v-if="!isDatabaseStorage(scope.row.storageId)"
+            v-if="!isDatabaseStorage(scope.row.storageId) && scope.row.status === 3"
           >
             重置
           </el-button>
@@ -195,7 +197,6 @@ import TaskProgressDrawer from './TaskProgressDrawer.vue'
 defineOptions({name: 'ControlTask'})
 
 const message = useMessage() // 消息弹窗
-const {t} = useI18n() // 国际化
 const {getStorageName} = useStorageMediumCache() // 存储介质缓存
 
 const loading = ref(true) // 列表的加载中
@@ -228,6 +229,11 @@ const queryParams = reactive({
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
 const actionLoading = ref<{ [key: number]: boolean }>({}) // 操作按钮的加载中
+let lifecyclePollTimer: ReturnType<typeof setInterval> | undefined
+
+// 与后端删除校验保持一致：已停止(status=3)显示“删除”；生命周期流转状态不可删除。
+const DELETABLE_TASK_STATUSES = [0, 1, 3, 4, 5, 6]
+const canDeleteTask = (status: number) => DELETABLE_TASK_STATUSES.includes(status)
 
 /** 查询列表 */
 const getList = async () => {
@@ -238,6 +244,19 @@ const getList = async () => {
     total.value = data.total
   } finally {
     loading.value = false
+  }
+}
+
+const refreshLifecycleTasks = async () => {
+  if (!list.value.some((item) => [7, 8, 9, 10].includes(item.status))) {
+    return
+  }
+  try {
+    const data = await ControlTaskApi.getControlTaskPage(queryParams)
+    list.value = data.list
+    total.value = data.total
+  } catch {
+    // 静默轮询失败不影响用户当前操作，下一轮继续尝试。
   }
 }
 
@@ -299,8 +318,8 @@ const handleStart = async (row: any) => {
   }, 1000)
 }
 
-/** 暂停任务 */
-const handlePause = (row: any) => {
+/** 停止任务 */
+const handleStop = (row: any) => {
   if (actionLoading.value[row.id]) {
     return
   }
@@ -310,30 +329,30 @@ const handlePause = (row: any) => {
       await ControlTaskApi.stopControlTask({
         id: row.id,
       })
-      message.success('暂停成功！')
+      message.success('停止成功')
       await getList()
     } catch (error) {
-      console.error('任务暂停失败', error)
+      console.error('任务停止失败', error)
     } finally {
       actionLoading.value[row.id] = false
     }
-  }, 1000) // 模拟延时60秒
+  }, 1000)
 }
 
 
-/** 暂停任务 */
+/** 清空任务数据 */
 const handlereset = (row: any) => {
   if (!row || !row.id) {
     message.error('操作失败，未找到有效的任务 ID')
     return
   }
-  message.info('重置任务中，请稍等10秒...')
+  message.info('正在提交清空任务...')
   setTimeout(async () => {
     try {
       await ControlTaskApi.resetTask({
         id: row.id,
       })
-      message.success('重置成功！')
+      message.success('已提交清空，后台将在任务完全静默后清理数据')
       await getList()
     } catch (error) {
       console.error('任务重置失败', error)
@@ -347,15 +366,21 @@ const handleDelete = async (id: number) => {
   try {
     // 查找要删除的任务
     const taskToDelete = list.value.find(item => item.id === id)
-    if (taskToDelete?.status === 2) {
-      message.warning('请先停止任务后再删除！！！')
+    if (!taskToDelete) {
+      message.error('操作失败，未找到有效的任务')
+      return
+    }
+    if (!canDeleteTask(taskToDelete.status)) {
+      message.warning(taskToDelete.status === 9
+        ? '任务正在停止中，请稍后再删除'
+        : '当前任务状态不可删除，请先停止任务')
       return
     }
     // 删除的二次确认
     await message.delConfirm()
     // 发起删除
     await ControlTaskApi.deleteControlTask(id)
-    message.success(t('common.delSuccess'))
+    message.success('删除成功')
     // 刷新列表
     await getList()
   } catch {
@@ -395,6 +420,13 @@ const isDatabaseStorage = (storageId) => {
 /** 初始化 **/
 onMounted(async () => {
   //storageList.value = await getStorageList() // Fetch and store the list
-  getList()
+  await getList()
+  lifecyclePollTimer = setInterval(refreshLifecycleTasks, 3000)
+})
+
+onBeforeUnmount(() => {
+  if (lifecyclePollTimer) {
+    clearInterval(lifecyclePollTimer)
+  }
 })
 </script>

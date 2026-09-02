@@ -24,7 +24,8 @@ export interface ControlTaskVO {
   knowledgeBaseId: number // 知识库ID
   scheduleType: boolean // 调度类型：0-立即执行 1-定时执行 2-周期执行
   scheduleConf: string // 调度配置(cron表达式或时间配置)
-  status: number // 状态：0-未开始 1-进行中 2-暂停 3-已完成
+  status: number // 0成功 1错误 2处理中 3已停止 4失败 5终止 6恢复 7后台删除标记（列表不展示） 8启动中 9停止中 10清空中
+  activeScanBatchId?: string // 当前允许写入ES的扫描批次
   resultCount: number // 布控结果数量
   lastExecuteTime: Date // 最后执行时间
   faceCount: number // 布控人脸数量
@@ -49,6 +50,8 @@ export interface ControlTaskScanReportVO {
   failedCount?: number
   waitingFileJobs?: number
   processingFileJobs?: number
+  contentWaitingFileJobs?: number
+  contentProcessingFileJobs?: number
   successFileJobs?: number
   failedFileJobs?: number
   skippedFileJobs?: number
